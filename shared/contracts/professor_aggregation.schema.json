@@ -1,0 +1,254 @@
+{
+  "$defs": {
+    "ErrorDetail": {
+      "additionalProperties": false,
+      "description": "Stable error fields without echoed input, tokens, or transcript text.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "request_id"
+      ],
+      "title": "ErrorDetail",
+      "type": "object"
+    },
+    "ErrorResponse": {
+      "additionalProperties": false,
+      "description": "Standard repository error envelope.",
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/ErrorDetail"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "EventEnvelope": {
+      "additionalProperties": false,
+      "description": "Realtime envelope whose payload is validated by its concrete event model.",
+      "properties": {
+        "event_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_type": {
+          "enum": [
+            "transcript.batch.accepted",
+            "error.occurred"
+          ],
+          "title": "Event Type",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Receipt"
+            },
+            {
+              "$ref": "#/$defs/ErrorResponse"
+            }
+          ],
+          "title": "Payload"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence_number": {
+          "minimum": 0,
+          "title": "Sequence Number",
+          "type": "integer"
+        },
+        "session_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Session Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "session_id",
+        "occurred_at",
+        "sequence_number",
+        "payload"
+      ],
+      "title": "EventEnvelope",
+      "type": "object"
+    },
+    "ProfessorSummary": {
+      "additionalProperties": false,
+      "description": "Post-lecture aggregates, not an attention/comprehension assessment.",
+      "properties": {
+        "aggregation_window_ms": {
+          "title": "Aggregation Window Ms",
+          "type": "integer"
+        },
+        "highest_signal_intervals": {
+          "items": {
+            "$ref": "#/$defs/SummaryBucket"
+          },
+          "title": "Highest Signal Intervals",
+          "type": "array"
+        },
+        "minimum_group_size": {
+          "title": "Minimum Group Size",
+          "type": "integer"
+        },
+        "policy_version": {
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "suppressed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Suggested Actions",
+          "type": "array"
+        },
+        "timeline_buckets": {
+          "items": {
+            "$ref": "#/$defs/SummaryBucket"
+          },
+          "title": "Timeline Buckets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "session_id",
+        "status",
+        "minimum_group_size",
+        "aggregation_window_ms",
+        "policy_version",
+        "timeline_buckets",
+        "highest_signal_intervals",
+        "suggested_actions"
+      ],
+      "title": "ProfessorSummary",
+      "type": "object"
+    },
+    "Receipt": {
+      "additionalProperties": false,
+      "description": "Batch result: accepted writes, exact retries, and current session revision.",
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "integer"
+        },
+        "duplicates": {
+          "title": "Duplicates",
+          "type": "integer"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "accepted",
+        "duplicates",
+        "revision"
+      ],
+      "title": "Receipt",
+      "type": "object"
+    },
+    "SummaryBucket": {
+      "additionalProperties": false,
+      "description": "Fixed bucket; suppressed buckets reveal neither counts nor signal ratios.",
+      "properties": {
+        "end_ms": {
+          "description": "Exclusive lecture-relative end.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_suppressed": {
+          "title": "Is Suppressed",
+          "type": "boolean"
+        },
+        "participant_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Participant Count"
+        },
+        "possible_missed_ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Possible Missed Ratio"
+        },
+        "start_ms": {
+          "description": "Inclusive lecture-relative start.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "is_suppressed"
+      ],
+      "title": "SummaryBucket",
+      "type": "object"
+    }
+  },
+  "$id": "urn:lumina:professor_aggregation:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lumina professor_aggregation contracts"
+}
