@@ -1,0 +1,70 @@
+asyncapi: 3.1.0
+info:
+  title: Lecture Recovery Assistant Realtime API
+  version: 0.1.0
+  description: >-
+    Contract placeholder for session-scoped WebSocket messages. Add concrete
+    messages as the realtime session workflow is implemented.
+servers:
+  local:
+    host: 127.0.0.1:8000
+    protocol: ws
+    description: Local development
+channels:
+  lecture_session:
+    address: /ws/v1/sessions/{session_id}
+    parameters:
+      session_id:
+        description: Unique lecture-session identifier.
+    messages:
+      session_event:
+        $ref: '#/components/messages/session_event'
+operations:
+  receive_session_events:
+    action: receive
+    channel:
+      $ref: '#/channels/lecture_session'
+    messages:
+      - $ref: '#/channels/lecture_session/messages/session_event'
+  send_client_events:
+    action: send
+    channel:
+      $ref: '#/channels/lecture_session'
+    messages:
+      - $ref: '#/channels/lecture_session/messages/session_event'
+components:
+  messages:
+    session_event:
+      name: session_event
+      title: Session event envelope
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+  schemas:
+    websocket_envelope:
+      type: object
+      additionalProperties: false
+      required:
+        - event_id
+        - event_type
+        - schema_version
+        - session_id
+        - occurred_at
+        - sequence_number
+        - payload
+      properties:
+        event_id:
+          type: string
+        event_type:
+          type: string
+        schema_version:
+          type: string
+        session_id:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        sequence_number:
+          type: integer
+          minimum: 0
+        payload:
+          type: object
