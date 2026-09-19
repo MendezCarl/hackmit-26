@@ -34,7 +34,7 @@ docs/
 │   └── zoom_integration.md
 ├── api/
 │   ├── unified_api_contracts.md
-│   ├── openapi.yaml
+│   ├── openapi.json
 │   └── asyncapi.yaml
 ├── privacy/
 │   ├── consent.md
@@ -72,7 +72,8 @@ docs/
 - Treat documentation as part of the implementation, not a later cleanup task.
 - Update the relevant document in the same pull request as a behavioral or contract change.
 - Do not duplicate an API payload definition in several Markdown files. Link to the canonical contract instead.
-- Put machine-readable REST contracts in `docs/api/openapi.yaml`.
+- FastAPI serves live Swagger UI at `/docs`, ReDoc at `/redoc`, and OpenAPI at `/openapi.json`.
+- Put the generated, machine-readable REST snapshot in `docs/api/openapi.json`.
 - Put machine-readable WebSocket contracts in `docs/api/asyncapi.yaml`.
 - Put reusable payload schemas in `shared/contracts/`.
 - Record architecture decisions in `docs/decisions/` using numbered ADR files.

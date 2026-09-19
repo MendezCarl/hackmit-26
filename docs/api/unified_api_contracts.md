@@ -25,7 +25,7 @@ Official references:
 ```text
 docs/api/
 ├── unified_api_contracts.md   # Human-readable catalog and rules
-├── openapi.yaml               # Checked-in REST snapshot
+├── openapi.json               # Generated, checked-in REST snapshot
 └── asyncapi.yaml              # WebSocket channels and events
 
 shared/contracts/
@@ -39,7 +39,29 @@ shared/contracts/
 └── websocket_envelope.schema.json
 ```
 
-The backend Pydantic models and reusable JSON Schemas must remain equivalent. Continuous integration should generate an OpenAPI snapshot from FastAPI and fail if it differs from the committed `docs/api/openapi.yaml`.
+The backend Pydantic models and reusable JSON Schemas must remain equivalent. FastAPI regenerates the live Swagger schema from route annotations and route-bound Pydantic models every time the application starts. The repository also stores `docs/api/openapi.json` so contract changes can be reviewed. Continuous integration fails when that snapshot is stale.
+
+### Swagger and OpenAPI workflow
+
+Run the backend and open:
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+- Raw OpenAPI: `http://127.0.0.1:8000/openapi.json`
+
+After adding or changing a FastAPI endpoint or any Pydantic model referenced by a route, run:
+
+```sh
+python backend/scripts/generate_openapi_contract.py
+```
+
+Verify that the committed snapshot is current with:
+
+```sh
+python backend/scripts/generate_openapi_contract.py --check
+```
+
+The generator uses Python's standard library and FastAPI's `app.openapi()` output; it does not add a YAML dependency. CI runs check mode and rejects stale contracts.
 
 ## Global conventions
 
@@ -295,7 +317,7 @@ The professor summary must not include student IDs, names, device IDs, or indivi
 
 1. Update the relevant JSON Schema in `shared/contracts/`.
 2. Update the FastAPI Pydantic model and route annotation.
-3. Regenerate `docs/api/openapi.yaml`.
+3. Regenerate `docs/api/openapi.json` with `python backend/scripts/generate_openapi_contract.py`.
 4. Update `docs/api/asyncapi.yaml` when a WebSocket event changes.
 5. Regenerate frontend types.
 6. Update examples and contract tests.
@@ -309,6 +331,7 @@ Breaking changes require a new API or event schema version. Do not silently rena
 - Every field has a type, description, and example where useful.
 - Inputs, outputs, errors, authentication, and privacy behavior are documented.
 - OpenAPI generation includes the endpoint.
+- `python backend/scripts/generate_openapi_contract.py --check` passes.
 - The frontend uses generated or contract-checked types.
 - Unit and integration tests cover success and error behavior.
 - No real student data or raw media appears in fixtures.

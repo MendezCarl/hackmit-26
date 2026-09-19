@@ -12,6 +12,8 @@ Read and follow `AGENTS.md` completely before beginning any task. `AGENTS.md` is
 6. Run the most targeted tests first, then the broader relevant checks.
 7. Report the outcome using the completion format in `AGENTS.md`.
 
+Default to mocks, fakes, or synthetic recorded fixtures for external APIs. Do not ping live providers from the normal test suite or CI. Use a live provider only in an explicit opt-in sandbox integration test when a mock cannot provide adequate confidence, and explain that choice.
+
 ## Contract-first behavior
 
 - For REST work, inspect `docs/api/unified_api_contracts.md`, Pydantic models, and the generated OpenAPI schema.
@@ -26,7 +28,11 @@ Read and follow `AGENTS.md` completely before beginning any task. `AGENTS.md` is
 - Add Python docstrings and TypeScript TSDoc for public and non-obvious functions, including inputs and outputs.
 - Do not add comments that simply repeat the code.
 - Do not create broad `helpers`, `utils`, or `common` modules when a domain-specific module name is possible.
-- Do not introduce new dependencies without explaining why the existing stack cannot satisfy the requirement.
+- Attempt a clear, maintainable implementation with the standard library and existing dependencies before adding another package.
+- Prefer direct project-specific code for small helpers and transformations.
+- Do not introduce a dependency without explaining why the existing stack is insufficient and why the package is recommended, safer, or materially easier.
+- Do not reimplement security-sensitive standards, OAuth clients, media codecs, database drivers, or mature protocol implementations.
+- After changing a FastAPI endpoint or route-bound Pydantic model, regenerate `docs/api/openapi.json` and run its check command.
 
 ## Privacy guardrail
 
