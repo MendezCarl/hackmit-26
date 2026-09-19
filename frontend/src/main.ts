@@ -1,23 +1,23 @@
-const path = require('node:path');
-const { app, BrowserWindow } = require('electron');
+import { join } from 'node:path';
+import { app, BrowserWindow } from 'electron/main';
 
-const createWindow = () => {
+const createWindow = (): void => {
   const mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
     minWidth: 760,
     minHeight: 520,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  void mainWindow.loadFile(join(__dirname, 'index.html'));
 };
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   createWindow();
 
   app.on('activate', () => {

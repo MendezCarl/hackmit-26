@@ -1,0 +1,101 @@
+{
+  "components": {
+    "schemas": {
+      "ApiStatusResponse": {
+        "description": "Response describing whether the API skeleton is ready.",
+        "properties": {
+          "message": {
+            "description": "Human-readable API status message.",
+            "examples": [
+              "FastAPI backend is ready."
+            ],
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ApiStatusResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Response returned by the liveness endpoint.",
+        "properties": {
+          "status": {
+            "description": "Current process health state.",
+            "examples": [
+              "ok"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Typed REST endpoints for lecture sessions, recovery cards, integrations, and anonymous professor summaries.",
+    "summary": "Backend API for privacy-first lecture recovery.",
+    "title": "Lecture Recovery Assistant API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/status": {
+      "get": {
+        "description": "Return a human-readable readiness message for the frontend skeleton.\n\nReturns:\n    A typed status response confirming that the API is ready.",
+        "operationId": "read_api_status_api_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Check API readiness",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Return the current process liveness state.\n\nReturns:\n    A typed response whose status is ``ok`` while the process is running.",
+        "operationId": "read_health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Check process health",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Liveness and API readiness endpoints.",
+      "name": "system"
+    }
+  ]
+}
