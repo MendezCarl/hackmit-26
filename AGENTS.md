@@ -75,6 +75,18 @@ Names must describe behavior or domain purpose. Avoid vague names such as `helpe
 - Keep route handlers thin; put domain behavior in services.
 - Keep React components focused on rendering and interaction; put API and state behavior in services/hooks.
 
+## Dependency policy
+
+- First inspect the standard library, the current dependency manifests, and existing project code.
+- Implement small, project-specific helpers and domain logic directly when the behavior is clear and testable.
+- Prefer the fewest dependencies that keep the solution readable, reliable, and maintainable.
+- Do not add a package merely to avoid writing a small amount of straightforward code.
+- Use an established dependency when it is the recommended implementation, materially simpler, or safer than custom code.
+- Do not reimplement cryptography, authentication standards, OAuth, protocol clients, media codecs, database drivers, or mature security-sensitive functionality.
+- Before adding a dependency, document why existing code and standard-library functionality are insufficient.
+- Add dependencies only to the appropriate manifest, use a maintained package, and include focused tests for the integration.
+- Remove exploratory dependencies that are not used by the final implementation.
+
 ## Comments and documentation
 
 - Every exported/public function, class, endpoint, and non-obvious helper must document its inputs, outputs, raised errors, and relevant side effects.
@@ -131,7 +143,11 @@ export function mapRtmsTimestamp(
 - Read `docs/api/unified_api_contracts.md` before changing an API or WebSocket message.
 - Treat `shared/contracts/` as the reusable payload source of truth.
 - Use OpenAPI 3.1 for REST and AsyncAPI 3.1 for WebSocket messages.
+- Keep FastAPI Swagger UI enabled at `/docs`, ReDoc at `/redoc`, and the raw schema at `/openapi.json`.
+- Every endpoint must use typed parameters and an explicit response model so its request and response schemas appear in Swagger.
 - Update the JSON Schema, Pydantic model, OpenAPI/AsyncAPI snapshot, generated frontend type, examples, and tests together.
+- Run `python backend/scripts/generate_openapi_contract.py` after changing a FastAPI route or any Pydantic model referenced by a route.
+- Run `python backend/scripts/generate_openapi_contract.py --check` before finishing; CI must fail when the checked-in OpenAPI contract is stale.
 - Do not independently invent frontend and backend payload shapes.
 - Do not accept raw webcam frames, raw audio, or recordings through the application API.
 - Use one standard error response and stable machine-readable error codes.
@@ -151,9 +167,14 @@ export function mapRtmsTimestamp(
 ## Testing and quality
 
 - Add or update tests for every behavioral change.
+- Prefer mocks, fakes, and recorded synthetic fixtures at external API boundaries.
+- The default test suite and CI must not call live provider APIs.
+- Live provider tests must be explicit, opt-in integration tests that use provider sandboxes, repository secrets, and synthetic data; document how to run them.
+- Keep test doubles aligned with documented provider contracts, and use focused sandbox contract tests when mocks cannot validate provider behavior adequately.
 - Python must pass formatting, linting, type checking, and Pytest.
 - TypeScript must pass formatting, linting, type checking, component tests, and relevant Playwright tests.
 - Contract changes require contract tests.
+- Route or API-model changes require a regenerated `docs/api/openapi.json` snapshot.
 - Bug fixes require a regression test that fails before the fix when practical.
 - Test error paths, privacy boundaries, time-range validation, and provider failure behavior.
 - Do not weaken, skip, or delete tests merely to make CI pass.
