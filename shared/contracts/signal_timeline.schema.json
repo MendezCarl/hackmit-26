@@ -1,0 +1,649 @@
+{
+  "$defs": {
+    "ContextWindow": {
+      "additionalProperties": false,
+      "description": "Recovery context with explicit requested/effective intervals and source revision.",
+      "properties": {
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/TranscriptChunk"
+          },
+          "title": "Chunks",
+          "type": "array"
+        },
+        "effective_interval": {
+          "$ref": "#/$defs/Interval"
+        },
+        "requested_interval": {
+          "$ref": "#/$defs/Interval"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "transcript_revision": {
+          "title": "Transcript Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "requested_interval",
+        "effective_interval",
+        "transcript_revision",
+        "chunks"
+      ],
+      "title": "ContextWindow",
+      "type": "object"
+    },
+    "ErrorDetail": {
+      "additionalProperties": false,
+      "description": "Stable error fields without echoed input, tokens, or transcript text.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "request_id"
+      ],
+      "title": "ErrorDetail",
+      "type": "object"
+    },
+    "ErrorResponse": {
+      "additionalProperties": false,
+      "description": "Standard repository error envelope.",
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/ErrorDetail"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "EventEnvelope": {
+      "additionalProperties": false,
+      "description": "Realtime envelope whose payload is validated by its concrete event model.",
+      "properties": {
+        "event_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_type": {
+          "enum": [
+            "transcript.batch.accepted",
+            "error.occurred"
+          ],
+          "title": "Event Type",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Receipt"
+            },
+            {
+              "$ref": "#/$defs/ErrorResponse"
+            }
+          ],
+          "title": "Payload"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence_number": {
+          "minimum": 0,
+          "title": "Sequence Number",
+          "type": "integer"
+        },
+        "session_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Session Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "session_id",
+        "occurred_at",
+        "sequence_number",
+        "payload"
+      ],
+      "title": "EventEnvelope",
+      "type": "object"
+    },
+    "Interval": {
+      "additionalProperties": false,
+      "description": "A half-open interval on the lecture clock, measured in integer milliseconds.",
+      "properties": {
+        "end_ms": {
+          "description": "Exclusive lecture-relative end.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "start_ms": {
+          "description": "Inclusive lecture-relative start.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms"
+      ],
+      "title": "Interval",
+      "type": "object"
+    },
+    "MissedWindow": {
+      "additionalProperties": false,
+      "description": "Derived interval eligible for recovery, with editable supporting signals.",
+      "properties": {
+        "confidence": {
+          "description": "Uncalibrated recovery heuristic, never an attention score or probability of missed content.",
+          "title": "Confidence",
+          "type": "number"
+        },
+        "end_ms": {
+          "description": "Exclusive lecture-relative end.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_type": {
+          "const": "possible_missed_window",
+          "default": "possible_missed_window",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "signals": {
+          "items": {
+            "enum": [
+              "face_absent",
+              "head_away",
+              "looking_down",
+              "window_unfocused",
+              "phone_visible",
+              "student_left_frame",
+              "student_returned",
+              "user_marked_confused"
+            ],
+            "type": "string"
+          },
+          "title": "Signals",
+          "type": "array"
+        },
+        "source_event_ids": {
+          "items": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "title": "Source Event Ids",
+          "type": "array"
+        },
+        "start_ms": {
+          "description": "Inclusive lecture-relative start.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "source_event_ids",
+        "signals",
+        "confidence"
+      ],
+      "title": "MissedWindow",
+      "type": "object"
+    },
+    "Receipt": {
+      "additionalProperties": false,
+      "description": "Batch result: accepted writes, exact retries, and current session revision.",
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "integer"
+        },
+        "duplicates": {
+          "title": "Duplicates",
+          "type": "integer"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "accepted",
+        "duplicates",
+        "revision"
+      ],
+      "title": "Receipt",
+      "type": "object"
+    },
+    "SignalBatch": {
+      "additionalProperties": false,
+      "description": "At most 100 derived signal events for the URL's authorized session.",
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/SignalEvent"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Events",
+          "type": "array"
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "title": "SignalBatch",
+      "type": "object"
+    },
+    "SignalEvent": {
+      "additionalProperties": false,
+      "description": "A possible missed-content signal, never a measurement of attention.",
+      "properties": {
+        "confidence": {
+          "description": "Confidence in the observation, not attention or comprehension.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "end_ms": {
+          "description": "Exclusive lecture-relative end.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_type": {
+          "enum": [
+            "possible_missed_window",
+            "face_absent",
+            "head_away",
+            "looking_down",
+            "window_unfocused",
+            "phone_visible",
+            "student_left_frame",
+            "student_returned",
+            "user_marked_confused"
+          ],
+          "title": "Event Type",
+          "type": "string"
+        },
+        "lecture_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Lecture Id",
+          "type": "string"
+        },
+        "signals": {
+          "items": {
+            "enum": [
+              "face_absent",
+              "head_away",
+              "looking_down",
+              "window_unfocused",
+              "phone_visible",
+              "student_left_frame",
+              "student_returned",
+              "user_marked_confused"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Signals",
+          "type": "array"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "enum": [
+                "local_yolo",
+                "local_mediapipe",
+                "local_opencv",
+                "local_client",
+                "user_report"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional local producer label; conveys no identity or authorization. phone_visible only means a phone appeared in the camera frame.",
+          "title": "Source"
+        },
+        "start_ms": {
+          "description": "Inclusive lecture-relative start.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "user_confirmed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User Confirmed"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_id",
+        "lecture_id",
+        "event_type",
+        "signals",
+        "confidence"
+      ],
+      "title": "SignalEvent",
+      "type": "object"
+    },
+    "SignalFeedback": {
+      "additionalProperties": false,
+      "description": "The student may confirm or dismiss a possible missed-content window.",
+      "properties": {
+        "user_confirmed": {
+          "title": "User Confirmed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "user_confirmed"
+      ],
+      "title": "SignalFeedback",
+      "type": "object"
+    },
+    "SimulatedZoomBatch": {
+      "additionalProperties": false,
+      "description": "At most 100 synthetic packets; raw media fields are forbidden.",
+      "properties": {
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/SimulatedZoomChunk"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Chunks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "chunks"
+      ],
+      "title": "SimulatedZoomBatch",
+      "type": "object"
+    },
+    "SimulatedZoomChunk": {
+      "additionalProperties": false,
+      "description": "Synthetic derived-text packet; epoch timestamps are integer milliseconds.",
+      "properties": {
+        "chunk_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "end_epoch_ms": {
+          "minimum": 0,
+          "title": "End Epoch Ms",
+          "type": "integer"
+        },
+        "is_final": {
+          "default": true,
+          "title": "Is Final",
+          "type": "boolean"
+        },
+        "revision": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "start_epoch_ms": {
+          "minimum": 0,
+          "title": "Start Epoch Ms",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "chunk_id",
+        "start_epoch_ms",
+        "end_epoch_ms",
+        "text"
+      ],
+      "title": "SimulatedZoomChunk",
+      "type": "object"
+    },
+    "TimelinePage": {
+      "additionalProperties": false,
+      "description": "Final transcript and the caller's private signals within a bounded interval.",
+      "properties": {
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/TranscriptChunk"
+          },
+          "title": "Chunks",
+          "type": "array"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/SignalEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "interval": {
+          "$ref": "#/$defs/Interval"
+        },
+        "missed_windows": {
+          "items": {
+            "$ref": "#/$defs/MissedWindow"
+          },
+          "title": "Missed Windows",
+          "type": "array"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "transcript_revision": {
+          "title": "Transcript Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "interval",
+        "revision",
+        "transcript_revision",
+        "chunks",
+        "events",
+        "missed_windows"
+      ],
+      "title": "TimelinePage",
+      "type": "object"
+    },
+    "TranscriptBatch": {
+      "additionalProperties": false,
+      "description": "A bounded batch of independently revisioned transcript chunks.",
+      "properties": {
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/TranscriptChunk"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Chunks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "chunks"
+      ],
+      "title": "TranscriptBatch",
+      "type": "object"
+    },
+    "TranscriptChunk": {
+      "additionalProperties": false,
+      "description": "Selected derived text; revision increases for corrections or finalization.",
+      "properties": {
+        "chunk_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "end_ms": {
+          "description": "Exclusive lecture-relative end.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_final": {
+          "title": "Is Final",
+          "type": "boolean"
+        },
+        "lecture_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Lecture Id",
+          "type": "string"
+        },
+        "revision": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "zoom_rtms",
+            "local_transcription",
+            "external_transcription"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "start_ms": {
+          "description": "Inclusive lecture-relative start.",
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "chunk_id",
+        "lecture_id",
+        "text",
+        "source",
+        "is_final"
+      ],
+      "title": "TranscriptChunk",
+      "type": "object"
+    },
+    "TranscriptMessage": {
+      "additionalProperties": false,
+      "description": "Client-to-server WebSocket message; identity and session come from transport.",
+      "properties": {
+        "event_type": {
+          "const": "transcript.batch.submitted",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/TranscriptBatch"
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ],
+      "title": "TranscriptMessage",
+      "type": "object"
+    }
+  },
+  "$id": "urn:lumina:signal_timeline:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lumina signal_timeline contracts"
+}

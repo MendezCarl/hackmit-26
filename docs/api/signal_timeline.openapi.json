@@ -1,0 +1,1885 @@
+{
+  "components": {
+    "schemas": {
+      "ContextWindow": {
+        "additionalProperties": false,
+        "description": "Recovery context with explicit requested/effective intervals and source revision.",
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptChunk"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "effective_interval": {
+            "$ref": "#/components/schemas/Interval"
+          },
+          "requested_interval": {
+            "$ref": "#/components/schemas/Interval"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "transcript_revision": {
+            "title": "Transcript Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "requested_interval",
+          "effective_interval",
+          "transcript_revision",
+          "chunks"
+        ],
+        "title": "ContextWindow",
+        "type": "object"
+      },
+      "DemoStatus": {
+        "additionalProperties": false,
+        "description": "Synthetic lecture lifecycle receipt.",
+        "properties": {
+          "is_ended": {
+            "title": "Is Ended",
+            "type": "boolean"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "is_ended"
+        ],
+        "title": "DemoStatus",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "additionalProperties": false,
+        "description": "Stable error fields without echoed input, tokens, or transcript text.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "description": "Standard repository error envelope.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HealthStatus": {
+        "additionalProperties": false,
+        "description": "Local process liveness, not external-provider readiness.",
+        "properties": {
+          "status": {
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "HealthStatus",
+        "type": "object"
+      },
+      "Interval": {
+        "additionalProperties": false,
+        "description": "A half-open interval on the lecture clock, measured in integer milliseconds.",
+        "properties": {
+          "end_ms": {
+            "description": "Exclusive lecture-relative end.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "start_ms": {
+            "description": "Inclusive lecture-relative start.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "Interval",
+        "type": "object"
+      },
+      "MissedWindow": {
+        "additionalProperties": false,
+        "description": "Derived interval eligible for recovery, with editable supporting signals.",
+        "properties": {
+          "confidence": {
+            "description": "Uncalibrated recovery heuristic, never an attention score or probability of missed content.",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_ms": {
+            "description": "Exclusive lecture-relative end.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_type": {
+            "const": "possible_missed_window",
+            "default": "possible_missed_window",
+            "title": "Event Type",
+            "type": "string"
+          },
+          "signals": {
+            "items": {
+              "enum": [
+                "face_absent",
+                "head_away",
+                "looking_down",
+                "window_unfocused",
+                "phone_visible",
+                "student_left_frame",
+                "student_returned",
+                "user_marked_confused"
+              ],
+              "type": "string"
+            },
+            "title": "Signals",
+            "type": "array"
+          },
+          "source_event_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "type": "string"
+            },
+            "title": "Source Event Ids",
+            "type": "array"
+          },
+          "start_ms": {
+            "description": "Inclusive lecture-relative start.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "source_event_ids",
+          "signals",
+          "confidence"
+        ],
+        "title": "MissedWindow",
+        "type": "object"
+      },
+      "Receipt": {
+        "additionalProperties": false,
+        "description": "Batch result: accepted writes, exact retries, and current session revision.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "duplicates": {
+            "title": "Duplicates",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "duplicates",
+          "revision"
+        ],
+        "title": "Receipt",
+        "type": "object"
+      },
+      "SignalBatch": {
+        "additionalProperties": false,
+        "description": "At most 100 derived signal events for the URL's authorized session.",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SignalEvent"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "SignalBatch",
+        "type": "object"
+      },
+      "SignalEvent": {
+        "additionalProperties": false,
+        "description": "A possible missed-content signal, never a measurement of attention.",
+        "properties": {
+          "confidence": {
+            "description": "Confidence in the observation, not attention or comprehension.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_ms": {
+            "description": "Exclusive lecture-relative end.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "enum": [
+              "possible_missed_window",
+              "face_absent",
+              "head_away",
+              "looking_down",
+              "window_unfocused",
+              "phone_visible",
+              "student_left_frame",
+              "student_returned",
+              "user_marked_confused"
+            ],
+            "title": "Event Type",
+            "type": "string"
+          },
+          "lecture_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "signals": {
+            "items": {
+              "enum": [
+                "face_absent",
+                "head_away",
+                "looking_down",
+                "window_unfocused",
+                "phone_visible",
+                "student_left_frame",
+                "student_returned",
+                "user_marked_confused"
+              ],
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Signals",
+            "type": "array"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "local_yolo",
+                  "local_mediapipe",
+                  "local_opencv",
+                  "local_client",
+                  "user_report"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional local producer label; conveys no identity or authorization. phone_visible only means a phone appeared in the camera frame.",
+            "title": "Source"
+          },
+          "start_ms": {
+            "description": "Inclusive lecture-relative start.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "user_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Confirmed"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "event_id",
+          "lecture_id",
+          "event_type",
+          "signals",
+          "confidence"
+        ],
+        "title": "SignalEvent",
+        "type": "object"
+      },
+      "SignalFeedback": {
+        "additionalProperties": false,
+        "description": "The student may confirm or dismiss a possible missed-content window.",
+        "properties": {
+          "user_confirmed": {
+            "title": "User Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "user_confirmed"
+        ],
+        "title": "SignalFeedback",
+        "type": "object"
+      },
+      "SimulatedZoomBatch": {
+        "additionalProperties": false,
+        "description": "At most 100 synthetic packets; raw media fields are forbidden.",
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/SimulatedZoomChunk"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Chunks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "chunks"
+        ],
+        "title": "SimulatedZoomBatch",
+        "type": "object"
+      },
+      "SimulatedZoomChunk": {
+        "additionalProperties": false,
+        "description": "Synthetic derived-text packet; epoch timestamps are integer milliseconds.",
+        "properties": {
+          "chunk_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_epoch_ms": {
+            "minimum": 0.0,
+            "title": "End Epoch Ms",
+            "type": "integer"
+          },
+          "is_final": {
+            "default": true,
+            "title": "Is Final",
+            "type": "boolean"
+          },
+          "revision": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "start_epoch_ms": {
+            "minimum": 0.0,
+            "title": "Start Epoch Ms",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "start_epoch_ms",
+          "end_epoch_ms",
+          "text"
+        ],
+        "title": "SimulatedZoomChunk",
+        "type": "object"
+      },
+      "TimelinePage": {
+        "additionalProperties": false,
+        "description": "Final transcript and the caller's private signals within a bounded interval.",
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptChunk"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SignalEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "interval": {
+            "$ref": "#/components/schemas/Interval"
+          },
+          "missed_windows": {
+            "items": {
+              "$ref": "#/components/schemas/MissedWindow"
+            },
+            "title": "Missed Windows",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "transcript_revision": {
+            "title": "Transcript Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "interval",
+          "revision",
+          "transcript_revision",
+          "chunks",
+          "events",
+          "missed_windows"
+        ],
+        "title": "TimelinePage",
+        "type": "object"
+      },
+      "TranscriptBatch": {
+        "additionalProperties": false,
+        "description": "A bounded batch of independently revisioned transcript chunks.",
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptChunk"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Chunks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "chunks"
+        ],
+        "title": "TranscriptBatch",
+        "type": "object"
+      },
+      "TranscriptChunk": {
+        "additionalProperties": false,
+        "description": "Selected derived text; revision increases for corrections or finalization.",
+        "properties": {
+          "chunk_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_ms": {
+            "description": "Exclusive lecture-relative end.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_final": {
+            "title": "Is Final",
+            "type": "boolean"
+          },
+          "lecture_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "revision": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "zoom_rtms",
+              "local_transcription",
+              "external_transcription"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "start_ms": {
+            "description": "Inclusive lecture-relative start.",
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "chunk_id",
+          "lecture_id",
+          "text",
+          "source",
+          "is_final"
+        ],
+        "title": "TranscriptChunk",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "Host-issued bearer token; session membership and consent are checked on every request.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Synthetic identities and providers. Only features installed in this checkout are registered.",
+    "title": "Lumina isolated backend features",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/sessions/{session_id}/demo/end": {
+      "post": {
+        "description": "Synthetic demo only: end the fixture lecture using the demo professor credential.",
+        "operationId": "end_demo_api_v1_sessions__session_id__demo_end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End Demo",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/events/batch": {
+      "post": {
+        "description": "Bearer membership and signal consent required. Atomic, retry-safe batch. Rejects raw media and caller identity; malformed payloads return 422, out-of-session ranges 400, conflicts 409. Optional local phone_visible observations support private recovery only with sustained corroboration; they never indicate attention or comprehension.",
+        "operationId": "ingest_signals_api_v1_sessions__session_id__events_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ingest consented coarse signal events",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/events/{event_id}": {
+      "patch": {
+        "description": "Bearer membership required. Only the originating participant may correct a signal. Returns 404 for another participant's event. Corrections affect timeline and later summaries.",
+        "operationId": "correct_signal_api_v1_sessions__session_id__events__event_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalFeedback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalEvent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm or dismiss your signal",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/signals": {
+      "post": {
+        "description": "Alias of events/batch with identical authorization, validation and privacy behavior.",
+        "operationId": "ingest_signals_api_v1_sessions__session_id__signals_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ingest coarse signals (feature alias)",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/timeline": {
+      "get": {
+        "description": "Bearer session membership required. Returns final transcript and only the caller's signals. Queries are bounded to ten minutes; invalid ranges return 400.",
+        "operationId": "read_timeline_api_v1_sessions__session_id__timeline_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Lecture-relative integer milliseconds.",
+            "in": "query",
+            "name": "start_ms",
+            "required": true,
+            "schema": {
+              "description": "Lecture-relative integer milliseconds.",
+              "maximum": 28800000,
+              "minimum": 0,
+              "title": "Start Ms",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Lecture-relative integer milliseconds.",
+            "in": "query",
+            "name": "end_ms",
+            "required": true,
+            "schema": {
+              "description": "Lecture-relative integer milliseconds.",
+              "maximum": 28800000,
+              "minimum": 0,
+              "title": "End Ms",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelinePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read your synchronized timeline",
+        "tags": [
+          "timeline"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript": {
+      "get": {
+        "description": "Bearer session membership required. Returns final source chunks with original timestamps and revision. Padding is clamped to session bounds. Missing final text returns 409. No raw media is read or returned.",
+        "operationId": "read_context_api_v1_sessions__session_id__transcript_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Lecture-relative integer milliseconds.",
+            "in": "query",
+            "name": "start_ms",
+            "required": true,
+            "schema": {
+              "description": "Lecture-relative integer milliseconds.",
+              "maximum": 28800000,
+              "minimum": 0,
+              "title": "Start Ms",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Lecture-relative integer milliseconds.",
+            "in": "query",
+            "name": "end_ms",
+            "required": true,
+            "schema": {
+              "description": "Lecture-relative integer milliseconds.",
+              "maximum": 28800000,
+              "minimum": 0,
+              "title": "End Ms",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "padding_ms",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 30000,
+              "minimum": 0,
+              "title": "Padding Ms",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextWindow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read a selected transcript context",
+        "tags": [
+          "timeline"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript-chunks/batch": {
+      "post": {
+        "description": "Bearer session membership and producer permission required. Text only; no audio or recordings. Batch commits atomically. Stale/conflicting revisions return 409; invalid fields return 422.",
+        "operationId": "ingest_transcript_api_v1_sessions__session_id__transcript_chunks_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ingest bounded transcript text",
+        "tags": [
+          "transcripts"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/zoom/simulated-transcript-chunks": {
+      "post": {
+        "description": "Demo-only route, absent from the production feature registration. Requires an authorized transcript producer. Accepts synthetic text and epoch-millisecond timestamps; does not expose RTMS media or claim live Zoom connectivity.",
+        "operationId": "simulate_zoom_api_v1_sessions__session_id__zoom_simulated_transcript_chunks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatedZoomBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid interval, identifiers, or feature request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid host bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Session access, role, consent, or selected-folder scope denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authorized resource not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflicting revision or invalid session state."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Body, batch, or feature storage capacity exceeded."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Only bounded JSON and supported derived text are accepted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid typed payload; supplied values are never echoed."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Provider failure; external details are redacted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Required host dependency or approved privacy policy is unavailable."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ingest synthetic Zoom transcript packets",
+        "tags": [
+          "zoom-demo"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Return process liveness without checking external services.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  }
+}

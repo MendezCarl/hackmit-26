@@ -1,0 +1,83 @@
+{
+  "asyncapi": "3.1.0",
+  "channels": {
+    "transcript": {
+      "address": "/ws/v1/sessions/{session_id}",
+      "messages": {
+        "result": {
+          "$ref": "#/components/messages/result"
+        },
+        "submitted": {
+          "$ref": "#/components/messages/submitted"
+        }
+      },
+      "parameters": {
+        "session_id": {
+          "description": "Authorized lecture-session identifier."
+        }
+      }
+    }
+  },
+  "components": {
+    "messages": {
+      "result": {
+        "name": "transcript.batch.result",
+        "payload": {
+          "$ref": "../../shared/contracts/signal_timeline.schema.json#/$defs/EventEnvelope"
+        }
+      },
+      "submitted": {
+        "name": "transcript.batch.submitted",
+        "payload": {
+          "$ref": "../../shared/contracts/signal_timeline.schema.json#/$defs/TranscriptMessage"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Transcript-producer messages only. Bearer upgrade header required; query tokens and binary media are forbidden. 256000-byte frame limit; configure matching transport limits.",
+    "title": "Lumina Transcript Ingestion",
+    "version": "1.0.0"
+  },
+  "operations": {
+    "receive_transcript": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/transcript"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/transcript/messages/submitted"
+        }
+      ]
+    },
+    "send_result": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/transcript"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/transcript/messages/result"
+        }
+      ]
+    }
+  },
+  "servers": {
+    "local": {
+      "host": "127.0.0.1:8000",
+      "protocol": "ws",
+      "security": [
+        {
+          "$ref": "#/components/securitySchemes/bearer"
+        }
+      ]
+    }
+  }
+}

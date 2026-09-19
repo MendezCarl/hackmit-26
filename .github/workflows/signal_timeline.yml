@@ -1,0 +1,44 @@
+name: "Backend feature 2: signal-timeline"
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "shared/contracts/signal_timeline.schema.json"
+      - "docs/api/signal_timeline.*"
+      - ".github/workflows/signal_timeline.yml"
+  push:
+    branches: [backend, dev, main, feature/backend-signal-timeline]
+    paths:
+      - "backend/**"
+      - "shared/contracts/signal_timeline.schema.json"
+      - "docs/api/signal_timeline.*"
+      - ".github/workflows/signal_timeline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify_features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install isolated feature dependencies
+        run: |
+          python -m venv backend/venv
+          backend/venv/bin/python -m pip install -e './backend[dev]' -r backend/requirements-signal_timeline.txt
+      - name: Check feature and baseline contracts
+        run: |
+          backend/venv/bin/python backend/scripts/generate_feature_contracts.py --check
+          backend/venv/bin/python backend/scripts/generate_openapi_contract.py --check
+      - name: Lint and format
+        run: |
+          backend/venv/bin/ruff check backend/app/{signals,transcript,timeline,professor,dropbox,zoom,integrations} backend/feature_tests/signal_timeline backend/scripts/generate_feature_contracts.py
+          backend/venv/bin/ruff format --check backend/app/{signals,transcript,timeline,professor,dropbox,zoom,integrations} backend/feature_tests/signal_timeline backend/scripts/generate_feature_contracts.py
+      - name: Type check
+        run: backend/venv/bin/mypy --config-file backend/lecture_features_mypy.ini backend/app/{signals,transcript,timeline,professor,dropbox,zoom,integrations}
+      - name: Run synthetic suites without external services
+        run: backend/venv/bin/python -m pytest backend/tests backend/feature_tests
