@@ -1,0 +1,13 @@
+openapi: 3.1.0
+info:
+  title: Lecture Recovery Assistant API
+  version: 0.1.0
+  description: >-
+    Generated-contract placeholder for the FastAPI REST API. Replace this
+    snapshot with FastAPI's generated OpenAPI document as routes are added.
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local development
+paths: {}
+components:
+  schemas: {}
