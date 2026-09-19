@@ -1,6 +1,6 @@
 # hackmit-26
 
-Electron desktop app with a Python FastAPI backend.
+Electron TypeScript desktop app with a Python FastAPI backend.
 
 ## Branch Workflow
 
