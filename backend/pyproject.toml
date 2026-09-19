@@ -1,0 +1,16 @@
+[project]
+name = "hackmit-26-backend"
+version = "0.1.0"
+description = "FastAPI backend skeleton for hackmit-26."
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi[standard]>=0.116.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src http://127.0.0.1:8000; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hackmit-26</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./renderer.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Electron + FastAPI</p>
+        <h1>hackmit-26 desktop starter</h1>
+        <p class="summary">
+          The desktop UI is running in Electron and is wired to a local Python API.
+        </p>
+      </section>
+
+      <section class="card" aria-live="polite">
+        <h2>Backend Connection</h2>
+        <p data-health>Checking backend...</p>
+        <p data-status></p>
+        <button type="button" data-retry>Retry Connection</button>
+      </section>
+    </main>
+  </body>
+</html>

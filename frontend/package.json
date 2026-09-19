@@ -1,0 +1,14 @@
+{
+  "name": "hackmit-26-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron frontend skeleton for hackmit-26.",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.1.0"
+  }
+}
