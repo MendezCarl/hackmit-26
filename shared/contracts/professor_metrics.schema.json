@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "DeliveryFinding": {
+      "additionalProperties": false,
+      "description": "Professor-visible delivery evidence contains no detector identity or student data.",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "signal_type": {
+          "enum": [
+            "presenter_out_of_frame",
+            "board_or_screen_occluded",
+            "slide_text_low_legibility"
+          ],
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "suggested_action": {
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "signal_type",
+        "confidence",
+        "suggested_action"
+      ],
+      "title": "DeliveryFinding",
+      "type": "object"
+    },
+    "MetricsBucket": {
+      "additionalProperties": false,
+      "description": "One fixed bucket; suppression hides counts, ratios and evidence alike.",
+      "properties": {
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleasedRatio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_hotspot": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Hotspot"
+        },
+        "possible_missed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleasedRatio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "suppressed",
+            "insufficient_evidence"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Action"
+        },
+        "transcript_chunk_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Transcript Chunk Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "status"
+      ],
+      "title": "MetricsBucket",
+      "type": "object"
+    },
+    "ReleasedRatio": {
+      "additionalProperties": false,
+      "description": "A ratio with its denominator; absent means insufficient or suppressed evidence.",
+      "properties": {
+        "denominator": {
+          "exclusiveMinimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "ratio": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Ratio",
+          "type": "number"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "ratio"
+      ],
+      "title": "ReleasedRatio",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Coverage-aware teaching report; missing learning outcomes are never invented.",
+  "properties": {
+    "bucket_ms": {
+      "title": "Bucket Ms",
+      "type": "integer"
+    },
+    "buckets": {
+      "items": {
+        "$ref": "#/$defs/MetricsBucket"
+      },
+      "title": "Buckets",
+      "type": "array"
+    },
+    "continuity": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReleasedRatio"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "delivery_findings": {
+      "items": {
+        "$ref": "#/$defs/DeliveryFinding"
+      },
+      "title": "Delivery Findings",
+      "type": "array"
+    },
+    "minimum_group_size": {
+      "title": "Minimum Group Size",
+      "type": "integer"
+    },
+    "policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "recovery_outcomes_status": {
+      "const": "not_collected",
+      "default": "not_collected",
+      "title": "Recovery Outcomes Status",
+      "type": "string"
+    },
+    "session_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "available",
+        "suppressed",
+        "insufficient_evidence"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "policy_version",
+    "status",
+    "minimum_group_size",
+    "bucket_ms",
+    "buckets"
+  ],
+  "title": "ProfessorMetrics",
+  "type": "object"
+}

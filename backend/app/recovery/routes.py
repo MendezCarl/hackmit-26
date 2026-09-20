@@ -26,6 +26,12 @@ def get_recovery_service(request: Request) -> RecoveryService:
 
 
 @router.post(
+    "/recovery-cards",
+    response_model=RecoveryJob,
+    status_code=202,
+    summary="Request recovery using the unified contract path",
+)
+@router.post(
     "/recovery/jobs",
     response_model=RecoveryJob,
     status_code=status.HTTP_202_ACCEPTED,
@@ -61,6 +67,12 @@ def read_recovery_job(
 
 
 @router.get(
+    "/recovery-cards/{card_id}",
+    response_model=RecoveryCard,
+    summary="Read a private recovery card",
+    operation_id="read_recovery_card_unified",
+)
+@router.get(
     "/recovery/cards/{card_id}",
     response_model=RecoveryCard,
     summary="Retrieve a recovery card",
@@ -72,7 +84,7 @@ def read_recovery_card(
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     service: Annotated[RecoveryService, Depends(get_recovery_service)],
 ) -> RecoveryCard:
-    """Return one personal recovery card to its owner or the session owner."""
+    """Return one personal recovery card exclusively to its requesting student."""
 
     response.headers["Cache-Control"] = "no-store"
     return service.get_card(actor, session_id, card_id)

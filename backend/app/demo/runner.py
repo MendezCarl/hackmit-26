@@ -9,7 +9,9 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from app.auth.tokens import AuthenticatedActor
+from app.contracts.learning import CoverageBatch, EvidenceCoverage, ProfessorMetrics
 from app.contracts.models import (
+    CostMetrics,
     CreateRecoveryJobRequest,
     CreateSessionRequest,
     IngestEventsRequest,
@@ -19,18 +21,25 @@ from app.contracts.models import (
     RecoveryCard,
     RecoveryJob,
     SessionMode,
+    SessionStatus,
     SignalEvent,
 )
+from app.core.clock import utc_now_iso
+from app.core.errors import AppError, ErrorCode
+from app.cost.ledger import CostLedger
+from app.demo.cost_comparison import DemoCostComparison, compare_context_cost
 from app.demo.synthetic_lecture import (
     DEMO_COURSE_ID,
     DEMO_LECTURE_ID,
     DEMO_SESSION_TITLE,
+    FULL_LECTURE_END_MS,
     MISSED_WINDOW_END_MS,
     MISSED_WINDOW_START_MS,
     PARTICIPANT_COUNT,
+    build_full_lecture_chunks,
     build_synthetic_missed_event,
-    build_synthetic_transcript_chunks,
 )
+from app.professor.metrics import ProfessorMetricsService
 from app.professor.service import ProfessorService
 from app.recovery.service import RecoveryService
 from app.sessions.service import SessionService
@@ -60,6 +69,19 @@ class DemoRunResult(BaseModel):
         description="Summary demonstrating small-group suppression."
     )
 
+    professor_metrics: ProfessorMetrics = Field(
+        description="Coverage-aware anonymous report using the synthetic policy."
+    )
+    professor_metrics_suppressed: ProfessorMetrics = Field(
+        description="Same safe report with too few synthetic participants."
+    )
+    token_cost_comparison: DemoCostComparison = Field(
+        description="Input-only heuristic comparison, never measured savings."
+    )
+    usage_records: list[CostMetrics] = Field(
+        description="Synthetic generation and cache ledger entries."
+    )
+
 
 class DemoRunner:
     """Orchestrates the end-to-end synthetic demo through real services."""
@@ -71,6 +93,8 @@ class DemoRunner:
         transcript_service: TranscriptService,
         recovery_service: RecoveryService,
         professor_service: ProfessorService,
+        professor_metrics: ProfessorMetricsService,
+        cost_ledger: CostLedger,
     ) -> None:
         """Bind the runner to the composed feature services.
 
@@ -79,7 +103,9 @@ class DemoRunner:
             signal_service: Signal ingestion service.
             transcript_service: Transcript ingestion service.
             recovery_service: Recovery orchestration service.
-            professor_service: Anonymous summary service.
+            professor_service: Legacy synthetic summary service.
+            professor_metrics: Current policy-gated coverage report service.
+            cost_ledger: Request-local synthetic usage ledger.
         """
 
         self._session_service = session_service
@@ -87,12 +113,17 @@ class DemoRunner:
         self._transcript_service = transcript_service
         self._recovery_service = recovery_service
         self._professor_service = professor_service
+        self._metrics = professor_metrics
+        self._ledger = cost_ledger
 
     def run(self) -> DemoRunResult:
         """Execute the full synthetic demo run.
 
         Returns:
-            The IDs and artifacts produced by each acceptance-flow step.
+            The ephemeral IDs and artifacts produced by each acceptance-flow step.
+
+        Raises:
+            AppError: If mock generation or the cache verification fails.
         """
 
         student = AuthenticatedActor(user_id="demo-student-1", role="student")
@@ -120,12 +151,13 @@ class DemoRunner:
             )
             self._signal_service.register_participant(participant, session_id)
 
+        chunks = build_full_lecture_chunks(session_id)
         transcript = self._transcript_service.ingest_batch(
             student,
             session_id,
             IngestTranscriptRequest(
                 lecture_id=DEMO_LECTURE_ID,
-                chunks=build_synthetic_transcript_chunks(session_id),
+                chunks=chunks,
             ),
         )
 
@@ -143,6 +175,20 @@ class DemoRunner:
                 IngestEventsRequest(lecture_id=DEMO_LECTURE_ID, events=events),
             )
             submitted_event_ids.extend(batch.accepted_event_ids)
+            self._metrics.ingest_coverage(
+                participant,
+                session_id,
+                CoverageBatch(
+                    records=[
+                        EvidenceCoverage(
+                            coverage_id=f"demo-coverage-{index}",
+                            start_ms=0,
+                            end_ms=FULL_LECTURE_END_MS,
+                            is_available=True,
+                        )
+                    ]
+                ),
+            )
 
         recovery_request = CreateRecoveryJobRequest(
             start_ms=MISSED_WINDOW_START_MS,
@@ -153,7 +199,10 @@ class DemoRunner:
             student, session_id, recovery_request
         )
         if recovery_job.card_id is None:
-            raise RuntimeError("Demo recovery job did not produce a card.")
+            raise AppError(
+                ErrorCode.PROVIDER_FAILURE,
+                "The synthetic demo could not produce a recovery card.",
+            )
         recovery_card = self._recovery_service.get_card(
             student, session_id, recovery_job.card_id
         )
@@ -161,9 +210,17 @@ class DemoRunner:
             student, session_id, recovery_request
         )
 
-        professor_summary = self._professor_service.build_summary(
-            professor, session_id
-        )
+        if (
+            cached_recovery_job.card_id != recovery_card.card_id
+            or cached_recovery_job.cache_status != "hit"
+        ):
+            raise AppError(
+                ErrorCode.INTERNAL_ERROR, "The synthetic demo cache check failed."
+            )
+        session.status = SessionStatus.ENDED
+        session.ended_at = utc_now_iso()
+        professor_summary = self._professor_service.build_summary(professor, session_id)
+        professor_metrics = self._metrics.report(professor, session_id)
 
         # Demonstrate suppression with a second, too-small synthetic session.
         small_session = self._session_service.create_session(
@@ -175,9 +232,7 @@ class DemoRunner:
                 mode=SessionMode.IN_PERSON,
             ),
         )
-        small_student = AuthenticatedActor(
-            user_id="demo-student-1", role="student"
-        )
+        small_student = AuthenticatedActor(user_id="demo-student-1", role="student")
         self._signal_service.register_participant(
             small_student, small_session.session_id
         )
@@ -189,11 +244,28 @@ class DemoRunner:
             small_session.session_id,
             IngestEventsRequest(lecture_id="demo-lecture-0002", events=small_events),
         )
+        self._transcript_service.ingest_batch(
+            small_student,
+            small_session.session_id,
+            IngestTranscriptRequest(
+                lecture_id=small_session.lecture_id,
+                chunks=build_full_lecture_chunks(small_session.session_id),
+            ),
+        )
+        small_session.status = SessionStatus.ENDED
+        small_session.ended_at = utc_now_iso()
+        suppressed_metrics = self._metrics.report(professor, small_session.session_id)
         suppressed_summary = self._professor_service.build_summary(
             professor, small_session.session_id
         )
 
         return DemoRunResult(
+            professor_metrics=professor_metrics,
+            professor_metrics_suppressed=suppressed_metrics,
+            usage_records=self._ledger.for_session(session_id),
+            token_cost_comparison=compare_context_cost(
+                chunks, recovery_card, self._ledger.for_session(session_id)
+            ),
             session=session,
             transcript_chunk_ids=transcript.accepted_chunk_ids,
             submitted_event_ids=submitted_event_ids,

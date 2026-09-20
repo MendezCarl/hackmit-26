@@ -1,0 +1,76 @@
+{
+  "$defs": {
+    "GroundedFact": {
+      "additionalProperties": false,
+      "description": "A claim and an exact evidence quote from a selected transcript chunk.",
+      "properties": {
+        "chunk_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "evidence_quote": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Evidence Quote",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "chunk_id",
+        "evidence_quote"
+      ],
+      "title": "GroundedFact",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Provider output; trusted IDs, timestamps and metadata are supplied by backend.",
+  "properties": {
+    "explanation": {
+      "maxLength": 3000,
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/GroundedFact"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Facts",
+      "type": "array"
+    },
+    "follow_up_question": {
+      "maxLength": 400,
+      "minLength": 1,
+      "title": "Follow Up Question",
+      "type": "string"
+    },
+    "topic": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Topic",
+      "type": "string"
+    }
+  },
+  "required": [
+    "topic",
+    "explanation",
+    "facts",
+    "follow_up_question"
+  ],
+  "title": "RecoveryDraft",
+  "type": "object"
+}

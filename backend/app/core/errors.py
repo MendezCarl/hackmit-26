@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -91,7 +91,7 @@ def build_error_payload(
     return ErrorResponse(error=body).model_dump()
 
 
-def install_error_handlers(app: Request) -> None:
+def install_error_handlers(app: FastAPI) -> None:
     """Register exception handlers that emit the standard error envelope.
 
     Args:

@@ -15,7 +15,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.auth.tokens import verify_access_token
 from app.core.errors import AppError
-from app.ws.publisher import EventPublisher
+from app.ws.publisher import WebSocketEventPublisher
 
 router = APIRouter()
 POLL_INTERVAL_SECONDS = 0.05
@@ -24,14 +24,14 @@ SESSION_CONNECTED_EVENT = "session.connected"
 CLIENT_HEARTBEAT_EVENT = "client.heartbeat"
 
 
-def _receive_client_message(websocket: WebSocket) -> "asyncio.Task[str]":
+def _receive_client_message(websocket: WebSocket) -> asyncio.Task[str]:
     """Create a receive task for one client message."""
 
     return asyncio.create_task(websocket.receive_text())
 
 
 async def _drain_queued_envelope(
-    websocket: WebSocket, queue: "asyncio.Queue[Any]"
+    websocket: WebSocket, queue: asyncio.Queue[Any]
 ) -> bool:
     """Forward queued envelopes until the queue is momentarily empty.
 
@@ -54,7 +54,7 @@ async def _drain_queued_envelope(
 
 
 async def _wait_briefly_for_client_message(
-    websocket: WebSocket, queue: "asyncio.Queue[Any]"
+    websocket: WebSocket, queue: asyncio.Queue[Any]
 ) -> None:
     """Wait briefly for a client message, tolerating heartbeats.
 
@@ -64,10 +64,9 @@ async def _wait_briefly_for_client_message(
     """
 
     receive_task = _receive_client_message(websocket)
-    done, _pending = await asyncio.wait(
-        {receive_task}, timeout=POLL_INTERVAL_SECONDS
-    )
+    done, _pending = await asyncio.wait({receive_task}, timeout=POLL_INTERVAL_SECONDS)
     if receive_task in done:
+        receive_task.result()
         # Client messages (heartbeats) are accepted and never answered with
         # per-user data; the queue is re-checked immediately afterwards.
         if await _drain_queued_envelope(websocket, queue):
@@ -94,7 +93,7 @@ async def connect_session_events(websocket: WebSocket, session_id: str) -> None:
     """
 
     settings = websocket.app.state.settings
-    publisher: EventPublisher = websocket.app.state.event_publisher
+    publisher: WebSocketEventPublisher = websocket.app.state.event_publisher
     token = websocket.query_params.get("token", "")
     try:
         actor = verify_access_token(settings, token)
@@ -105,7 +104,7 @@ async def connect_session_events(websocket: WebSocket, session_id: str) -> None:
         return
 
     await websocket.accept()
-    queue = publisher.subscribe(session_id)
+    queue = publisher.subscribe(session_id, actor.user_id)
     welcome = publisher.build_envelope(
         session_id,
         SESSION_CONNECTED_EVENT,
@@ -114,10 +113,12 @@ async def connect_session_events(websocket: WebSocket, session_id: str) -> None:
     await websocket.send_text(welcome.model_dump_json())
     try:
         while True:
+            verify_access_token(settings, token)
+            session_access.resolve_membership(actor, session_id)
             if await _drain_queued_envelope(websocket, queue):
                 continue
             await _wait_briefly_for_client_message(websocket, queue)
-    except WebSocketDisconnect:
+    except WebSocketDisconnect, AppError:
         pass
     finally:
         publisher.unsubscribe(session_id, queue)

@@ -126,3 +126,11 @@ deterministic mock whose usage is labeled `synthetic`.
 pytest
 ```
 
+
+## New learning feature implementation
+
+See [NEW_PLAN_FEATURES.md](NEW_PLAN_FEATURES.md) for the integrated synthetic demo,
+optional AI/vision setup, contracts, privacy behavior, branch ownership and tests.
+The integration worktree extends baseline `88d7bbb`; it does not overwrite the
+older isolated signal, professor or Dropbox branches. New implementation changes
+remain local and uncommitted for review.

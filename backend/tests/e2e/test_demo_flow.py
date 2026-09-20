@@ -6,10 +6,9 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.config import Settings
+from app.main import create_app
+from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="demo")
 
@@ -35,11 +34,11 @@ def test_demo_run_executes_full_acceptance_flow() -> None:
     body = response.json()
 
     # 1. A synthetic lecture session exists.
-    assert body["session"]["status"] == "active"
+    assert body["session"]["status"] == "ended"
     assert body["session"]["lecture_id"] == "demo-lecture-0001"
 
     # 2. Timestamped transcript chunks were ingested.
-    assert len(body["transcript_chunk_ids"]) == 4
+    assert len(body["transcript_chunk_ids"]) == 32
 
     # 3. Enough synthetic participants submitted missed-window events.
     assert len(body["submitted_event_ids"]) == 5

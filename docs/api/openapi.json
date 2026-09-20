@@ -1,6 +1,21 @@
 {
   "components": {
     "schemas": {
+      "AggregationConsent": {
+        "additionalProperties": false,
+        "description": "Current participant's revocable anonymous reporting permission.",
+        "properties": {
+          "is_allowed": {
+            "title": "Is Allowed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_allowed"
+        ],
+        "title": "AggregationConsent",
+        "type": "object"
+      },
       "ApiStatusResponse": {
         "description": "Response describing whether the API is ready.",
         "properties": {
@@ -17,6 +32,57 @@
           "message"
         ],
         "title": "ApiStatusResponse",
+        "type": "object"
+      },
+      "ArtifactExport": {
+        "additionalProperties": false,
+        "description": "Export an existing own recovery card; request bodies cannot supply file contents.",
+        "properties": {
+          "card_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "filename": {
+            "pattern": "^[a-zA-Z0-9_-]{1,80}\\.md$",
+            "title": "Filename",
+            "type": "string"
+          },
+          "is_confirmed": {
+            "title": "Is Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "card_id",
+          "filename",
+          "is_confirmed"
+        ],
+        "title": "ArtifactExport",
+        "type": "object"
+      },
+      "BatchReceipt": {
+        "additionalProperties": false,
+        "description": "Accepted records and exact retries; conflicting identifiers fail atomically.",
+        "properties": {
+          "accepted": {
+            "minimum": 0.0,
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "duplicates": {
+            "minimum": 0.0,
+            "title": "Duplicates",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "duplicates"
+        ],
+        "title": "BatchReceipt",
         "type": "object"
       },
       "ConfirmEventRequest": {
@@ -111,6 +177,26 @@
         "title": "CostMetrics",
         "type": "object"
       },
+      "CoverageBatch": {
+        "additionalProperties": false,
+        "description": "Atomic coverage ingestion; no more than 100 interval records.",
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceCoverage"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "title": "CoverageBatch",
+        "type": "object"
+      },
       "CreateRecoveryJobRequest": {
         "additionalProperties": false,
         "description": "Request to recover content for one lecture interval.",
@@ -190,12 +276,320 @@
         "title": "CreateSessionRequest",
         "type": "object"
       },
+      "DeliveryBatch": {
+        "additionalProperties": false,
+        "description": "Bounded delivery events; the URL and verified actor define session scope.",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryEvent"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "DeliveryBatch",
+        "type": "object"
+      },
+      "DeliveryEvent": {
+        "additionalProperties": false,
+        "description": "Derived lecture-delivery issue, separate from student recovery observations.",
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "detector_version": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_.-]+$",
+            "title": "Detector Version",
+            "type": "string"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/DeliveryEvidence"
+          },
+          "signal_type": {
+            "enum": [
+              "presenter_out_of_frame",
+              "board_or_screen_occluded",
+              "slide_text_low_legibility"
+            ],
+            "title": "Signal Type",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "event_id",
+          "signal_type",
+          "confidence",
+          "detector_version",
+          "evidence"
+        ],
+        "title": "DeliveryEvent",
+        "type": "object"
+      },
+      "DeliveryEvidence": {
+        "additionalProperties": false,
+        "description": "Bounded derived observations; boxes, frame paths and identities are forbidden.",
+        "properties": {
+          "performance_profile": {
+            "enum": [
+              "low_power",
+              "balanced",
+              "performance"
+            ],
+            "title": "Performance Profile",
+            "type": "string"
+          },
+          "positive_sample_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Positive Sample Count",
+            "type": "integer"
+          },
+          "sample_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Sample Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sample_count",
+          "positive_sample_count",
+          "performance_profile"
+        ],
+        "title": "DeliveryEvidence",
+        "type": "object"
+      },
+      "DeliveryFinding": {
+        "additionalProperties": false,
+        "description": "Professor-visible delivery evidence contains no detector identity or student data.",
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "signal_type": {
+            "enum": [
+              "presenter_out_of_frame",
+              "board_or_screen_occluded",
+              "slide_text_low_legibility"
+            ],
+            "title": "Signal Type",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "suggested_action": {
+            "title": "Suggested Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "signal_type",
+          "confidence",
+          "suggested_action"
+        ],
+        "title": "DeliveryFinding",
+        "type": "object"
+      },
+      "DemoCostComparison": {
+        "additionalProperties": false,
+        "description": "Compare fixture text sizes without claiming measured provider savings.\n\nTokens use a character heuristic, not a model tokenizer. Dollar values use\na deliberately hypothetical rate, exclude prompts/output, and are not bills.",
+        "properties": {
+          "baseline_method": {
+            "const": "all_final_fixture_transcript_text",
+            "default": "all_final_fixture_transcript_text",
+            "title": "Baseline Method",
+            "type": "string"
+          },
+          "cache_hits": {
+            "minimum": 0.0,
+            "title": "Cache Hits",
+            "type": "integer"
+          },
+          "data_label": {
+            "const": "synthetic_estimate",
+            "default": "synthetic_estimate",
+            "title": "Data Label",
+            "type": "string"
+          },
+          "estimated_input_reduction_ratio": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Input Reduction Ratio",
+            "type": "number"
+          },
+          "estimation_method": {
+            "const": "ceil_unicode_characters_div_4",
+            "default": "ceil_unicode_characters_div_4",
+            "title": "Estimation Method",
+            "type": "string"
+          },
+          "full_transcript_characters": {
+            "minimum": 0.0,
+            "title": "Full Transcript Characters",
+            "type": "integer"
+          },
+          "full_transcript_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Full Transcript Estimated Tokens",
+            "type": "integer"
+          },
+          "full_transcript_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Full Transcript Illustrative Input Usd",
+            "type": "number"
+          },
+          "generation_calls_avoided": {
+            "minimum": 0.0,
+            "title": "Generation Calls Avoided",
+            "type": "integer"
+          },
+          "illustrative_input_reduction_usd": {
+            "minimum": 0.0,
+            "title": "Illustrative Input Reduction Usd",
+            "type": "number"
+          },
+          "illustrative_input_usd_per_million_tokens": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Illustrative Input Usd Per Million Tokens",
+            "type": "number"
+          },
+          "measured_input_tokens": {
+            "title": "Measured Input Tokens",
+            "type": "null"
+          },
+          "measured_output_tokens": {
+            "title": "Measured Output Tokens",
+            "type": "null"
+          },
+          "measured_savings_usd": {
+            "title": "Measured Savings Usd",
+            "type": "null"
+          },
+          "mock_generation_calls": {
+            "minimum": 0.0,
+            "title": "Mock Generation Calls",
+            "type": "integer"
+          },
+          "pricing_basis": {
+            "const": "hypothetical_not_provider_pricing",
+            "default": "hypothetical_not_provider_pricing",
+            "title": "Pricing Basis",
+            "type": "string"
+          },
+          "provider_api_calls": {
+            "const": 0,
+            "default": 0,
+            "title": "Provider Api Calls",
+            "type": "integer"
+          },
+          "scope": {
+            "const": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "default": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "title": "Scope",
+            "type": "string"
+          },
+          "selected_context_characters": {
+            "minimum": 0.0,
+            "title": "Selected Context Characters",
+            "type": "integer"
+          },
+          "selected_context_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Selected Context Estimated Tokens",
+            "type": "integer"
+          },
+          "selected_context_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Selected Context Illustrative Input Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "full_transcript_characters",
+          "selected_context_characters",
+          "full_transcript_estimated_tokens",
+          "selected_context_estimated_tokens",
+          "estimated_input_reduction_ratio",
+          "full_transcript_illustrative_input_usd",
+          "selected_context_illustrative_input_usd",
+          "illustrative_input_reduction_usd",
+          "mock_generation_calls",
+          "cache_hits",
+          "generation_calls_avoided"
+        ],
+        "title": "DemoCostComparison",
+        "type": "object"
+      },
+      "DemoRunRequest": {
+        "additionalProperties": false,
+        "description": "Empty optional body: client identities, media and provider overrides are forbidden.",
+        "properties": {},
+        "title": "DemoRunRequest",
+        "type": "object"
+      },
       "DemoRunResult": {
         "description": "Summary of one fully synthetic demo run.",
         "properties": {
           "cached_recovery_job": {
             "$ref": "#/components/schemas/RecoveryJob",
             "description": "Repeated recovery job demonstrating cache reuse."
+          },
+          "professor_metrics": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Coverage-aware anonymous report using the synthetic policy."
+          },
+          "professor_metrics_suppressed": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Same safe report with too few synthetic participants."
           },
           "professor_summary": {
             "$ref": "#/components/schemas/ProfessorSummary",
@@ -225,12 +619,24 @@
             "title": "Submitted Event Ids",
             "type": "array"
           },
+          "token_cost_comparison": {
+            "$ref": "#/components/schemas/DemoCostComparison",
+            "description": "Input-only heuristic comparison, never measured savings."
+          },
           "transcript_chunk_ids": {
             "description": "Ingested synthetic transcript chunk ids.",
             "items": {
               "type": "string"
             },
             "title": "Transcript Chunk Ids",
+            "type": "array"
+          },
+          "usage_records": {
+            "description": "Synthetic generation and cache ledger entries.",
+            "items": {
+              "$ref": "#/components/schemas/CostMetrics"
+            },
+            "title": "Usage Records",
             "type": "array"
           }
         },
@@ -242,7 +648,11 @@
           "recovery_card",
           "cached_recovery_job",
           "professor_summary",
-          "professor_summary_suppressed"
+          "professor_summary_suppressed",
+          "professor_metrics",
+          "professor_metrics_suppressed",
+          "token_cost_comparison",
+          "usage_records"
         ],
         "title": "DemoRunResult",
         "type": "object"
@@ -314,6 +724,56 @@
         "title": "DemoTokenResponse",
         "type": "object"
       },
+      "ErrorBody": {
+        "additionalProperties": false,
+        "description": "Machine-readable error code and message.",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable error code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured details; never secrets.",
+            "title": "Details"
+          },
+          "message": {
+            "description": "Human-readable error explanation.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "description": "Repository-standard error envelope used by every endpoint.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody",
+            "description": "The typed error body."
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
       "EventBatchResponse": {
         "description": "Response summarizing one accepted signal-event batch.",
         "properties": {
@@ -345,6 +805,146 @@
           "recovery_eligible_event_ids"
         ],
         "title": "EventBatchResponse",
+        "type": "object"
+      },
+      "EvidenceCoverage": {
+        "additionalProperties": false,
+        "description": "A local observation interval, including detector-unavailable periods.\n\nIdentity is resolved from JWT. Available means observations ran, not attention.",
+        "properties": {
+          "coverage_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Coverage Id",
+            "type": "string"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_available": {
+            "title": "Is Available",
+            "type": "boolean"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "coverage_id",
+          "is_available"
+        ],
+        "title": "EvidenceCoverage",
+        "type": "object"
+      },
+      "ExportReceipt": {
+        "additionalProperties": false,
+        "description": "Receipt distinguishes synthetic destination writes from real provider success.",
+        "properties": {
+          "export_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "export_id",
+          "provider_mode",
+          "filename"
+        ],
+        "title": "ExportReceipt",
+        "type": "object"
+      },
+      "ExternalTextConsent": {
+        "additionalProperties": false,
+        "description": "Separate, revocable permission for bounded text to the chosen AI provider.",
+        "properties": {
+          "is_allowed": {
+            "title": "Is Allowed",
+            "type": "boolean"
+          },
+          "provider": {
+            "const": "openai",
+            "default": "openai",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "is_allowed"
+        ],
+        "title": "ExternalTextConsent",
+        "type": "object"
+      },
+      "FolderSelection": {
+        "additionalProperties": false,
+        "description": "Explicit selection of a provider-authorized folder identifier.",
+        "properties": {
+          "folder_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Folder Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id"
+        ],
+        "title": "FolderSelection",
+        "type": "object"
+      },
+      "GroundedFact": {
+        "additionalProperties": false,
+        "description": "A claim and an exact evidence quote from a selected transcript chunk.",
+        "properties": {
+          "chunk_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "evidence_quote": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Evidence Quote",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "chunk_id",
+          "evidence_quote"
+        ],
+        "title": "GroundedFact",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -478,6 +1078,30 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "LectureInterval": {
+        "additionalProperties": false,
+        "description": "Half-open lecture-relative interval, in integer milliseconds.",
+        "properties": {
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "LectureInterval",
+        "type": "object"
+      },
       "LectureSession": {
         "description": "One running occurrence of a lecture on the shared lecture clock.",
         "properties": {
@@ -561,6 +1185,93 @@
           "session_clock_origin"
         ],
         "title": "LectureSession",
+        "type": "object"
+      },
+      "MetricsBucket": {
+        "additionalProperties": false,
+        "description": "One fixed bucket; suppression hides counts, ratios and evidence alike.",
+        "properties": {
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_hotspot": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Hotspot"
+          },
+          "possible_missed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "suppressed",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Action"
+          },
+          "transcript_chunk_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Transcript Chunk Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "status"
+        ],
+        "title": "MetricsBucket",
         "type": "object"
       },
       "ModelMetadata": {
@@ -666,6 +1377,83 @@
         "title": "ParticipantResponse",
         "type": "object"
       },
+      "ProfessorMetrics": {
+        "additionalProperties": false,
+        "description": "Coverage-aware teaching report; missing learning outcomes are never invented.",
+        "properties": {
+          "bucket_ms": {
+            "title": "Bucket Ms",
+            "type": "integer"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/MetricsBucket"
+            },
+            "title": "Buckets",
+            "type": "array"
+          },
+          "continuity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delivery_findings": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryFinding"
+            },
+            "title": "Delivery Findings",
+            "type": "array"
+          },
+          "minimum_group_size": {
+            "title": "Minimum Group Size",
+            "type": "integer"
+          },
+          "policy_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "recovery_outcomes_status": {
+            "const": "not_collected",
+            "default": "not_collected",
+            "title": "Recovery Outcomes Status",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "suppressed",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "policy_version",
+          "status",
+          "minimum_group_size",
+          "bucket_ms",
+          "buckets"
+        ],
+        "title": "ProfessorMetrics",
+        "type": "object"
+      },
       "ProfessorSummary": {
         "description": "Anonymous, aggregated, threshold-safe professor report.\n\nNever includes student IDs, names, device IDs, or individual confidence\nvalues. Small groups are suppressed.",
         "properties": {
@@ -765,6 +1553,135 @@
         "title": "ProfessorSummary",
         "type": "object"
       },
+      "Recommendation": {
+        "additionalProperties": false,
+        "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.",
+        "properties": {
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "observation": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Observation",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "suggested_action": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Suggested Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "observation",
+          "suggested_action"
+        ],
+        "title": "Recommendation",
+        "type": "object"
+      },
+      "RecommendationReport": {
+        "additionalProperties": false,
+        "description": "Recommendations retain report revision, provider provenance and uncertainty.",
+        "properties": {
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "report_revision": {
+            "title": "Report Revision",
+            "type": "string"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationReview"
+            },
+            "maxItems": 5,
+            "title": "Reviews",
+            "type": "array"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "report_revision",
+          "status",
+          "provider_mode",
+          "recommendations"
+        ],
+        "title": "RecommendationReport",
+        "type": "object"
+      },
+      "RecommendationReview": {
+        "additionalProperties": false,
+        "description": "Professor feedback on a revision-bound suggestion.",
+        "properties": {
+          "recommendation_index": {
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Recommendation Index",
+            "type": "integer"
+          },
+          "report_revision": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Report Revision",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "reviewed",
+              "dismissed",
+              "resolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_revision",
+          "recommendation_index",
+          "status"
+        ],
+        "title": "RecommendationReview",
+        "type": "object"
+      },
       "RecoveryCard": {
         "description": "A grounded, compassionate explanation of missed lecture content.",
         "properties": {
@@ -852,6 +1769,47 @@
           "created_at"
         ],
         "title": "RecoveryCard",
+        "type": "object"
+      },
+      "RecoveryDraft": {
+        "additionalProperties": false,
+        "description": "Provider output; trusted IDs, timestamps and metadata are supplied by backend.",
+        "properties": {
+          "explanation": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/GroundedFact"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Facts",
+            "type": "array"
+          },
+          "follow_up_question": {
+            "maxLength": 400,
+            "minLength": 1,
+            "title": "Follow Up Question",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "explanation",
+          "facts",
+          "follow_up_question"
+        ],
+        "title": "RecoveryDraft",
         "type": "object"
       },
       "RecoveryJob": {
@@ -956,6 +1914,35 @@
         "description": "Opt-in registration for aggregation; identity comes from authentication.",
         "properties": {},
         "title": "RegisterParticipantRequest",
+        "type": "object"
+      },
+      "ReleasedRatio": {
+        "additionalProperties": false,
+        "description": "A ratio with its denominator; absent means insufficient or suppressed evidence.",
+        "properties": {
+          "denominator": {
+            "exclusiveMinimum": 0.0,
+            "title": "Denominator",
+            "type": "integer"
+          },
+          "numerator": {
+            "minimum": 0.0,
+            "title": "Numerator",
+            "type": "integer"
+          },
+          "ratio": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Ratio",
+            "type": "number"
+          }
+        },
+        "required": [
+          "numerator",
+          "denominator",
+          "ratio"
+        ],
+        "title": "ReleasedRatio",
         "type": "object"
       },
       "SessionMode": {
@@ -1178,6 +2165,53 @@
           "event_count"
         ],
         "title": "TimelineBucket",
+        "type": "object"
+      },
+      "ToolRecoveryResult": {
+        "additionalProperties": false,
+        "description": "A validated tool-assisted draft; no permanent card or provider billing claims in mock mode.",
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/RecoveryDraft"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft",
+          "provider_mode"
+        ],
+        "title": "ToolRecoveryResult",
         "type": "object"
       },
       "TranscriptBatchResponse": {
@@ -1424,8 +2458,25 @@
     },
     "/api/v1/demo/runs": {
       "post": {
-        "description": "Execute the full synthetic recovery pipeline for demonstration.",
+        "description": "Requires APP_ENV=demo; no JWT needed because all data is synthetic and isolated. Optional empty JSON body only. Returns a sourced mock card, anonymous reports and an input-only heuristic cost illustration. No provider calls or persistent session IDs. Non-demo access: 404; invalid fields: 422; oversized body: 413; generation failure: 502.",
         "operationId": "run_demo_api_v1_demo_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DemoRunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -1436,6 +2487,66 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
           }
         },
         "summary": "Run the synthetic end-to-end demo",
@@ -1571,6 +2682,345 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/aggregation-consent": {
+      "put": {
+        "description": "JWT participant changes only their own aggregation consent. Withdrawal removes coverage and affects every subsequent report. It does not change external text consent.",
+        "operationId": "update_aggregation_consent_api_v1_sessions__session_id__aggregation_consent_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AggregationConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregationConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Update Aggregation Consent",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/artifacts/exports": {
+      "post": {
+        "description": "JWT card owner confirms create-only export to their selected folder. Accepts a card reference, not arbitrary text or raw media. Mock receipts do not imply live Dropbox success.",
+        "operationId": "export_card_api_v1_sessions__session_id__artifacts_exports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactExport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Export Card",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/artifacts/folder": {
+      "put": {
+        "description": "JWT member selects their own authorized course folder. Default destination is synthetic in demo/test only.",
+        "operationId": "select_folder_api_v1_sessions__session_id__artifacts_folder_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderSelection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Select Folder",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/cost/metrics": {
       "get": {
         "description": "Return recorded provider usage, labeled synthetic in mock mode.",
@@ -1615,6 +3065,275 @@
         "summary": "List cost metrics for the session",
         "tags": [
           "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/coverage/batch": {
+      "post": {
+        "description": "JWT student membership and current aggregation consent required. Accepts bounded availability intervals only. Exact retries are duplicates; conflicting batches are atomic. No raw media or identity claims.",
+        "operationId": "ingest_coverage_api_v1_sessions__session_id__coverage_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoverageBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Ingest Coverage",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/delivery-events/batch": {
+      "post": {
+        "description": "Course-professor JWT required. Accepts only local derived delivery events. Frames, boxes, file paths and student identity are forbidden. Conflicts reject the entire batch.",
+        "operationId": "ingest_delivery_api_v1_sessions__session_id__delivery_events_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Ingest Delivery",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/end": {
+      "post": {
+        "description": "Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected.",
+        "operationId": "end_session_api_v1_sessions__session_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LectureSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "End Session",
+        "tags": [
+          "sessions"
         ]
       }
     },
@@ -1733,6 +3452,119 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/external-text-consent": {
+      "put": {
+        "description": "JWT member updates only their own provider-specific permission. Separate from signal/aggregation consent. Revocation clears their recovery cache; previously exported external copies are not deleted.",
+        "operationId": "update_external_consent_api_v1_sessions__session_id__external_text_consent_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalTextConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalTextConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Update External Consent",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/participants": {
       "post": {
         "description": "Opt the authenticated user into anonymous, aggregated participation.",
@@ -1793,6 +3625,325 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/professor-metrics": {
+      "get": {
+        "description": "Authorized course professor, ended session and configured policy required. Returns fixed buckets with safe counts or suppression; unknown coverage is never healthy continuity. Phone observations are excluded.",
+        "operationId": "read_metrics_api_v1_sessions__session_id__professor_metrics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessorMetrics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Read Metrics",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor-recommendations": {
+      "post": {
+        "description": "Course-professor JWT and released evidence required. Mock by default; live mode additionally requires external-text consent. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider.",
+        "operationId": "generate_recommendations_api_v1_sessions__session_id__professor_recommendations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Generate Recommendations",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor-recommendations/reviews": {
+      "put": {
+        "description": "Course-professor JWT required. Store reviewed/dismissed/resolved state against a current report revision. Stale evidence returns a conflict.",
+        "operationId": "review_recommendation_api_v1_sessions__session_id__professor_recommendations_reviews_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationReview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Review Recommendation",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/professor/summary": {
       "get": {
         "description": "Return an anonymous, aggregated summary for the course professor.\n\nAggregates are suppressed below the configured minimum group size and\nnever include student identifiers or individual confidence values.",
@@ -1836,9 +3987,114 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/recovery-cards": {
+      "post": {
+        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.",
+        "operationId": "create_recovery_job_api_v1_sessions__session_id__recovery_cards_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecoveryJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryJob"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request recovery using the unified contract path",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery-cards/{card_id}": {
+      "get": {
+        "description": "Return one personal recovery card exclusively to its requesting student.",
+        "operationId": "read_recovery_card_unified",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "title": "Card Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read a private recovery card",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/recovery/cards/{card_id}": {
       "get": {
-        "description": "Return one personal recovery card to its owner or the session owner.",
+        "description": "Return one personal recovery card exclusively to its requesting student.",
         "operationId": "read_recovery_card_api_v1_sessions__session_id__recovery_cards__card_id__get",
         "parameters": [
           {
@@ -1993,6 +4249,109 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/recovery/tool-runs": {
+      "post": {
+        "description": "Student JWT required. Run bounded read-only tools within the requested interval. Mock by default. Live mode requires separate provider consent; no raw media, phone observations or cross-user history is sent.",
+        "operationId": "run_tools_api_v1_sessions__session_id__recovery_tool_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LectureInterval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolRecoveryResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Run Tools",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/transcript": {
       "get": {
         "description": "Read final transcript chunks overlapping ``[start_ms, end_ms)``.",
@@ -2055,6 +4414,59 @@
           }
         },
         "summary": "Read transcript chunks for an interval",
+        "tags": [
+          "transcript"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript-chunks/batch": {
+      "post": {
+        "description": "Ingest timestamped transcript chunks from Zoom RTMS or local worker.",
+        "operationId": "ingest_transcript_api_v1_sessions__session_id__transcript_chunks_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestTranscriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest transcript chunks using the unified contract path",
         "tags": [
           "transcript"
         ]

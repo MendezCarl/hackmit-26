@@ -16,7 +16,7 @@ CONTRACTS_DIR = REPOSITORY_ROOT / "shared" / "contracts"
 
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.contracts import models as contract_models  # noqa: E402
+from app.contracts import models as contract_models
 
 CONTRACT_MODEL_NAMES: dict[str, str] = {
     "error_response": "ErrorResponse",

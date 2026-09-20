@@ -85,9 +85,7 @@ class InMemoryTimelineReader:
         ]
         chunks.sort(key=lambda chunk: (chunk.start_ms, chunk.end_ms))
         all_chunks = self._store.transcript_chunks.get(session_id, [])
-        transcript_revision = max(
-            (chunk.revision for chunk in all_chunks), default=0
-        )
+        transcript_revision = max((chunk.revision for chunk in all_chunks), default=0)
         return WindowReadResult(
             chunks=chunks,
             transcript_revision=transcript_revision,

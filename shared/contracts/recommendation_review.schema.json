@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Professor feedback on a revision-bound suggestion.",
+  "properties": {
+    "recommendation_index": {
+      "maximum": 4,
+      "minimum": 0,
+      "title": "Recommendation Index",
+      "type": "integer"
+    },
+    "report_revision": {
+      "maxLength": 64,
+      "minLength": 64,
+      "title": "Report Revision",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "reviewed",
+        "dismissed",
+        "resolved"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "report_revision",
+    "recommendation_index",
+    "status"
+  ],
+  "title": "RecommendationReview",
+  "type": "object"
+}

@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "EvidenceCoverage": {
+      "additionalProperties": false,
+      "description": "A local observation interval, including detector-unavailable periods.\n\nIdentity is resolved from JWT. Available means observations ran, not attention.",
+      "properties": {
+        "coverage_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Coverage Id",
+          "type": "string"
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_available": {
+          "title": "Is Available",
+          "type": "boolean"
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "coverage_id",
+        "is_available"
+      ],
+      "title": "EvidenceCoverage",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Atomic coverage ingestion; no more than 100 interval records.",
+  "properties": {
+    "records": {
+      "items": {
+        "$ref": "#/$defs/EvidenceCoverage"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Records",
+      "type": "array"
+    }
+  },
+  "required": [
+    "records"
+  ],
+  "title": "CoverageBatch",
+  "type": "object"
+}

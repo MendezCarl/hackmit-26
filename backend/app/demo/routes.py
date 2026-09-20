@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import BaseModel, Field
 
 from app.auth.tokens import (
@@ -16,8 +16,11 @@ from app.auth.tokens import (
     issue_access_token,
 )
 from app.config import DEMO_ENV, TEST_ENV
+from app.contracts.learning import StrictPayload
+from app.contracts.models import ErrorResponse
 from app.core.errors import AppError, ErrorCode
 from app.demo.runner import DemoRunner, DemoRunResult
+from app.demo.runtime import build_demo_runner
 
 router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
 
@@ -39,10 +42,13 @@ class DemoTokenResponse(BaseModel):
     role: str = Field(description="Synthetic role.")
 
 
-def get_demo_runner(request: Request) -> DemoRunner:
-    """Resolve the demo runner from application state."""
+class DemoRunRequest(StrictPayload):
+    """Empty optional body: client identities, media and provider overrides are forbidden."""
 
-    return request.app.state.demo_runner
+
+def get_demo_runner() -> DemoRunner:
+    """Build isolated, mock-only services for this request; no persistent side effects."""
+    return build_demo_runner()
 
 
 def require_demo_mode(request: Request) -> None:
@@ -62,11 +68,17 @@ def require_demo_mode(request: Request) -> None:
     response_model=DemoRunResult,
     status_code=status.HTTP_201_CREATED,
     summary="Run the synthetic end-to-end demo",
+    description="Requires APP_ENV=demo; no JWT needed because all data is synthetic and isolated. Optional empty JSON body only. Returns a sourced mock card, anonymous reports and an input-only heuristic cost illustration. No provider calls or persistent session IDs. Non-demo access: 404; invalid fields: 422; oversized body: 413; generation failure: 502.",
+    responses={
+        code: {"model": ErrorResponse} for code in (404, 413, 415, 422, 500, 502)
+    },
 )
 def run_demo(
     request: Request,
+    response: Response,
     runner: Annotated[DemoRunner, Depends(get_demo_runner)],
     _mode: Annotated[None, Depends(require_demo_mode)],
+    request_body: DemoRunRequest | None = None,
 ) -> DemoRunResult:
     """Execute the full synthetic recovery pipeline for demonstration."""
 
@@ -77,6 +89,7 @@ def run_demo(
             "Demo runs require APP_ENV=demo.",
             details={"app_env": request.app.state.settings.app_env},
         )
+    response.headers["Cache-Control"] = "no-store"
     return runner.run()
 
 
