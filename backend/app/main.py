@@ -135,7 +135,12 @@ def create_app(
     app.add_middleware(DerivedJsonLimit)
     install_error_handlers(app)
 
-    store = InMemoryStore()
+    if settings.mongodb_uri:
+        from app.storage.mongo import create_mongo_store
+
+        store = create_mongo_store(settings.mongodb_uri, settings.mongodb_database)
+    else:
+        store = InMemoryStore()
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()

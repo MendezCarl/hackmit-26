@@ -61,12 +61,14 @@ def update_aggregation_consent(
     """Revoke or restore participant consent; never restore erased coverage implicitly."""
     request.app.state.session_access.resolve_membership(actor, session_id)
     store = request.app.state.store
-    participant = store.participants.get(session_id, {}).get(actor.user_id)
+    participants = store.participants.get(session_id, {})
+    participant = participants.get(actor.user_id)
     if participant is None or actor.role != "student":
         raise AppError(ErrorCode.FORBIDDEN, "Registered student participation is required.")
     state = request.app.state.learning_state
     with state.lock:
         participant.is_opted_in = body.is_allowed
+        store.participants[session_id] = participants
         if not body.is_allowed:
             state.coverage = {
                 key: value

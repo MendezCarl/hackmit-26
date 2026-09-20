@@ -169,6 +169,7 @@ class TranscriptService:
             by_chunk_id[chunk.chunk_id] = chunk
             accepted.append(chunk.chunk_id)
 
+        self._store.transcript_chunks[session_id] = chunks
         transcript_revision = max((chunk.revision for chunk in chunks), default=0)
         self._publisher.publish(
             self._publisher.build_envelope(

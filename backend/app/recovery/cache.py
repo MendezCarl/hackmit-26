@@ -8,6 +8,7 @@ real integration gate is met; the interface stays unchanged.
 
 from __future__ import annotations
 
+from collections.abc import MutableMapping
 from typing import Protocol
 
 
@@ -65,7 +66,7 @@ def build_cache_key(
 class InMemoryRecoveryCache:
     """Process-local cache used until the Redis integration gate is met."""
 
-    def __init__(self, entries: dict[str, str]) -> None:
+    def __init__(self, entries: MutableMapping[str, str]) -> None:
         """Bind the cache to the shared store's entry map.
 
         Args:
