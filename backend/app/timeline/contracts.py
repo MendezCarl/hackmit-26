@@ -117,9 +117,7 @@ class EventEnvelope(StrictModel):
 def require_interval(grant: SessionGrant, interval: Interval) -> None:
     """Raise FeatureError when an interval exceeds the trusted session duration."""
     if interval.end_ms > grant.duration_ms:
-        raise FeatureError(
-            "invalid_time_range", "Interval exceeds the session duration."
-        )
+        raise FeatureError("invalid_time_range", "Interval exceeds the session duration.")
 
 
 def overlaps(left: Interval, right: Interval) -> bool:

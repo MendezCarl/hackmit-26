@@ -1,6 +1,7 @@
 """Private recovery service denies other members, including the session owner."""
 
 import pytest
+
 from app.contracts.models import CreateRecoveryJobRequest
 from app.core.errors import AppError
 from app.main import create_app
@@ -32,7 +33,5 @@ def test_private_jobs_and_content_cache():
     with pytest.raises(AppError):
         service.get_card(actor(), "s", job.card_id)
     assert service.create_job(actor("student2"), "s", request).cache_status == "hit"
-    store.transcript_chunks["s"][
-        0
-    ].text = "A queue follows first-in, first-out ordering."
+    store.transcript_chunks["s"][0].text = "A queue follows first-in, first-out ordering."
     assert service.create_job(actor("student2"), "s", request).cache_status == "miss"

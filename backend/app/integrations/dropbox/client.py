@@ -84,9 +84,7 @@ class SdkDropboxGateway:
                 and entry.size <= MAX_MATERIAL_BYTES
                 and PurePosixPath(entry.path_lower).suffix.lower() in {".txt", ".md"}
             ]
-            return FilePage(
-                files=files, next_cursor=page.cursor if page.has_more else None
-            )
+            return FilePage(files=files, next_cursor=page.cursor if page.has_more else None)
 
         return await self._call(operation)
 

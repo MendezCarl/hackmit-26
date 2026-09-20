@@ -1,6 +1,7 @@
 """A model cannot expand a scoped transcript interval or repeat tool calls."""
 
 import pytest
+
 from app.ai.tools import ToolArguments, ToolCall, ToolRegistry, ToolRunner, ToolTurn
 from app.contracts.learning import LectureInterval
 from app.core.errors import AppError, ErrorCode

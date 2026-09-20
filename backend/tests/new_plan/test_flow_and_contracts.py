@@ -3,6 +3,7 @@
 import json
 
 from jsonschema import Draft202012Validator
+
 from scripts.demo_new_plan import run_demo
 from scripts.generate_learning_contracts import artifacts
 
@@ -96,9 +97,7 @@ def test_mock_export_requires_selection_confirmation_and_card_ownership():
     ).json()
     export = {"card_id": job["card_id"], "filename": "review.md", "is_confirmed": True}
     assert (
-        client.post(
-            base + "/artifacts/exports", headers=headers(), json=export
-        ).status_code
+        client.post(base + "/artifacts/exports", headers=headers(), json=export).status_code
         == 403
     )
     client.put(
@@ -127,9 +126,7 @@ def test_mock_export_requires_selection_confirmation_and_card_ownership():
         == "mock"
     )
     assert (
-        client.post(
-            base + "/artifacts/exports", headers=headers(), json=export
-        ).status_code
+        client.post(base + "/artifacts/exports", headers=headers(), json=export).status_code
         == 409
     )
 

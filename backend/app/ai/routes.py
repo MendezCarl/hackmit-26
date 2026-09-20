@@ -61,18 +61,14 @@ class SyntheticToolModel:
             )
         sources = json.loads(results[0][1])["sources"]
         if not sources:
-            raise AppError(
-                ErrorCode.VALIDATION_FAILED, "No final transcript is available."
-            )
+            raise AppError(ErrorCode.VALIDATION_FAILED, "No final transcript is available.")
         source = sources[0]
         quote = source["text"][:500]
         draft = RecoveryDraft(
             topic="Lecture recap",
             explanation=quote,
             facts=[
-                GroundedFact(
-                    text=quote, chunk_id=source["chunk_id"], evidence_quote=quote
-                )
+                GroundedFact(text=quote, chunk_id=source["chunk_id"], evidence_quote=quote)
             ],
             follow_up_question="Would another example help?",
         )
@@ -82,9 +78,7 @@ class SyntheticToolModel:
 router = APIRouter(
     prefix="/api/v1/sessions/{session_id}",
     tags=["recovery"],
-    responses={
-        code: {"model": ErrorResponse} for code in (401, 403, 404, 413, 422, 502)
-    },
+    responses={code: {"model": ErrorResponse} for code in (401, 403, 404, 413, 422, 502)},
 )
 
 
@@ -154,9 +148,7 @@ def run_tools(
                 and (session_id, actor.user_id, "openai")
                 not in state.learning_state.external_consent
             ):
-                raise AppError(
-                    ErrorCode.FORBIDDEN, "External text consent was revoked."
-                )
+                raise AppError(ErrorCode.FORBIDDEN, "External text consent was revoked.")
             result = ToolRunner().run(model, registry)
         draft = RecoveryDraft.model_validate_json(result)
         chunks = {

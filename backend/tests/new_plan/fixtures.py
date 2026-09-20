@@ -1,9 +1,10 @@
 """Synthetic fixtures with explicit lecture-relative time; no external services."""
 
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="test", context_padding_ms=0)
 
@@ -15,9 +16,7 @@ def actor(user="owner", role="student"):
 
 def headers(user="owner", role="student"):
     """Sign synthetic credentials with test-only settings."""
-    return {
-        "Authorization": "Bearer " + issue_access_token(SETTINGS, actor(user, role))
-    }
+    return {"Authorization": "Bearer " + issue_access_token(SETTINGS, actor(user, role))}
 
 
 def setup(generator=None):
@@ -53,9 +52,7 @@ def setup(generator=None):
     )
     assert response.status_code < 300, response.text
     for user in ["owner", "s2", "s3", "s4", "s5"]:
-        assert (
-            client.post(base + "/participants", headers=headers(user)).status_code < 300
-        )
+        assert client.post(base + "/participants", headers=headers(user)).status_code < 300
     return client, session, base
 
 

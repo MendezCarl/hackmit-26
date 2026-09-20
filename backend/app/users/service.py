@@ -136,9 +136,7 @@ class UserService:
         """
 
         record = self._find_by_email(request.email)
-        if record is None or not verify_password(
-            request.password, record.password_hash
-        ):
+        if record is None or not verify_password(request.password, record.password_hash):
             raise AppError(
                 ErrorCode.UNAUTHORIZED,
                 "Email or password is incorrect.",

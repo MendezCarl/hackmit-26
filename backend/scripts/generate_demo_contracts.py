@@ -10,7 +10,6 @@ sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.demo.routes import DemoRunRequest
 from app.demo.runner import DemoRunResult
-
 from scripts.generate_learning_contracts import ts_type
 
 

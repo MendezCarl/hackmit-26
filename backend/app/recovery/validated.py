@@ -125,10 +125,7 @@ class PrivateRecoveryService(RecoveryService):
         """Bound context by the known transcript horizon and total selected text size."""
         window = super()._build_context_window(session_id, start_ms, end_ms)
         horizon = max(
-            (
-                chunk.end_ms
-                for chunk in self._store.transcript_chunks.get(session_id, [])
-            ),
+            (chunk.end_ms for chunk in self._store.transcript_chunks.get(session_id, [])),
             default=end_ms,
         )
         window.effective_end_ms = min(window.effective_end_ms, horizon, MAX_LECTURE_MS)

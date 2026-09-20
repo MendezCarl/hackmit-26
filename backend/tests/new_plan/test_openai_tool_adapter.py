@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from app.core.errors import AppError
 from app.integrations.openai.tools import OpenAIToolModel
 
@@ -37,9 +38,7 @@ def test_all_output_items_and_tool_results_are_preserved_without_server_storage(
         name="get_transcript_window",
         arguments='{"start_ms":0,"end_ms":1000}',
     )
-    api = Responses(
-        [response([reasoning, call]), response([], '{"topic":"synthetic"}')]
-    )
+    api = Responses([response([reasoning, call]), response([], '{"topic":"synthetic"}')])
     model = OpenAIToolModel(
         SimpleNamespace(responses=api),
         "test-model",
@@ -49,8 +48,7 @@ def test_all_output_items_and_tool_results_are_preserved_without_server_storage(
     turn = model.next_turn([])
     assert turn.calls[0].name == "get_transcript_window"
     assert (
-        model.next_turn([("call1", '{"sources":[]}')]).final_json
-        == '{"topic":"synthetic"}'
+        model.next_turn([("call1", '{"sources":[]}')]).final_json == '{"topic":"synthetic"}'
     )
     assert reasoning in model.input and call in model.input
     assert any(

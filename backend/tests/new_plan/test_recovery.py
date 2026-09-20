@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from app.contracts.learning import RecoveryDraft
 from app.integrations.openai.recovery import OpenAIRecoveryGenerator
 
@@ -96,9 +97,7 @@ def test_openai_consent_minimal_payload_measured_usage_and_revocation():
     for forbidden in [session, "owner", "phone_visible", "Synthetic stacks"]:
         assert forbidden not in provider_request["input"]
     metrics = client.get(base + "/cost/metrics", headers=headers()).json()[0]
-    assert (
-        metrics["data_label"] == "measured" and metrics["input_usage"]["tokens"] == 100
-    )
+    assert metrics["data_label"] == "measured" and metrics["input_usage"]["tokens"] == 100
     client.put(
         base + "/external-text-consent",
         headers=headers(),

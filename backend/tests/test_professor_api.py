@@ -6,10 +6,11 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="test")
 LECTURE_ID = "lecture-1"
@@ -53,9 +54,7 @@ def create_session(client: TestClient) -> str:
     ).json()["session_id"]
 
 
-def submit_event(
-    client: TestClient, session_id: str, user_id: str, event_id: str
-) -> None:
+def submit_event(client: TestClient, session_id: str, user_id: str, event_id: str) -> None:
     """Register one participant and submit one event as them."""
 
     client.post(

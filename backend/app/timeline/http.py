@@ -34,9 +34,7 @@ ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 def error_response(error: FeatureError) -> JSONResponse:
     """Serialize a stable safe error, excluding request bodies and provider details."""
     payload = ErrorResponse(
-        error=ErrorDetail(
-            code=error.code, message=error.message, request_id=uuid4().hex
-        )
+        error=ErrorDetail(code=error.code, message=error.message, request_id=uuid4().hex)
     )
     return JSONResponse(
         status_code=error.status_code, content=payload.model_dump(mode="json")
@@ -95,9 +93,7 @@ class BoundedJsonMiddleware:
             if not message.get("more_body", False):
                 break
         headers = dict(scope.get("headers", []))
-        content_type = (
-            headers.get(b"content-type", b"").split(b";", 1)[0].strip().lower()
-        )
+        content_type = headers.get(b"content-type", b"").split(b";", 1)[0].strip().lower()
         if body and content_type != b"application/json":
             await error_response(
                 FeatureError(

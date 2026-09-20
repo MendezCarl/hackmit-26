@@ -1,6 +1,7 @@
 """Selected mock exports cannot overwrite or claim live provider success."""
 
 import pytest
+
 from app.artifacts.export import MockArtifactDestination
 from app.core.errors import AppError
 
@@ -18,9 +19,7 @@ def test_export_scope_and_create_only_write():
         == "mock"
     )
     with pytest.raises(AppError):
-        destination.write(
-            actor(), "synthetic-course-folder", "review.md", "Replacement"
-        )
+        destination.write(actor(), "synthetic-course-folder", "review.md", "Replacement")
     assert (
         destination.write(
             actor("student2"), "synthetic-course-folder", "review.md", "Other own text"

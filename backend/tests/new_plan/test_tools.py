@@ -1,6 +1,7 @@
 """Bounded tool execution reauthorizes every call and refuses arbitrary access."""
 
 import pytest
+
 from app.ai.tools import ToolArguments, ToolCall, ToolRegistry, ToolRunner, ToolTurn
 from app.contracts.learning import LectureInterval
 from app.core.errors import AppError
@@ -43,9 +44,7 @@ def call(name="get_transcript_window", start=0, end=30_000):
 
 def test_bounded_read_and_final_output():
     selected = registry()
-    model = Model(
-        [ToolTurn(calls=[call()]), ToolTurn(final_json='{"result":"synthetic"}')]
-    )
+    model = Model([ToolTurn(calls=[call()]), ToolTurn(final_json='{"result":"synthetic"}')])
     assert ToolRunner().run(model, selected) == '{"result":"synthetic"}'
 
 

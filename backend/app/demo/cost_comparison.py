@@ -96,9 +96,7 @@ def compare_context_cost(
     ):
         raise ValueError("The demo comparison accepts synthetic mock usage only.")
     full_characters = sum(len(chunk.text) for chunk in final.values())
-    selected_characters = sum(
-        len(final[key].text) for key in selected if key is not None
-    )
+    selected_characters = sum(len(final[key].text) for key in selected if key is not None)
     full_tokens = estimate_transcript_tokens(full_characters)
     selected_tokens = estimate_transcript_tokens(selected_characters)
     rate = ILLUSTRATIVE_INPUT_USD_PER_MILLION / 1_000_000
@@ -113,9 +111,7 @@ def compare_context_cost(
         else 0.0,
         full_transcript_illustrative_input_usd=round(full_tokens * rate, 8),
         selected_context_illustrative_input_usd=round(selected_tokens * rate, 8),
-        illustrative_input_reduction_usd=round(
-            (full_tokens - selected_tokens) * rate, 8
-        ),
+        illustrative_input_reduction_usd=round((full_tokens - selected_tokens) * rate, 8),
         mock_generation_calls=sum(entry.cache_status == "miss" for entry in usage),
         cache_hits=cache_hits,
         generation_calls_avoided=cache_hits,

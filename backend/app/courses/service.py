@@ -23,9 +23,7 @@ class CourseService:
 
         self._store = store
 
-    def _require_owned_course(
-        self, actor: AuthenticatedActor, course_id: str
-    ) -> Course:
+    def _require_owned_course(self, actor: AuthenticatedActor, course_id: str) -> Course:
         """Return one course the actor owns.
 
         Args:

@@ -27,7 +27,7 @@ from app.contracts.models import (
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
 from app.signals.service import SignalService
-from app.storage.in_memory import InMemoryStore
+from app.storage.in_memory import EventRecord, InMemoryStore
 from app.ws.publisher import EventPublisher
 
 PROFESSOR_SUMMARY_READY = "professor_summary.ready"
@@ -109,9 +109,7 @@ class ProfessorService:
             count = sum(
                 1 for event in events if event.start_ms < end and start < event.end_ms
             )
-            buckets.append(
-                TimelineBucket(start_ms=start, end_ms=end, event_count=count)
-            )
+            buckets.append(TimelineBucket(start_ms=start, end_ms=end, event_count=count))
         return buckets
 
     def _build_highest_signal_intervals(
@@ -149,9 +147,7 @@ class ProfessorService:
             for key, count in ranked
         ]
 
-    def build_summary(
-        self, actor: AuthenticatedActor, session_id: str
-    ) -> ProfessorSummary:
+    def build_summary(self, actor: AuthenticatedActor, session_id: str) -> ProfessorSummary:
         """Build one threshold-safe anonymous summary for a course professor.
 
         Args:
@@ -205,9 +201,7 @@ class ProfessorService:
                 None if is_suppressed else self._build_timeline_buckets(session_id)
             ),
             highest_signal_intervals=(
-                None
-                if is_suppressed
-                else self._build_highest_signal_intervals(session_id)
+                None if is_suppressed else self._build_highest_signal_intervals(session_id)
             ),
             suggested_actions=None if is_suppressed else list(SUGGESTED_ACTIONS),
             generated_at=utc_now_iso(),
@@ -221,7 +215,7 @@ class ProfessorService:
         )
         return summary
 
-    def _safe_records(self, session_id: str):
+    def _safe_records(self, session_id: str) -> list[EventRecord]:
         """Exclude dismissed, nonconsenting and phone-derived evidence in legacy demos."""
         participants = self._signal_service.get_participants(session_id)
         return [

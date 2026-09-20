@@ -49,9 +49,7 @@ def fake_response(payload: dict, input_tokens: int = 321, output_tokens: int = 8
     content = json.dumps(payload)
     return SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content=content))],
-        usage=SimpleNamespace(
-            prompt_tokens=input_tokens, completion_tokens=output_tokens
-        ),
+        usage=SimpleNamespace(prompt_tokens=input_tokens, completion_tokens=output_tokens),
     )
 
 

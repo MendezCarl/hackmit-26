@@ -127,10 +127,7 @@ def _settings_from_environment() -> Settings:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")
     if settings.provider_mode not in KNOWN_PROVIDER_MODES:
         raise ValueError(f"Unknown PROVIDER_MODE: {settings.provider_mode}")
-    if (
-        settings.app_env == PRODUCTION_ENV
-        and settings.app_secret == DEFAULT_DEMO_SECRET
-    ):
+    if settings.app_env == PRODUCTION_ENV and settings.app_secret == DEFAULT_DEMO_SECRET:
         raise ValueError("Production requires a real APP_SECRET.")
     return settings
 

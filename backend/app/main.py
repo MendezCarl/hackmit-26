@@ -12,9 +12,9 @@ from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
 from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.core.logging_redaction import install_logging
+from app.cost.ledger import CostLedger
 from app.courses.routes import router as course_router
 from app.courses.service import CourseService
-from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
 from app.learning.composition import install_learning_features
 from app.lectures.routes import router as lecture_router
@@ -127,9 +127,7 @@ def create_app(
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()
-    generator = ValidatedGenerator(
-        recovery_generator or DeterministicRecoveryGenerator()
-    )
+    generator = ValidatedGenerator(recovery_generator or DeterministicRecoveryGenerator())
 
     session_service = SessionService(store, settings, session_access)
     signal_service = SignalService(store, settings, session_access, event_publisher)

@@ -35,7 +35,7 @@ namespaces = false
 
 [tool.ruff]
 line-length = 92
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 # UP042 (str+Enum -> StrEnum) is disabled: the frozen contract enums already
@@ -49,4 +49,4 @@ select = [
   "B",  # bugbear
   "SIM", # simplify
 ]
-ignore = ["UP042"]
+ignore = ["E402", "E501", "UP042"]

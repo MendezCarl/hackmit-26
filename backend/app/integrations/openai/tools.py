@@ -85,9 +85,7 @@ class OpenAIToolModel:
                     for part in getattr(item, "content", [])
                 ):
                     raise ValueError("Refusal")
-            return ToolTurn(
-                calls=calls, final_json=None if calls else response.output_text
-            )
+            return ToolTurn(calls=calls, final_json=None if calls else response.output_text)
         except Exception:  # noqa: BLE001 - sanitize every provider failure
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,

@@ -6,6 +6,8 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.core.errors import AppError, ErrorCode
@@ -13,7 +15,6 @@ from app.main import create_app
 from app.recovery.generator import (
     DeterministicRecoveryGenerator,
 )
-from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="test")
 LECTURE_ID = "lecture-1"
@@ -333,9 +334,7 @@ def test_provider_timeout_is_a_typed_failure() -> None:
     client = build_test_client(FailingRecoveryGenerator(ErrorCode.PROVIDER_TIMEOUT))
     session_id = create_session(client)
     ingest_transcript(client, session_id)
-    job = request_recovery(
-        client, session_id, token_for("owner-1"), recovery_body()
-    ).json()
+    job = request_recovery(client, session_id, token_for("owner-1"), recovery_body()).json()
     assert job["status"] == "failed"
     assert job["failure"]["reason"] == "provider_timeout"
 
@@ -346,9 +345,7 @@ def test_provider_refusal_is_a_typed_failure() -> None:
     client = build_test_client(FailingRecoveryGenerator(ErrorCode.PROVIDER_REFUSED))
     session_id = create_session(client)
     ingest_transcript(client, session_id)
-    job = request_recovery(
-        client, session_id, token_for("owner-1"), recovery_body()
-    ).json()
+    job = request_recovery(client, session_id, token_for("owner-1"), recovery_body()).json()
     assert job["status"] == "failed"
     assert job["failure"]["reason"] == "provider_refused"
 
@@ -359,9 +356,7 @@ def test_malformed_provider_output_is_a_typed_failure() -> None:
     client = build_test_client(MalformedRecoveryGenerator())
     session_id = create_session(client)
     ingest_transcript(client, session_id)
-    job = request_recovery(
-        client, session_id, token_for("owner-1"), recovery_body()
-    ).json()
+    job = request_recovery(client, session_id, token_for("owner-1"), recovery_body()).json()
     assert job["status"] == "failed"
     assert job["failure"]["reason"] == "provider_malformed_output"
 

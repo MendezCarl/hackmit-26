@@ -69,9 +69,7 @@ def require_demo_mode(request: Request) -> None:
     status_code=status.HTTP_201_CREATED,
     summary="Run the synthetic end-to-end demo",
     description="Requires APP_ENV=demo; no JWT needed because all data is synthetic and isolated. Optional empty JSON body only. Returns a sourced mock card, anonymous reports and an input-only heuristic cost illustration. No provider calls or persistent session IDs. Non-demo access: 404; invalid fields: 422; oversized body: 413; generation failure: 502.",
-    responses={
-        code: {"model": ErrorResponse} for code in (404, 413, 415, 422, 500, 502)
-    },
+    responses={code: {"model": ErrorResponse} for code in (404, 413, 415, 422, 500, 502)},
 )
 def run_demo(
     request: Request,

@@ -125,9 +125,7 @@ class DeterministicRecoveryGenerator:
         requested_center = (window.requested_start_ms + window.requested_end_ms) / 2
         closest_chunk = min(
             chunks,
-            key=lambda chunk: abs(
-                (chunk.start_ms + chunk.end_ms) / 2 - requested_center
-            ),
+            key=lambda chunk: abs((chunk.start_ms + chunk.end_ms) / 2 - requested_center),
         )
         source_timestamps = [
             SourceTimestamp(

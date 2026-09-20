@@ -56,9 +56,7 @@ def read_transcript_window(
     session_id: str,
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     service: Annotated[TranscriptService, Depends(get_transcript_service)],
-    start_ms: Annotated[
-        int, Query(ge=0, description="Half-open interval start in ms.")
-    ],
+    start_ms: Annotated[int, Query(ge=0, description="Half-open interval start in ms.")],
     end_ms: Annotated[int, Query(gt=0, description="Half-open interval end in ms.")],
 ) -> TranscriptWindowResponse:
     """Read final transcript chunks overlapping ``[start_ms, end_ms)``."""

@@ -36,9 +36,7 @@ class EventBatchResponse(BaseModel):
     """Response summarizing one accepted signal-event batch."""
 
     session_id: str = Field(description="Session the batch was ingested into.")
-    accepted_event_ids: list[str] = Field(
-        description="Newly accepted event identifiers."
-    )
+    accepted_event_ids: list[str] = Field(description="Newly accepted event identifiers.")
     recovery_eligible_event_ids: list[str] = Field(
         description="Event ids passing the configurable missed-window rule."
     )
@@ -174,8 +172,7 @@ class SignalService:
             within_batch.add(event.event_id)
             accepted.append(event.event_id)
         records.extend(
-            EventRecord(event=event, submitted_by=actor.user_id)
-            for event in request.events
+            EventRecord(event=event, submitted_by=actor.user_id) for event in request.events
         )
 
         self._publisher.publish(
@@ -313,9 +310,7 @@ class SignalService:
             All known event ids for the session.
         """
 
-        return [
-            record.event.event_id for record in self._store.events.get(session_id, [])
-        ]
+        return [record.event.event_id for record in self._store.events.get(session_id, [])]
 
     def list_session_events(self, session_id: str) -> list[EventRecord]:
         """Return stored event records; attribution stays server-side.

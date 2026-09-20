@@ -12,6 +12,8 @@ on:
       - dev
       - main
       - feature/backend-demo-health-metrics
+      - backend
+      - test
     paths:
       - "backend/**"
       - "docs/api/**"

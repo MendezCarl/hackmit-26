@@ -8,6 +8,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.config import Settings
 from app.core.errors import AppError, ErrorCode
 from app.demo.cost_comparison import compare_context_cost, estimate_transcript_tokens
@@ -15,7 +17,6 @@ from app.demo.runtime import build_demo_runner
 from app.demo.synthetic_lecture import build_full_lecture_chunks
 from app.main import create_app
 from app.recovery.generator import DeterministicRecoveryGenerator
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.parametrize("mode", ["development", "test", "production", "demo"])
@@ -135,9 +136,7 @@ def test_token_costs_are_input_only_estimates_and_cache_skips_generation(monkeyp
     assert comparison.selected_context_characters == sum(
         len(c.text) for c in calls[0].chunks
     )
-    assert (
-        comparison.full_transcript_characters > comparison.selected_context_characters
-    )
+    assert comparison.full_transcript_characters > comparison.selected_context_characters
     assert (
         comparison.full_transcript_estimated_tokens
         == (comparison.full_transcript_characters + 3) // 4
@@ -235,8 +234,9 @@ def test_demo_contract_artifacts_and_serialized_response():
     """JSON schemas, generated handoff types and real endpoint payload stay aligned."""
     import json
 
-    from app.demo.runner import DemoRunResult
     from jsonschema import Draft202012Validator
+
+    from app.demo.runner import DemoRunResult
     from scripts.generate_demo_contracts import artifacts
 
     for path, content in artifacts().items():
@@ -253,9 +253,7 @@ def test_demo_contract_artifacts_and_serialized_response():
     schema = client.get("/openapi.json").json()
     route = schema["paths"]["/api/v1/demo/runs"]["post"]
     assert "requestBody" in route
-    assert all(
-        str(code) in route["responses"] for code in (201, 404, 413, 415, 422, 502)
-    )
+    assert all(str(code) in route["responses"] for code in (201, 404, 413, 415, 422, 502))
 
 
 def test_judge_script_uses_real_demo_endpoint():

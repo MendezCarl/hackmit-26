@@ -43,9 +43,7 @@ def test_merge_empty_input() -> None:
 def test_context_interval_merges_connected_source_events() -> None:
     """Source events overlapping the request must expand the window."""
 
-    interval = build_context_interval(
-        (100, 200), [(150, 260), (900, 950)]
-    )
+    interval = build_context_interval((100, 200), [(150, 260), (900, 950)])
     assert interval == (100, 260)
 
 

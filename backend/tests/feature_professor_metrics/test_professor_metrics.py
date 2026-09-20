@@ -14,9 +14,7 @@ def test_missing_coverage_and_revocation_suppress_evidence():
         state,
         access,
         settings,
-        MetricsPolicy(
-            policy_version="synthetic", minimum_group_size=5, bucket_ms=30_000
-        ),
+        MetricsPolicy(policy_version="synthetic", minimum_group_size=5, bucket_ms=30_000),
     )
     store.sessions["s"].status = SessionStatus.ENDED
     assert service.report(actor("prof", "professor"), "s").continuity is None

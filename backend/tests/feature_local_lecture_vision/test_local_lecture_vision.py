@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from app.local_ml.vision import (
     Detection,
     ModelManifest,
@@ -23,9 +24,7 @@ class Detector:
     def detect(self, frame):
         if self.fail:
             raise ValueError("synthetic inference failure")
-        return (
-            [Detection(x1=0, y1=0, x2=1, y2=1, confidence=0.9)] if self.present else []
-        )
+        return [Detection(x1=0, y1=0, x2=1, y2=1, confidence=0.9)] if self.present else []
 
 
 def frame():

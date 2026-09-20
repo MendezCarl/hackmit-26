@@ -67,15 +67,11 @@ class ProfessorPort(Protocol):
 class DropboxPort(Protocol):
     """Selected derived-content operations supplied by feature 6."""
 
-    async def link(
-        self, grant: SessionGrant, selection: FolderSelection
-    ) -> FolderReceipt:
+    async def link(self, grant: SessionGrant, selection: FolderSelection) -> FolderReceipt:
         """Link a verified user-selected folder."""
         ...
 
-    async def list_files(
-        self, grant: SessionGrant, cursor: str | None = None
-    ) -> FilePage:
+    async def list_files(self, grant: SessionGrant, cursor: str | None = None) -> FilePage:
         """List bounded metadata inside the linked folder."""
         ...
 
@@ -83,8 +79,6 @@ class DropboxPort(Protocol):
         """Read selected supporting text."""
         ...
 
-    async def export(
-        self, grant: SessionGrant, request: ExportRequest
-    ) -> ExportReceipt:
+    async def export(self, grant: SessionGrant, request: ExportRequest) -> ExportReceipt:
         """Export an authorized derived artifact."""
         ...

@@ -79,9 +79,7 @@ class OpenAIRecoveryGenerator:
                 if isinstance(exc, (APITimeoutError, TimeoutError))
                 else ErrorCode.PROVIDER_FAILURE
             )
-            raise AppError(
-                code, "The text provider is temporarily unavailable."
-            ) from None
+            raise AppError(code, "The text provider is temporarily unavailable.") from None
         if any(
             getattr(part, "type", "") == "refusal"
             for item in response.output

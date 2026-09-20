@@ -76,9 +76,7 @@ def end_session(
 
     session = request.app.state.session_service.get_session(actor, session_id)
     if session.owner_id != actor.user_id:
-        raise AppError(
-            ErrorCode.FORBIDDEN, "Only the session owner can end the session."
-        )
+        raise AppError(ErrorCode.FORBIDDEN, "Only the session owner can end the session.")
     if session.status != SessionStatus.ENDED:
         session.status = SessionStatus.ENDED
         session.ended_at = utc_now_iso()

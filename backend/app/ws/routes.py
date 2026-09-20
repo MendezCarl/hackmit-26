@@ -30,9 +30,7 @@ def _receive_client_message(websocket: WebSocket) -> asyncio.Task[str]:
     return asyncio.create_task(websocket.receive_text())
 
 
-async def _drain_queued_envelope(
-    websocket: WebSocket, queue: asyncio.Queue[Any]
-) -> bool:
+async def _drain_queued_envelope(websocket: WebSocket, queue: asyncio.Queue[Any]) -> bool:
     """Forward queued envelopes until the queue is momentarily empty.
 
     Args:

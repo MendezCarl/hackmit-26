@@ -52,6 +52,4 @@ def build_demo_runner() -> DemoRunner:
             policy_version="synthetic-demo-v1", minimum_group_size=5, bucket_ms=30_000
         ),
     )
-    return DemoRunner(
-        sessions, signals, transcript, recovery, professor, metrics, ledger
-    )
+    return DemoRunner(sessions, signals, transcript, recovery, professor, metrics, ledger)

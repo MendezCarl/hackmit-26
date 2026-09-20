@@ -27,9 +27,7 @@ MAX_QUEUE_DEPTH = 100
 class EventPublisher(Protocol):
     """Frozen interface publishing typed events to an authorized audience."""
 
-    def publish(
-        self, envelope: EventEnvelope, audience_user_id: str | None = None
-    ) -> None:
+    def publish(self, envelope: EventEnvelope, audience_user_id: str | None = None) -> None:
         """Publish one typed envelope to subscribers of its session.
 
         Args:
@@ -89,9 +87,7 @@ class WebSocketEventPublisher:
             A bounded queue the WebSocket route drains.
         """
 
-        queue: asyncio.Queue[EventEnvelope] = asyncio.Queue(
-            maxsize=self._max_queue_depth
-        )
+        queue: asyncio.Queue[EventEnvelope] = asyncio.Queue(maxsize=self._max_queue_depth)
         with self._state_lock:
             self._subscribers.setdefault(session_id, []).append(queue)
             self._audiences[id(queue)] = actor_id
@@ -132,9 +128,7 @@ class WebSocketEventPublisher:
             payload=payload,
         )
 
-    def publish(
-        self, envelope: EventEnvelope, audience_user_id: str | None = None
-    ) -> None:
+    def publish(self, envelope: EventEnvelope, audience_user_id: str | None = None) -> None:
         """Deliver one envelope to every subscriber of its session.
 
         Args:

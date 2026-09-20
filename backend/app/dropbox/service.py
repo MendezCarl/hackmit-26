@@ -40,13 +40,9 @@ class DropboxService:
     def _require_access(self, grant: SessionGrant) -> None:
         """Reject provider operations unless the host grants Dropbox consent/access."""
         if not grant.can_use_dropbox:
-            raise FeatureError(
-                "consent_required", "Dropbox access is not authorized.", 403
-            )
+            raise FeatureError("consent_required", "Dropbox access is not authorized.", 403)
 
-    async def link(
-        self, grant: SessionGrant, selection: FolderSelection
-    ) -> FolderReceipt:
+    async def link(self, grant: SessionGrant, selection: FolderSelection) -> FolderReceipt:
         """Verify and remember this actor's explicit folder choice for this session."""
         self._require_access(grant)
         await self.gateway.verify_folder(grant.actor_id, selection.folder_path)
@@ -56,9 +52,7 @@ class DropboxService:
                 link for link in state.folder_links if link.actor_id != grant.actor_id
             ]
             if len(state.folder_links) >= 1000:
-                raise FeatureError(
-                    "session_capacity", "Folder-link capacity reached.", 413
-                )
+                raise FeatureError("session_capacity", "Folder-link capacity reached.", 413)
             state.folder_links.append(
                 FolderLink(actor_id=grant.actor_id, folder_path=selection.folder_path)
             )
@@ -77,17 +71,13 @@ class DropboxService:
                 return link.folder_path
         raise FeatureError("folder_not_linked", "Select a course folder first.", 409)
 
-    async def list_files(
-        self, grant: SessionGrant, cursor: str | None = None
-    ) -> FilePage:
+    async def list_files(self, grant: SessionGrant, cursor: str | None = None) -> FilePage:
         """List text materials; constrain provider results even for supplied cursors."""
         folder = await self._folder(grant)
         page = await self.gateway.list_files(grant.actor_id, folder, cursor)
         return FilePage(
             files=[
-                entry
-                for entry in page.files
-                if is_within_folder(entry.file_path, folder)
+                entry for entry in page.files if is_within_folder(entry.file_path, folder)
             ],
             next_cursor=page.next_cursor,
         )
@@ -114,9 +104,7 @@ class DropboxService:
             )
         return material
 
-    async def export(
-        self, grant: SessionGrant, request: ExportRequest
-    ) -> ExportReceipt:
+    async def export(self, grant: SessionGrant, request: ExportRequest) -> ExportReceipt:
         """Export an authorized derived artifact; never accept arbitrary upload content."""
         folder = await self._folder(grant)
         artifact = await self.artifacts.read(grant, request.artifact_id)
@@ -129,9 +117,7 @@ class DropboxService:
                 "artifact_too_large", "Derived artifact exceeds the export limit.", 413
             )
         path = f"{folder}/{request.filename}"
-        revision = await self.gateway.write_text(
-            grant.actor_id, path, artifact.markdown
-        )
+        revision = await self.gateway.write_text(grant.actor_id, path, artifact.markdown)
         return ExportReceipt(
             artifact_id=request.artifact_id,
             file_path=path,

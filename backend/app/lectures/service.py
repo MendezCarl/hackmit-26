@@ -27,9 +27,7 @@ class LectureService:
 
         self._store = store
 
-    def _require_owned_lecture(
-        self, actor: AuthenticatedActor, lecture_id: str
-    ) -> Lecture:
+    def _require_owned_lecture(self, actor: AuthenticatedActor, lecture_id: str) -> Lecture:
         """Return one lecture the actor owns.
 
         Args:
@@ -104,9 +102,7 @@ class LectureService:
         self._store.lectures[lecture.lecture_id] = lecture
         return lecture
 
-    def list_lectures(
-        self, actor: AuthenticatedActor, course_id: str
-    ) -> list[Lecture]:
+    def list_lectures(self, actor: AuthenticatedActor, course_id: str) -> list[Lecture]:
         """List lecture records for one owned course.
 
         Args:
@@ -124,9 +120,7 @@ class LectureService:
             if lecture.course_id == course_id
         ]
 
-    def get_lecture(
-        self, actor: AuthenticatedActor, lecture_id: str
-    ) -> Lecture:
+    def get_lecture(self, actor: AuthenticatedActor, lecture_id: str) -> Lecture:
         """Return one owned lecture record.
 
         Args:
@@ -139,9 +133,7 @@ class LectureService:
 
         return self._require_owned_lecture(actor, lecture_id)
 
-    def delete_lecture(
-        self, actor: AuthenticatedActor, lecture_id: str
-    ) -> None:
+    def delete_lecture(self, actor: AuthenticatedActor, lecture_id: str) -> None:
         """Delete one owned lecture record.
 
         Args:
@@ -152,9 +144,7 @@ class LectureService:
         self._require_owned_lecture(actor, lecture_id)
         del self._store.lectures[lecture_id]
 
-    def _require_owned_course(
-        self, actor: AuthenticatedActor, course_id: str
-    ) -> None:
+    def _require_owned_course(self, actor: AuthenticatedActor, course_id: str) -> None:
         """Ensure the actor owns the referenced course.
 
         Args:

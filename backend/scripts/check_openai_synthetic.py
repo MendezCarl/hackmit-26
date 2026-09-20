@@ -49,9 +49,9 @@ def main() -> int:
         chunk_ids=[chunk.chunk_id],
         chunks=[chunk],
     )
-    _, usage = OpenAIRecoveryGenerator(
-        OpenAI(timeout=20, max_retries=1), model
-    ).generate(session, window)
+    _, usage = OpenAIRecoveryGenerator(OpenAI(timeout=20, max_retries=1), model).generate(
+        session, window
+    )
     print(usage.model_dump_json())
     return 0
 

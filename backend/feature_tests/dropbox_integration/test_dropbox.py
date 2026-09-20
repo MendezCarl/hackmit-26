@@ -6,12 +6,13 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from app.dropbox.models import MAX_MATERIAL_BYTES
-from app.integrations.dropbox.client import SdkDropboxGateway
-from app.timeline.contracts import FeatureError
 from dropbox.files import FileMetadata, FolderMetadata, ListFolderResult
 from fastapi.testclient import TestClient
 from requests.exceptions import Timeout
+
+from app.dropbox.models import MAX_MATERIAL_BYTES
+from app.integrations.dropbox.client import SdkDropboxGateway
+from app.timeline.contracts import FeatureError
 
 from .factories import BASE, authorization
 
@@ -40,9 +41,7 @@ def test_selected_material_and_derived_export(client: TestClient) -> None:
     )
     assert "last-in" in material.json()["text"]
     request = {"artifact_id": "demo-card", "filename": "recovery.md", "confirmed": True}
-    result = client.post(
-        f"{BASE}/dropbox/exports", headers=authorization(), json=request
-    )
+    result = client.post(f"{BASE}/dropbox/exports", headers=authorization(), json=request)
     assert result.status_code == 200
     assert result.json()["provider_mode"] == "mock"
     assert result.json()["file_path"] == "/course/recovery.md"
@@ -58,9 +57,7 @@ def test_folder_selection_and_artifacts_are_actor_scoped(client: TestClient) -> 
     """One user's folder selection or card never grants access to another user."""
     link_folder(client)
     assert (
-        client.get(
-            f"{BASE}/dropbox/files", headers=authorization("student-2")
-        ).status_code
+        client.get(f"{BASE}/dropbox/files", headers=authorization("student-2")).status_code
         == 409
     )
     link_folder(client, "student-2")
@@ -77,9 +74,7 @@ def test_folder_selection_and_artifacts_are_actor_scoped(client: TestClient) -> 
         == 404
     )
     assert (
-        client.get(
-            f"{BASE}/dropbox/files", headers=authorization("professor")
-        ).status_code
+        client.get(f"{BASE}/dropbox/files", headers=authorization("professor")).status_code
         == 403
     )
 

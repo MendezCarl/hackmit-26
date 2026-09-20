@@ -233,9 +233,7 @@ class DemoRunner:
             ),
         )
         small_student = AuthenticatedActor(user_id="demo-student-1", role="student")
-        self._signal_service.register_participant(
-            small_student, small_session.session_id
-        )
+        self._signal_service.register_participant(small_student, small_session.session_id)
         small_events = [
             build_synthetic_missed_event(small_session.session_id, "demo-small-001")
         ]

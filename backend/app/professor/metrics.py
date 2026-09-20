@@ -104,9 +104,7 @@ class ProfessorMetricsService:
                 else:
                     pending[key] = record.model_copy(deep=True)
             if len(self.state.coverage) + len(pending) > self.state.maximum_records:
-                raise AppError(
-                    ErrorCode.PAYLOAD_TOO_LARGE, "Coverage capacity reached."
-                )
+                raise AppError(ErrorCode.PAYLOAD_TOO_LARGE, "Coverage capacity reached.")
             self.state.coverage.update(pending)
         return BatchReceipt(accepted=len(pending), duplicates=duplicates)
 

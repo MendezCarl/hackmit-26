@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from app.contracts.learning import RecoveryDraft
 from app.contracts.models import ContextWindow
 from app.core.errors import AppError

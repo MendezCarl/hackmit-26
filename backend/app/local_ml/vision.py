@@ -65,9 +65,7 @@ class ModelManifest(StrictPayload):
     is_approved: bool = False
     input_size: int = Field(ge=32, le=320)
     person_class_id: int = Field(ge=0, le=1000, default=0)
-    output_format: Literal["xyxy_score_class_normalized"] = (
-        "xyxy_score_class_normalized"
-    )
+    output_format: Literal["xyxy_score_class_normalized"] = "xyxy_score_class_normalized"
 
 
 class OnnxPersonDetector:
@@ -103,9 +101,7 @@ class OnnxPersonDetector:
 
     def detect(self, frame: Frame) -> list[Detection]:
         """Run CPU inference and validate local boxes; erase all intermediate tensors."""
-        resized = cv2.resize(
-            frame, (self.manifest.input_size, self.manifest.input_size)
-        )
+        resized = cv2.resize(frame, (self.manifest.input_size, self.manifest.input_size))
         tensor = (
             np.ascontiguousarray(
                 resized[:, :, ::-1].transpose(2, 0, 1)[None], dtype=np.float32
@@ -222,8 +218,7 @@ class VisionWorker:
                 return []
             if (
                 self.previous_ms is not None
-                and lecture_time_ms - self.previous_ms
-                > self.policy.maximum_sample_gap_ms
+                and lecture_time_ms - self.previous_ms > self.policy.maximum_sample_gap_ms
             ):
                 self.active.clear()
             self.previous_ms = lecture_time_ms
@@ -295,9 +290,7 @@ class VisionWorker:
                 )
 
 
-def benchmark_detector(
-    detector: LocalDetector, samples: int = 10
-) -> dict[str, int | str]:
+def benchmark_detector(detector: LocalDetector, samples: int = 10) -> dict[str, int | str]:
     """Benchmark synthetic frames on this device; no cross-platform performance claim."""
     if not 3 <= samples <= 100:
         raise ValueError("Use 3 to 100 benchmark samples")

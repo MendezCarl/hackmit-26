@@ -150,9 +150,7 @@ class OpenAIRecoveryGenerator:
             ) from exc
         return OpenAI(api_key=self._api_key)
 
-    def _build_user_prompt(
-        self, session: LectureSession, window: ContextWindow
-    ) -> str:
+    def _build_user_prompt(self, session: LectureSession, window: ContextWindow) -> str:
         """Build the bounded prompt from the selected transcript chunks.
 
         Args:
@@ -319,9 +317,7 @@ class OpenAIRecoveryGenerator:
             ) from exc
         self._validate_grounded_payload(payload, window)
 
-        chunk_sources = {
-            chunk.chunk_id: chunk.source.value for chunk in window.chunks
-        }
+        chunk_sources = {chunk.chunk_id: chunk.source.value for chunk in window.chunks}
         latency_ms = int((time.perf_counter() - started) * 1000)
         input_tokens, output_tokens = self._extract_token_counts(response)
         metadata = ModelMetadata(

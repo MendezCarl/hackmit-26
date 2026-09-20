@@ -77,8 +77,7 @@ def _validate_interval(start_ms: int, end_ms: int) -> None:
 
     if start_ms < 0 or end_ms <= 0 or start_ms >= end_ms:
         raise ValueError(
-            "Intervals are half-open [start_ms, end_ms) and require "
-            "0 <= start_ms < end_ms."
+            "Intervals are half-open [start_ms, end_ms) and require 0 <= start_ms < end_ms."
         )
 
 
@@ -258,9 +257,7 @@ class ContextWindow(_StrictModel):
         description="Transcript revision used; invalidates cached cards on change.",
     )
     chunk_ids: list[str] = Field(description="Selected transcript chunk identifiers.")
-    chunks: list[TranscriptChunk] = Field(
-        description="Selected final transcript chunks."
-    )
+    chunks: list[TranscriptChunk] = Field(description="Selected final transcript chunks.")
     derived_visual_context: list[DerivedVisualContext] = Field(
         default_factory=list, description="Permitted derived slide text, if any."
     )
@@ -350,9 +347,7 @@ class JobFailure(BaseModel):
     """A typed, recoverable failure attached to a failed job."""
 
     reason: JobFailureReason = Field(description="Stable typed failure reason.")
-    message: str = Field(
-        description="Human-readable, compassionate failure explanation."
-    )
+    message: str = Field(description="Human-readable, compassionate failure explanation.")
 
 
 class RecoveryJob(BaseModel):
@@ -363,9 +358,7 @@ class RecoveryJob(BaseModel):
     status: JobStatus = Field(description="Current job status.")
     requested_start_ms: int = Field(ge=0, description="Requested interval start in ms.")
     requested_end_ms: int = Field(gt=0, description="Requested interval end in ms.")
-    card_id: str | None = Field(
-        default=None, description="Card reference when completed."
-    )
+    card_id: str | None = Field(default=None, description="Card reference when completed.")
     failure: JobFailure | None = Field(
         default=None, description="Typed failure when failed."
     )
@@ -464,9 +457,7 @@ class EventEnvelope(BaseModel):
     )
     session_id: str = Field(description="Session the event belongs to.")
     occurred_at: str = Field(description="UTC ISO 8601 occurrence time ending in Z.")
-    sequence_number: int = Field(
-        ge=0, description="Per-session monotonic sequence number."
-    )
+    sequence_number: int = Field(ge=0, description="Per-session monotonic sequence number.")
     payload: dict[str, Any] = Field(description="Typed event payload.")
 
 
@@ -484,6 +475,8 @@ class ErrorResponse(_StrictModel):
     """Repository-standard error envelope used by every endpoint."""
 
     error: ErrorBody = Field(description="The typed error body.")
+
+
 EMAIL_ADDRESS_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 REGISTERED_ROLES: tuple[str, ...] = ("student", "professor")
 
@@ -492,13 +485,9 @@ class RegisterUserRequest(_StrictModel):
     """New-account registration; roles are chosen here, never in bodies later."""
 
     email: str = Field(min_length=3, max_length=254, description="Account email.")
-    password: str = Field(
-        min_length=8, max_length=128, description="Account password."
-    )
+    password: str = Field(min_length=8, max_length=128, description="Account password.")
     display_name: str = Field(min_length=1, max_length=128)
-    role: Literal["student", "professor"] = Field(
-        description="Requested account role."
-    )
+    role: Literal["student", "professor"] = Field(description="Requested account role.")
 
     @field_validator("email")
     @classmethod

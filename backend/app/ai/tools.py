@@ -192,9 +192,7 @@ class ToolModel(Protocol):
 class ToolRunner:
     """Bound rounds, cumulative output and duplicate calls across one model request."""
 
-    def __init__(
-        self, maximum_rounds: int = 3, maximum_characters: int = 32_000
-    ) -> None:
+    def __init__(self, maximum_rounds: int = 3, maximum_characters: int = 32_000) -> None:
         """Configure positive execution limits; invalid limits raise ValueError."""
         if not 1 <= maximum_rounds <= 5 or not 1 <= maximum_characters <= 64_000:
             raise ValueError("Invalid tool execution limits")
@@ -220,11 +218,7 @@ class ToolRunner:
                         "Provider final output is not JSON.",
                     ) from None
                 return turn.final_json
-            if (
-                turn.final_json is not None
-                or not turn.calls
-                or _ == self.maximum_rounds
-            ):
+            if turn.final_json is not None or not turn.calls or _ == self.maximum_rounds:
                 break
             results = []
             for call in turn.calls:

@@ -36,13 +36,7 @@ class LearningState:
             self.recommendation_runs = {
                 k: v for k, v in self.recommendation_runs.items() if k[0] != session_id
             }
-            self.coverage = {
-                k: v for k, v in self.coverage.items() if k[0] != session_id
-            }
-            self.delivery = {
-                k: v for k, v in self.delivery.items() if k[0] != session_id
-            }
-            self.external_consent = {
-                k for k in self.external_consent if k[0] != session_id
-            }
+            self.coverage = {k: v for k, v in self.coverage.items() if k[0] != session_id}
+            self.delivery = {k: v for k, v in self.delivery.items() if k[0] != session_id}
+            self.external_consent = {k for k in self.external_consent if k[0] != session_id}
             self.reviews = {k: v for k, v in self.reviews.items() if k[0] != session_id}

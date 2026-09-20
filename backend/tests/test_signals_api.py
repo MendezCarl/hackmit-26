@@ -6,10 +6,11 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="test")
 LECTURE_ID = "lecture-1"
@@ -19,9 +20,7 @@ COURSE_ID = "course-1"
 def token_for(user_id: str) -> str:
     """Mint a synthetic student token."""
 
-    return issue_access_token(
-        SETTINGS, AuthenticatedActor(user_id=user_id, role="student")
-    )
+    return issue_access_token(SETTINGS, AuthenticatedActor(user_id=user_id, role="student"))
 
 
 def auth_headers(token: str) -> dict[str, str]:
@@ -154,9 +153,7 @@ def test_raw_media_fields_are_rejected() -> None:
     raw_media_event = sample_event(session_id)
     raw_media_event["audio_frames"] = ["base64-audio"]
     raw_media_event["webcam_frame"] = "base64-frame"
-    response = ingest_events(
-        client, session_id, token_for("owner-1"), [raw_media_event]
-    )
+    response = ingest_events(client, session_id, token_for("owner-1"), [raw_media_event])
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_failed"
 

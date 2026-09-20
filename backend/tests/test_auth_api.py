@@ -8,10 +8,11 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 import jwt as pyjwt
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="test")
 
@@ -66,9 +67,7 @@ def test_invalid_token_is_unauthorized() -> None:
     """A tampered token must receive the standard 401."""
 
     client = build_test_client()
-    response = client.get(
-        "/api/v1/sessions/session_x", headers=auth_headers("not-a-jwt")
-    )
+    response = client.get("/api/v1/sessions/session_x", headers=auth_headers("not-a-jwt"))
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "unauthorized"
 

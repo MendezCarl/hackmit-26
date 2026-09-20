@@ -19,9 +19,7 @@ from app.professor.recommendations import (
 )
 
 
-def install_learning_features(
-    app: FastAPI, policy: MetricsPolicy | None = None
-) -> None:
+def install_learning_features(app: FastAPI, policy: MetricsPolicy | None = None) -> None:
     """Install derived-data services using shared host membership and storage.
 
     No network calls occur during composition. Real reporting requires an explicit
@@ -34,9 +32,7 @@ def install_learning_features(
             policy_version="synthetic-demo-v1", minimum_group_size=5, bucket_ms=30_000
         )
     elif policy is None and os.environ.get("LUMINA_METRICS_POLICY_JSON"):
-        policy = MetricsPolicy.model_validate_json(
-            os.environ["LUMINA_METRICS_POLICY_JSON"]
-        )
+        policy = MetricsPolicy.model_validate_json(os.environ["LUMINA_METRICS_POLICY_JSON"])
     metrics = ProfessorMetricsService(
         app.state.store, state, app.state.session_access, settings, policy
     )

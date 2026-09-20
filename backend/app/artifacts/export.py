@@ -123,9 +123,7 @@ def select_folder(
         raise AppError(ErrorCode.PROVIDER_FAILURE, "Artifact export is not configured.")
     service.destination.verify_folder(actor, body.folder_id)
     if len(service.folders) >= 1000:
-        raise AppError(
-            ErrorCode.PAYLOAD_TOO_LARGE, "Folder selection capacity reached."
-        )
+        raise AppError(ErrorCode.PAYLOAD_TOO_LARGE, "Folder selection capacity reached.")
     service.folders[(session_id, actor.user_id)] = body.folder_id
     return body
 

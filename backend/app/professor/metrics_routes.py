@@ -63,9 +63,7 @@ def update_aggregation_consent(
     store = request.app.state.store
     participant = store.participants.get(session_id, {}).get(actor.user_id)
     if participant is None or actor.role != "student":
-        raise AppError(
-            ErrorCode.FORBIDDEN, "Registered student participation is required."
-        )
+        raise AppError(ErrorCode.FORBIDDEN, "Registered student participation is required.")
     state = request.app.state.learning_state
     with state.lock:
         participant.is_opted_in = body.is_allowed

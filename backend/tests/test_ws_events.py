@@ -7,11 +7,12 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 import pytest
+from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 
 SETTINGS = Settings(app_env="test")
 LECTURE_ID = "lecture-1"
@@ -20,9 +21,7 @@ LECTURE_ID = "lecture-1"
 def token_for(user_id: str) -> str:
     """Mint a synthetic student token."""
 
-    return issue_access_token(
-        SETTINGS, AuthenticatedActor(user_id=user_id, role="student")
-    )
+    return issue_access_token(SETTINGS, AuthenticatedActor(user_id=user_id, role="student"))
 
 
 def build_test_client() -> TestClient:
@@ -81,9 +80,7 @@ def test_authorized_connection_receives_welcome_envelope() -> None:
 
     client = build_test_client()
     session_id = create_session(client)
-    with client.websocket_connect(
-        ws_url(session_id, token_for("owner-1"))
-    ) as websocket:
+    with client.websocket_connect(ws_url(session_id, token_for("owner-1"))) as websocket:
         welcome = websocket.receive_json()
         assert welcome["event_type"] == "session.connected"
         assert welcome["session_id"] == session_id
@@ -98,9 +95,7 @@ def test_published_envelopes_reach_only_their_session() -> None:
     session_one = create_session(client, lecture_id="lecture-1")
     session_two = create_session(client, lecture_id="lecture-2")
 
-    with client.websocket_connect(
-        ws_url(session_one, token_for("owner-1"))
-    ) as socket_one:
+    with client.websocket_connect(ws_url(session_one, token_for("owner-1"))) as socket_one:
         socket_one.receive_json()  # welcome
         with client.websocket_connect(
             ws_url(session_two, token_for("owner-1"))

@@ -8,10 +8,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
+from pydantic.json_schema import models_json_schema
+
 from app.timeline.application import create_demo_app
 from app.timeline.composition import installed_features
 from app.timeline.contracts import ErrorResponse, EventEnvelope, Receipt
-from pydantic.json_schema import models_json_schema
 
 
 def build_contracts() -> dict[Path, dict[str, Any]]:

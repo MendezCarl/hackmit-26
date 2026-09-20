@@ -4,6 +4,7 @@ import json
 
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
+
 from scripts.generate_feature_contracts import build_contracts
 
 

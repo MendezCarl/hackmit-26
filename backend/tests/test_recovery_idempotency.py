@@ -19,9 +19,7 @@ LECTURE_ID = "lecture-1"
 def token_for(user_id: str) -> str:
     """Mint a synthetic student token."""
 
-    return issue_access_token(
-        SETTINGS, AuthenticatedActor(user_id=user_id, role="student")
-    )
+    return issue_access_token(SETTINGS, AuthenticatedActor(user_id=user_id, role="student"))
 
 
 def auth_headers(token: str) -> dict[str, str]:

@@ -6,10 +6,11 @@ from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
+from fastapi.testclient import TestClient
+
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import Settings
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 
 def run_demo() -> dict[str, object]:
@@ -27,9 +28,7 @@ def run_demo() -> dict[str, object]:
         def call(method: str, path: str, body=None, user="student-1", role="student"):
             token = issue_access_token(
                 settings,
-                AuthenticatedActor(
-                    user_id=user, role=role, course_id="synthetic-course"
-                ),
+                AuthenticatedActor(user_id=user, role=role, course_id="synthetic-course"),
             )
             response = client.request(
                 method, path, json=body, headers={"Authorization": "Bearer " + token}
@@ -133,15 +132,11 @@ def run_demo() -> dict[str, object]:
         )
         job = call("POST", base + "/recovery-cards", {"start_ms": 0, "end_ms": 30_000})
         card = call("GET", base + "/recovery-cards/" + job["card_id"])
-        reused = call(
-            "POST", base + "/recovery-cards", {"start_ms": 0, "end_ms": 30_000}
-        )
+        reused = call("POST", base + "/recovery-cards", {"start_ms": 0, "end_ms": 30_000})
         tool_run = call(
             "POST", base + "/recovery/tool-runs", {"start_ms": 0, "end_ms": 30_000}
         )
-        call(
-            "PUT", base + "/artifacts/folder", {"folder_id": "synthetic-course-folder"}
-        )
+        call("PUT", base + "/artifacts/folder", {"folder_id": "synthetic-course-folder"})
         receipt = call(
             "POST",
             base + "/artifacts/exports",

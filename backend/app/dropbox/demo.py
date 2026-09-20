@@ -18,9 +18,7 @@ class DemoDropboxGateway:
     async def verify_folder(self, actor_id: str, folder_path: str) -> None:
         """Only /course exists in the synthetic account."""
         if folder_path != "/course":
-            raise FeatureError(
-                "folder_not_found", "Selected folder was not found.", 404
-            )
+            raise FeatureError("folder_not_found", "Selected folder was not found.", 404)
 
     async def list_files(
         self, actor_id: str, folder_path: str, cursor: str | None
@@ -39,9 +37,7 @@ class DemoDropboxGateway:
     async def read_text(self, actor_id: str, file_path: str) -> Material:
         """Return synthetic learning material for the one fixture file."""
         if file_path != "/course/notes.md":
-            raise FeatureError(
-                "file_not_found", "Selected material was not found.", 404
-            )
+            raise FeatureError("file_not_found", "Selected material was not found.", 404)
         return Material(
             file_path=file_path,
             revision="synthetic-1",

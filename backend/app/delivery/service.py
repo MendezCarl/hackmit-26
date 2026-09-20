@@ -46,8 +46,6 @@ class DeliveryService:
                 else:
                     pending[key] = event.model_copy(deep=True)
             if len(self.state.delivery) + len(pending) > self.state.maximum_records:
-                raise AppError(
-                    ErrorCode.PAYLOAD_TOO_LARGE, "Delivery capacity reached."
-                )
+                raise AppError(ErrorCode.PAYLOAD_TOO_LARGE, "Delivery capacity reached.")
             self.state.delivery.update(pending)
         return BatchReceipt(accepted=len(pending), duplicates=duplicates)

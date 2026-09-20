@@ -9,10 +9,11 @@ from urllib.request import Request, urlopen
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from fastapi.testclient import TestClient
+
 from app.config import Settings
 from app.demo.runner import DemoRunResult
 from app.main import create_app
-from fastapi.testclient import TestClient
 
 
 def run_demo(url: str | None = None) -> dict[str, object]:

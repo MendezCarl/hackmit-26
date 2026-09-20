@@ -1,6 +1,7 @@
 """Derived delivery ingestion keeps authority out of request bodies."""
 
 import pytest
+
 from app.contracts.learning import DeliveryBatch
 from app.core.errors import AppError
 from app.delivery.service import DeliveryService

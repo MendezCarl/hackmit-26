@@ -24,7 +24,5 @@ def installed_features(
         if find_spec(path) is not None:
             modules.append(import_module(path))
         elif enabled_features is not None:
-            raise ValueError(
-                "Requested backend feature is not present in this checkout."
-            )
+            raise ValueError("Requested backend feature is not present in this checkout.")
     return modules

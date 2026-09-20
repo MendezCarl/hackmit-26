@@ -24,9 +24,7 @@ class HealthStatus(StrictModel):
     status: str = "ok"
 
 
-demo_router = APIRouter(
-    tags=["demo"], route_class=FeatureRoute, responses=ERROR_RESPONSES
-)
+demo_router = APIRouter(tags=["demo"], route_class=FeatureRoute, responses=ERROR_RESPONSES)
 
 
 @demo_router.post(

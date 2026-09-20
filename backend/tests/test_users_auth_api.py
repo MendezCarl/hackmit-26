@@ -26,9 +26,7 @@ def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def register_account(
-    client: TestClient, email: str, role: str = "student"
-) -> dict:
+def register_account(client: TestClient, email: str, role: str = "student") -> dict:
     """Register one account and return the auth-session payload."""
 
     response = client.post(
@@ -55,9 +53,7 @@ def test_register_returns_profile_and_token() -> None:
     assert body["user"]["role"] == "student"
     assert "password" not in str(body).lower() or "password_hash" not in str(body)
 
-    profile = client.get(
-        "/api/v1/users/me", headers=auth_headers(body["access_token"])
-    )
+    profile = client.get("/api/v1/users/me", headers=auth_headers(body["access_token"]))
     assert profile.status_code == 200
     assert profile.json()["user_id"] == body["user"]["user_id"]
 
@@ -156,9 +152,7 @@ def test_consent_defaults_off_and_updates() -> None:
     client = build_test_client()
     token = register_account(client, "student@example.com")["access_token"]
 
-    initial = client.get(
-        "/api/v1/users/me/consent", headers=auth_headers(token)
-    )
+    initial = client.get("/api/v1/users/me/consent", headers=auth_headers(token))
     assert initial.status_code == 200
     assert initial.json()["analytics_opt_in"] is False
 

@@ -59,16 +59,12 @@ class RecommendationService:
         """Inject report generation, feedback storage and the replaceable AI boundary."""
         self.metrics, self.state, self.generator = metrics, state, generator
 
-    def generate(
-        self, actor: AuthenticatedActor, session_id: str
-    ) -> RecommendationReport:
+    def generate(self, actor: AuthenticatedActor, session_id: str) -> RecommendationReport:
         """Serialize consent/report snapshot and provider submission against revocation."""
         with self.state.lock:
             return self._generate(actor, session_id)
 
-    def _generate(
-        self, actor: AuthenticatedActor, session_id: str
-    ) -> RecommendationReport:
+    def _generate(self, actor: AuthenticatedActor, session_id: str) -> RecommendationReport:
         """Generate from safe aggregates; deny live processing without separate consent."""
         report = self.metrics.report(actor, session_id)
         revision = hashlib.sha256(report.model_dump_json().encode()).hexdigest()
@@ -148,9 +144,7 @@ class RecommendationService:
             )
         with self.state.lock:
             if len(self.state.reviews) >= self.state.maximum_records:
-                raise AppError(
-                    ErrorCode.PAYLOAD_TOO_LARGE, "Feedback capacity reached."
-                )
+                raise AppError(ErrorCode.PAYLOAD_TOO_LARGE, "Feedback capacity reached.")
             self.state.reviews[
                 (session_id, actor.user_id, revision, review.recommendation_index)
             ] = review

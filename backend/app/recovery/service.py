@@ -8,6 +8,7 @@ generation call; it is never counted as provider savings.
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import uuid4
 
 from app.auth.access import (
@@ -41,8 +42,8 @@ from app.ws.publisher import EventPublisher
 RECOVERY_JOB_STARTED = "recovery_job.started"
 RECOVERY_CARD_COMPLETED = "recovery_card.completed"
 RECOVERY_CARD_FAILED = "recovery_card.failed"
-CACHE_MISS = "miss"
-CACHE_HIT = "hit"
+CACHE_MISS: Literal["miss"] = "miss"
+CACHE_HIT: Literal["hit"] = "hit"
 FULL_CONTEXT_BASELINE = "full_context_generation_avoided_estimate"
 
 GENERATOR_ERROR_REASONS: dict[str, JobFailureReason] = {
@@ -132,10 +133,14 @@ class RecoveryService:
                 signal handled by the caller for job failure recording.
         """
 
-        padding = min(self._settings.context_padding_ms, self._settings.max_context_padding_ms)
+        padding = min(
+            self._settings.context_padding_ms, self._settings.max_context_padding_ms
+        )
         effective_start_ms = max(0, start_ms - padding)
         effective_end_ms = end_ms + padding
-        read = self._timeline_reader.read_window(session_id, effective_start_ms, effective_end_ms)
+        read = self._timeline_reader.read_window(
+            session_id, effective_start_ms, effective_end_ms
+        )
         return ContextWindow(
             session_id=session_id,
             requested_start_ms=start_ms,
@@ -195,9 +200,7 @@ class RecoveryService:
         scoped_idempotency_key: str | None = None
         if idempotency_key:
             scoped_idempotency_key = f"{actor.user_id}|{session_id}|{idempotency_key}"
-            existing_job_id = self._store.recovery_idempotency.get(
-                scoped_idempotency_key
-            )
+            existing_job_id = self._store.recovery_idempotency.get(scoped_idempotency_key)
             if existing_job_id is not None:
                 existing_job = self._store.recovery_jobs.get(existing_job_id)
                 if existing_job is not None:
@@ -310,7 +313,9 @@ class RecoveryService:
                 self._store.sessions[job.session_id], window
             )
         except AppError as exc:
-            reason = GENERATOR_ERROR_REASONS.get(exc.code.value, JobFailureReason.PROVIDER_REFUSED)
+            reason = GENERATOR_ERROR_REASONS.get(
+                exc.code.value, JobFailureReason.PROVIDER_REFUSED
+            )
             return self._fail_job(job, reason, exc.message)
         except ValueError:
             return self._fail_job(
@@ -504,9 +509,7 @@ class RecoveryService:
                 details={"card_id": card_id},
             )
         is_card_owner = record.owner_user_id == actor.user_id
-        is_session_owner = (
-            membership.session_role == SESSION_ROLE_OWNER
-        )
+        is_session_owner = membership.session_role == SESSION_ROLE_OWNER
         if not (is_card_owner or is_session_owner):
             raise AppError(
                 ErrorCode.FORBIDDEN,

@@ -97,7 +97,5 @@ class SignalRules(StrictModel):
     minimum_confidence: Annotated[float, Field(ge=0, le=1)] = 0.5
     merge_gap_ms: Annotated[int, Field(strict=True, ge=0)] = 1000
     phone_looking_down_duration_ms: Annotated[int, Field(strict=True, gt=0)] = 20_000
-    phone_unfocused_absent_duration_ms: Annotated[int, Field(strict=True, gt=0)] = (
-        15_000
-    )
+    phone_unfocused_absent_duration_ms: Annotated[int, Field(strict=True, gt=0)] = 15_000
     phone_candidate_confidence_cap: Annotated[float, Field(ge=0, le=1)] = 0.5
