@@ -161,9 +161,7 @@ class DemoRunner:
             student, session_id, recovery_request
         )
 
-        professor_summary = self._professor_service.build_summary(
-            professor, session_id
-        )
+        professor_summary = self._professor_service.build_summary(professor, session_id)
 
         # Demonstrate suppression with a second, too-small synthetic session.
         small_session = self._session_service.create_session(
@@ -175,9 +173,7 @@ class DemoRunner:
                 mode=SessionMode.IN_PERSON,
             ),
         )
-        small_student = AuthenticatedActor(
-            user_id="demo-student-1", role="student"
-        )
+        small_student = AuthenticatedActor(user_id="demo-student-1", role="student")
         self._signal_service.register_participant(
             small_student, small_session.session_id
         )

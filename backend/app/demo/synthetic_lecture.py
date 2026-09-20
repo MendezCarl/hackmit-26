@@ -34,27 +34,35 @@ def build_synthetic_transcript_chunks(session_id: str) -> list[TranscriptChunk]:
         (
             900_000,
             930_000,
-            "Before we continue, recall that attention lets a model weigh how "
-            "much each input token should influence every output token.",
+            (
+                "Before we continue, recall that attention lets a model weigh how "
+                "much each input token should influence every output token."
+            ),
         ),
         (
             930_000,
             960_000,
-            "We compute attention scores by taking a query vector and "
-            "measuring its similarity against every key vector. "
-            "A softmax then turns those scores into weights that sum to one.",
+            (
+                "We compute attention scores by taking a query vector and "
+                "measuring its similarity against every key vector. "
+                "A softmax then turns those scores into weights that sum to one."
+            ),
         ),
         (
             960_000,
             990_000,
-            "Multi-head attention runs several of these scoring passes in "
-            "parallel so the model can track different relationships at once.",
+            (
+                "Multi-head attention runs several of these scoring passes in "
+                "parallel so the model can track different relationships at once."
+            ),
         ),
         (
             990_000,
             1_020_000,
-            "Finally, the weighted values are concatenated and projected back "
-            "into the original embedding size before the next layer begins.",
+            (
+                "Finally, the weighted values are concatenated and projected back "
+                "into the original embedding size before the next layer begins."
+            ),
         ),
     ]
     return [
@@ -73,9 +81,7 @@ def build_synthetic_transcript_chunks(session_id: str) -> list[TranscriptChunk]:
     ]
 
 
-def build_synthetic_missed_event(
-    session_id: str, event_id: str
-) -> SignalEvent:
+def build_synthetic_missed_event(session_id: str, event_id: str) -> SignalEvent:
     """Build one synthetic possible-missed-window event.
 
     Args:

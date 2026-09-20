@@ -10,7 +10,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.contracts.models import CostMetrics, LectureSession, RecoveryCard, RecoveryJob, SignalEvent, TranscriptChunk
+from app.contracts.models import (
+    CostMetrics,
+    LectureSession,
+    RecoveryCard,
+    RecoveryJob,
+    SignalEvent,
+    TranscriptChunk,
+)
 
 
 @dataclass

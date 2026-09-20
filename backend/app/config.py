@@ -75,6 +75,9 @@ class Settings(BaseModel):
         ),
         ge=0,
     )
+    phone_support_confidence: float = Field(default=0.5, ge=0, le=1)
+    phone_looking_down_ms: int = Field(default=20_000, ge=1)
+    phone_unfocused_absent_ms: int = Field(default=15_000, ge=1)
     max_batch_events: int = Field(
         default=50, description="Maximum signal events accepted per batch.", ge=1
     )
@@ -114,7 +117,10 @@ def _settings_from_environment() -> Settings:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")
     if settings.provider_mode not in KNOWN_PROVIDER_MODES:
         raise ValueError(f"Unknown PROVIDER_MODE: {settings.provider_mode}")
-    if settings.app_env == PRODUCTION_ENV and settings.app_secret == DEFAULT_DEMO_SECRET:
+    if (
+        settings.app_env == PRODUCTION_ENV
+        and settings.app_secret == DEFAULT_DEMO_SECRET
+    ):
         raise ValueError("Production requires a real APP_SECRET.")
     return settings
 

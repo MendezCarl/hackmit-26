@@ -8,6 +8,7 @@ generation call; it is never counted as provider savings.
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import uuid4
 
 from app.auth.access import (
@@ -39,8 +40,8 @@ from app.ws.publisher import EventPublisher
 RECOVERY_JOB_STARTED = "recovery_job.started"
 RECOVERY_CARD_COMPLETED = "recovery_card.completed"
 RECOVERY_CARD_FAILED = "recovery_card.failed"
-CACHE_MISS = "miss"
-CACHE_HIT = "hit"
+CACHE_MISS: Literal["miss"] = "miss"
+CACHE_HIT: Literal["hit"] = "hit"
 FULL_CONTEXT_BASELINE = "full_context_generation_avoided_estimate"
 
 GENERATOR_ERROR_REASONS: dict[str, JobFailureReason] = {
@@ -108,10 +109,14 @@ class RecoveryService:
                 signal handled by the caller for job failure recording.
         """
 
-        padding = min(self._settings.context_padding_ms, self._settings.max_context_padding_ms)
+        padding = min(
+            self._settings.context_padding_ms, self._settings.max_context_padding_ms
+        )
         effective_start_ms = max(0, start_ms - padding)
         effective_end_ms = end_ms + padding
-        read = self._timeline_reader.read_window(session_id, effective_start_ms, effective_end_ms)
+        read = self._timeline_reader.read_window(
+            session_id, effective_start_ms, effective_end_ms
+        )
         return ContextWindow(
             session_id=session_id,
             requested_start_ms=start_ms,
@@ -267,11 +272,15 @@ class RecoveryService:
                 self._store.sessions[job.session_id], window
             )
         except AppError as exc:
-            reason = GENERATOR_ERROR_REASONS.get(exc.code.value, JobFailureReason.PROVIDER_REFUSED)
+            reason = GENERATOR_ERROR_REASONS.get(
+                exc.code.value, JobFailureReason.PROVIDER_REFUSED
+            )
             return self._fail_job(job, reason, exc.message)
-        except ValueError as exc:
+        except ValueError:
             return self._fail_job(
-                job, JobFailureReason.PROVIDER_MALFORMED_OUTPUT, str(exc)
+                job,
+                JobFailureReason.PROVIDER_MALFORMED_OUTPUT,
+                "The provider returned an invalid recovery card.",
             )
 
         card_id = f"card_{uuid4().hex}"
@@ -350,22 +359,33 @@ class RecoveryService:
             if metadata is not None
             else {"characters": 0}
         )
+        if metadata is not None and hasattr(metadata, "input_tokens"):
+            input_usage["tokens"] = metadata.input_tokens
+            output_usage["tokens"] = getattr(metadata, "output_tokens", 0)
         self._cost_ledger.record(
             CostMetrics(
                 job_id=job.job_id,
                 session_id=job.session_id,
-                provider_mode=self._settings.provider_mode,
+                provider_mode=getattr(
+                    metadata,
+                    "provider_mode",
+                    "mock" if self._generator.provider == "mock" else "live",
+                ),
                 model=self._generator.model,
                 input_usage=input_usage,
                 output_usage=output_usage,
                 cache_status=CACHE_HIT if cache_hit else CACHE_MISS,
                 latency_ms=(
-                    getattr(metadata, "latency_ms", 0)
-                    if metadata is not None
-                    else 0
+                    getattr(metadata, "latency_ms", 0) if metadata is not None else 0
                 ),
-                baseline_method=FULL_CONTEXT_BASELINE,
-                data_label="synthetic",
+                baseline_method="cache_hit_no_generation"
+                if cache_hit
+                else "no_comparative_baseline_measured",
+                data_label=getattr(
+                    metadata,
+                    "data_label",
+                    "synthetic" if self._generator.provider == "mock" else "measured",
+                ),
             )
         )
 
@@ -422,9 +442,7 @@ class RecoveryService:
                 details={"card_id": card_id},
             )
         is_card_owner = record.owner_user_id == actor.user_id
-        is_session_owner = (
-            membership.session_role == SESSION_ROLE_OWNER
-        )
+        is_session_owner = membership.session_role == SESSION_ROLE_OWNER
         if not (is_card_owner or is_session_owner):
             raise AppError(
                 ErrorCode.FORBIDDEN,

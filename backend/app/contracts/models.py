@@ -126,8 +126,7 @@ class SignalEvent(BaseModel):
         min_length=1,
         max_length=64,
         description=(
-            "possible_missed_window | face_absent | head_away | "
-            "window_unfocused | ..."
+            "possible_missed_window | face_absent | head_away | window_unfocused | ..."
         ),
     )
     start_ms: int = Field(ge=0, description="Half-open interval start in ms.")
@@ -139,7 +138,8 @@ class SignalEvent(BaseModel):
         description="Finite client confidence between 0 and 1, never an attention score."
     )
     user_confirmed: bool | None = Field(
-        default=None, description="Student correction: confirmed or denied missed content."
+        default=None,
+        description="Student correction: confirmed or denied missed content.",
     )
     client_generated_at: str | None = Field(
         default=None, description="UTC ISO 8601 time the client generated the event."
@@ -155,7 +155,7 @@ class SignalEvent(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "SignalEvent":
+    def validate_interval_bounds(self) -> SignalEvent:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -203,11 +203,13 @@ class TranscriptChunk(BaseModel):
         default=True, description="False for provisional chunks awaiting correction."
     )
     revision: int = Field(
-        default=1, ge=1, description="Version used to invalidate cached cards on correction."
+        default=1,
+        ge=1,
+        description="Version used to invalidate cached cards on correction.",
     )
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "TranscriptChunk":
+    def validate_interval_bounds(self) -> TranscriptChunk:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -251,10 +253,13 @@ class ContextWindow(_StrictModel):
     effective_start_ms: int = Field(ge=0, description="Clamped interval start in ms.")
     effective_end_ms: int = Field(gt=0, description="Clamped interval end in ms.")
     transcript_revision: int = Field(
-        ge=0, description="Transcript revision used; invalidates cached cards on change."
+        ge=0,
+        description="Transcript revision used; invalidates cached cards on change.",
     )
     chunk_ids: list[str] = Field(description="Selected transcript chunk identifiers.")
-    chunks: list[TranscriptChunk] = Field(description="Selected final transcript chunks.")
+    chunks: list[TranscriptChunk] = Field(
+        description="Selected final transcript chunks."
+    )
     derived_visual_context: list[DerivedVisualContext] = Field(
         default_factory=list, description="Permitted derived slide text, if any."
     )
@@ -293,7 +298,9 @@ class RecoveryCard(BaseModel):
 
     card_id: str = Field(description="Unique recovery-card identifier.")
     session_id: str = Field(description="Session the card was generated for.")
-    source_event_ids: list[str] = Field(description="Signal events that motivated this card.")
+    source_event_ids: list[str] = Field(
+        description="Signal events that motivated this card."
+    )
     topic: str = Field(description="Short topic label for what was missed.")
     what_you_missed: str = Field(
         description="Compassionate explanation of the missed content."
@@ -321,7 +328,7 @@ class CreateRecoveryJobRequest(_StrictModel):
     )
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "CreateRecoveryJobRequest":
+    def validate_interval_bounds(self) -> CreateRecoveryJobRequest:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -332,7 +339,9 @@ class JobFailure(BaseModel):
     """A typed, recoverable failure attached to a failed job."""
 
     reason: JobFailureReason = Field(description="Stable typed failure reason.")
-    message: str = Field(description="Human-readable, compassionate failure explanation.")
+    message: str = Field(
+        description="Human-readable, compassionate failure explanation."
+    )
 
 
 class RecoveryJob(BaseModel):
@@ -343,7 +352,9 @@ class RecoveryJob(BaseModel):
     status: JobStatus = Field(description="Current job status.")
     requested_start_ms: int = Field(ge=0, description="Requested interval start in ms.")
     requested_end_ms: int = Field(gt=0, description="Requested interval end in ms.")
-    card_id: str | None = Field(default=None, description="Card reference when completed.")
+    card_id: str | None = Field(
+        default=None, description="Card reference when completed."
+    )
     failure: JobFailure | None = Field(
         default=None, description="Typed failure when failed."
     )
@@ -364,7 +375,7 @@ class CostMetrics(BaseModel):
     provider_mode: str = Field(description="Mock or live provider mode.")
     model: str = Field(description="Model identifier used.")
     input_usage: dict[str, int] = Field(
-        description="Measured input usage, e.g. ``{\"characters\": 1200}``."
+        description='Measured input usage, e.g. ``{"characters": 1200}``.'
     )
     output_usage: dict[str, int] = Field(description="Measured output usage.")
     cache_status: str = Field(description="``miss`` or ``hit`` for this generation.")
@@ -437,7 +448,9 @@ class EventEnvelope(BaseModel):
     event_type: str = Field(
         description="Dotted past-tense event type, e.g. ``recovery_card.completed``."
     )
-    schema_version: str = Field(default=SCHEMA_VERSION, description="Payload schema version.")
+    schema_version: str = Field(
+        default=SCHEMA_VERSION, description="Payload schema version."
+    )
     session_id: str = Field(description="Session the event belongs to.")
     occurred_at: str = Field(description="UTC ISO 8601 occurrence time ending in Z.")
     sequence_number: int = Field(
@@ -460,4 +473,3 @@ class ErrorResponse(_StrictModel):
     """Repository-standard error envelope used by every endpoint."""
 
     error: ErrorBody = Field(description="The typed error body.")
-

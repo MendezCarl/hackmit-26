@@ -93,3 +93,16 @@ If documentation and implementation disagree, resolve the conflict in this order
 6. Markdown explanation or example
 
 The team should fix all mismatches in the same pull request.
+
+## New learning plans and implementation
+
+- [Professor metrics plan](professor_metrics_dashboard.md)
+- [AI provider/tool-calling plan](ai_provider_tool_calling_plan.md)
+- [Local object detection plan](architecture/local_object_detection.md)
+- [Implementation report](implementation/new_plan_execution.md): current host baseline, verified behavior and remaining gates.
+- [Contract decisions](decisions/adr_0002_learning_plan_contracts.md): differences resolved against the existing API.
+- [New API handoff](api/learning_plan_contracts.md)
+- [Backend runbook](../backend/NEW_PLAN_FEATURES.md)
+
+The plan documents remain proposals. The implementation report distinguishes code
+from mocked verification, policy approval and live-provider/model evaluation.

@@ -6,10 +6,9 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.config import Settings
+from app.main import create_app
+from fastapi.testclient import TestClient
 
 SETTINGS = Settings(app_env="demo")
 

@@ -25,6 +25,12 @@ def get_transcript_service(request: Request) -> TranscriptService:
 
 
 @router.post(
+    "/transcript-chunks/batch",
+    response_model=TranscriptBatchResponse,
+    status_code=202,
+    summary="Ingest transcript chunks using the unified contract path",
+)
+@router.post(
     "/transcript/batch",
     response_model=TranscriptBatchResponse,
     status_code=status.HTTP_202_ACCEPTED,
@@ -50,7 +56,9 @@ def read_transcript_window(
     session_id: str,
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     service: Annotated[TranscriptService, Depends(get_transcript_service)],
-    start_ms: Annotated[int, Query(ge=0, description="Half-open interval start in ms.")],
+    start_ms: Annotated[
+        int, Query(ge=0, description="Half-open interval start in ms.")
+    ],
     end_ms: Annotated[int, Query(gt=0, description="Half-open interval end in ms.")],
 ) -> TranscriptWindowResponse:
     """Read final transcript chunks overlapping ``[start_ms, end_ms)``."""

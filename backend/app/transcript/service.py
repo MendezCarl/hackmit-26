@@ -22,7 +22,9 @@ class TranscriptBatchResponse(BaseModel):
     """Response summarizing one accepted transcript batch."""
 
     session_id: str = Field(description="Session the batch was ingested into.")
-    accepted_chunk_ids: list[str] = Field(description="Newly accepted chunk identifiers.")
+    accepted_chunk_ids: list[str] = Field(
+        description="Newly accepted chunk identifiers."
+    )
     superseded_chunk_ids: list[str] = Field(
         description="Chunk ids corrected by a higher revision in this batch."
     )

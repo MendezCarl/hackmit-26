@@ -44,5 +44,10 @@ jobs:
       - name: Run backend tests
         run: backend/venv/bin/python -m pytest backend/tests
 
-      - name: Verify additive shared contracts
-        run: backend/venv/bin/python backend/scripts/generate_learning_contracts.py --check
+      - name: Verify learning contracts and quality
+        run: |
+          backend/venv/bin/python backend/scripts/generate_learning_contracts.py --check
+          backend/venv/bin/python -m ruff check backend/app backend/tests backend/scripts
+          backend/venv/bin/python -m ruff format --check backend/app backend/tests backend/scripts
+          backend/venv/bin/python -m mypy --follow-imports=silent --ignore-missing-imports backend/app
+          backend/venv/bin/python backend/scripts/demo_new_plan.py

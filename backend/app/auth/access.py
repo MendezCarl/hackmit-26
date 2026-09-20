@@ -15,9 +15,9 @@ from app.auth.tokens import ROLE_PROFESSOR, AuthenticatedActor
 from app.core.errors import AppError, ErrorCode
 from app.storage.in_memory import InMemoryStore
 
-SESSION_ROLE_OWNER = "owner"
-SESSION_ROLE_PARTICIPANT = "participant"
-SESSION_ROLE_COURSE_PROFESSOR = "course_professor"
+SESSION_ROLE_OWNER: Literal["owner"] = "owner"
+SESSION_ROLE_PARTICIPANT: Literal["participant"] = "participant"
+SESSION_ROLE_COURSE_PROFESSOR: Literal["course_professor"] = "course_professor"
 SessionRole = Literal["owner", "participant", "course_professor"]
 
 

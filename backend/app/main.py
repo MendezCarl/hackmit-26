@@ -8,15 +8,17 @@ from pydantic import BaseModel, Field
 
 from app.auth.access import StoreSessionAccess
 from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
+from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
 from app.demo.runner import DemoRunner
+from app.learning.composition import install_learning_features
 from app.professor.routes import router as professor_router
 from app.professor.service import ProfessorService
 from app.recovery.generator import DeterministicRecoveryGenerator, RecoveryGenerator
 from app.recovery.routes import router as recovery_router
-from app.recovery.service import RecoveryService
+from app.recovery.validated import PrivateRecoveryService, ValidatedGenerator
 from app.sessions.routes import router as session_router
 from app.sessions.service import SessionService
 from app.signals.routes import router as signal_router
@@ -72,9 +74,18 @@ def create_app(
 
     if settings is None:
         settings = get_settings()
-    if settings.provider_mode == LIVE_PROVIDER_MODE:
-        raise RuntimeError(
-            "PROVIDER_MODE=live is not implemented yet; use PROVIDER_MODE=mock."
+    if settings.provider_mode == LIVE_PROVIDER_MODE and recovery_generator is None:
+        import os
+
+        from openai import OpenAI
+
+        from app.integrations.openai.recovery import OpenAIRecoveryGenerator
+
+        model = os.environ.get("OPENAI_MODEL", "")
+        if not os.environ.get("OPENAI_API_KEY") or not model:
+            raise RuntimeError("Live mode requires OPENAI_API_KEY and OPENAI_MODEL.")
+        recovery_generator = OpenAIRecoveryGenerator(
+            OpenAI(timeout=20.0, max_retries=1), model
         )
 
     app = FastAPI(
@@ -101,13 +112,16 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(DerivedJsonLimit)
     install_error_handlers(app)
 
     store = InMemoryStore()
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()
-    generator = recovery_generator or DeterministicRecoveryGenerator()
+    generator = ValidatedGenerator(
+        recovery_generator or DeterministicRecoveryGenerator()
+    )
 
     session_service = SessionService(store, settings, session_access)
     signal_service = SignalService(store, settings, session_access, event_publisher)
@@ -115,7 +129,7 @@ def create_app(
     transcript_service = TranscriptService(
         store, settings, session_access, timeline_reader, event_publisher
     )
-    recovery_service = RecoveryService(
+    recovery_service = PrivateRecoveryService(
         store,
         settings,
         session_access,
@@ -148,6 +162,8 @@ def create_app(
     app.state.recovery_service = recovery_service
     app.state.professor_service = professor_service
     app.state.demo_runner = demo_runner
+
+    install_learning_features(app)
 
     app.include_router(session_router)
     app.include_router(signal_router)
