@@ -105,3 +105,17 @@ def test_unknown_provider_mode_is_rejected(monkeypatch) -> None:
         assert "PROVIDER_MODE" in str(exc)
     else:
         raise AssertionError("Unknown PROVIDER_MODE must be rejected.")
+
+
+def test_environment_threshold_overrides_are_loaded(monkeypatch) -> None:
+    """Documented numeric environment variables must affect runtime settings."""
+
+    monkeypatch.setenv("JWT_TTL_SECONDS", "7200")
+    monkeypatch.setenv("MINIMUM_GROUP_SIZE", "7")
+    monkeypatch.setenv("PHONE_SUPPORT_CONFIDENCE", "0.7")
+
+    settings = _settings_from_environment()
+
+    assert settings.jwt_ttl_seconds == 7200
+    assert settings.minimum_group_size == 7
+    assert settings.phone_support_confidence == 0.7

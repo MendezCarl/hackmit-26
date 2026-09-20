@@ -235,7 +235,8 @@ const bindStudentActions = (): void => {
           events: [event],
         });
         recordSubmittedEvent(event);
-        window.location.hash = buildRouteHash('student-summary');
+        if (session.mode === 'zoom') renderApplication();
+        else window.location.hash = buildRouteHash('student-summary');
       } catch (error) {
         const message = document.querySelector<HTMLElement>('[data-join-message]');
         if (message) message.textContent = formErrorMessage(error);

@@ -17,6 +17,18 @@ npm install
 npm run dev
 ```
 
+Set `BLOOM_BACKEND_URL` when the backend does not run at
+`http://127.0.0.1:8000`.
+
+Build a local installer with:
+
+```sh
+npm run package
+```
+
+The repository release workflow builds platform installers on version tags and
+attaches them to a draft GitHub Release.
+
 Use `APP_ENV=demo` (or `APP_ENV=test`) locally so educator reports use the
 synthetic aggregation policy. In the default environment, the metrics endpoint
 requires `LUMINA_METRICS_POLICY_JSON` with `is_approved: true`, and the summary
