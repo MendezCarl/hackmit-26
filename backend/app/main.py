@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.auth.access import StoreSessionAccess
 from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
 from app.core.errors import install_error_handlers
+from app.core.logging_redaction import install_logging
 from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
 from app.demo.runner import DemoRunner
@@ -76,6 +77,7 @@ def create_app(
         raise RuntimeError(
             "PROVIDER_MODE=live is not implemented yet; use PROVIDER_MODE=mock."
         )
+    install_logging()
 
     app = FastAPI(
         title="Lecture Recovery Assistant API",

@@ -11,7 +11,26 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0.0",
+  "ruff>=0.8.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 92
+target-version = "py313"
+
+[tool.ruff.lint]
+# UP042 (str+Enum -> StrEnum) is disabled: the frozen contract enums already
+# serialize correctly through Pydantic/OpenAPI and churn risks contract drift.
+select = [
+  "E",  # pycodestyle errors
+  "W",  # pycodestyle warnings
+  "F",  # pyflakes
+  "I",  # import order
+  "UP", # pyupgrade
+  "B",  # bugbear
+  "SIM", # simplify
+]
+ignore = ["UP042"]

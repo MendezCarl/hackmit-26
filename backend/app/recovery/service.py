@@ -108,10 +108,15 @@ class RecoveryService:
                 signal handled by the caller for job failure recording.
         """
 
-        padding = min(self._settings.context_padding_ms, self._settings.max_context_padding_ms)
+        padding = min(
+            self._settings.context_padding_ms,
+            self._settings.max_context_padding_ms,
+        )
         effective_start_ms = max(0, start_ms - padding)
         effective_end_ms = end_ms + padding
-        read = self._timeline_reader.read_window(session_id, effective_start_ms, effective_end_ms)
+        read = self._timeline_reader.read_window(
+            session_id, effective_start_ms, effective_end_ms
+        )
         return ContextWindow(
             session_id=session_id,
             requested_start_ms=start_ms,
@@ -267,7 +272,9 @@ class RecoveryService:
                 self._store.sessions[job.session_id], window
             )
         except AppError as exc:
-            reason = GENERATOR_ERROR_REASONS.get(exc.code.value, JobFailureReason.PROVIDER_REFUSED)
+            reason = GENERATOR_ERROR_REASONS.get(
+                exc.code.value, JobFailureReason.PROVIDER_REFUSED
+            )
             return self._fail_job(job, reason, exc.message)
         except ValueError as exc:
             return self._fail_job(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def utc_now_iso() -> str:
@@ -13,5 +13,5 @@ def utc_now_iso() -> str:
         the repository contract for wall-clock values.
     """
 
-    formatted = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
+    formatted = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")
     return formatted[:-3] + "Z"

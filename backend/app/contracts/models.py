@@ -155,7 +155,7 @@ class SignalEvent(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "SignalEvent":
+    def validate_interval_bounds(self) -> SignalEvent:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -203,11 +203,13 @@ class TranscriptChunk(BaseModel):
         default=True, description="False for provisional chunks awaiting correction."
     )
     revision: int = Field(
-        default=1, ge=1, description="Version used to invalidate cached cards on correction."
+        default=1,
+        ge=1,
+        description="Version used to invalidate cached cards on correction.",
     )
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "TranscriptChunk":
+    def validate_interval_bounds(self) -> TranscriptChunk:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -293,7 +295,9 @@ class RecoveryCard(BaseModel):
 
     card_id: str = Field(description="Unique recovery-card identifier.")
     session_id: str = Field(description="Session the card was generated for.")
-    source_event_ids: list[str] = Field(description="Signal events that motivated this card.")
+    source_event_ids: list[str] = Field(
+        description="Signal events that motivated this card."
+    )
     topic: str = Field(description="Short topic label for what was missed.")
     what_you_missed: str = Field(
         description="Compassionate explanation of the missed content."
@@ -317,11 +321,13 @@ class CreateRecoveryJobRequest(_StrictModel):
     end_ms: int = Field(gt=0, description="Half-open interval end in ms.")
     source_event_ids: list[str] = Field(
         default_factory=list,
-        description="Signal events that motivated this request; validated against the session.",
+        description=(
+            "Signal events that motivated this request; validated against the session."
+        ),
     )
 
     @model_validator(mode="after")
-    def validate_interval_bounds(self) -> "CreateRecoveryJobRequest":
+    def validate_interval_bounds(self) -> CreateRecoveryJobRequest:
         """Require the half-open interval ``0 <= start_ms < end_ms``."""
 
         _validate_interval(self.start_ms, self.end_ms)
@@ -437,7 +443,9 @@ class EventEnvelope(BaseModel):
     event_type: str = Field(
         description="Dotted past-tense event type, e.g. ``recovery_card.completed``."
     )
-    schema_version: str = Field(default=SCHEMA_VERSION, description="Payload schema version.")
+    schema_version: str = Field(
+        default=SCHEMA_VERSION, description="Payload schema version."
+    )
     session_id: str = Field(description="Session the event belongs to.")
     occurred_at: str = Field(description="UTC ISO 8601 occurrence time ending in Z.")
     sequence_number: int = Field(
