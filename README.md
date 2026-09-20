@@ -54,7 +54,6 @@ APP_ENV=demo fastapi dev app/main.py
 
 ```powershell
 Set-Location backend
-py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 $env:APP_ENV = "demo"
 fastapi dev app/main.py
@@ -138,7 +137,9 @@ of bundling or spawning Python itself. Start the backend first, or set
 `BLOOM_BACKEND_URL` to the backend origin before launching the app when it is not
 available at `http://127.0.0.1:8000`.
 
-To build an installer locally from this checkout:
+To build an installer locally from this checkout (`npm run package` targets the
+current OS; use `package:mac`, `package:win` or `package:linux` for an explicit
+target):
 
 **macOS/Linux**
 
@@ -146,8 +147,6 @@ To build an installer locally from this checkout:
 cd frontend
 npm install
 npm run package
-npm run package:mac
-npm run package:linux
 ```
 
 **Windows (PowerShell)**
@@ -156,7 +155,6 @@ npm run package:linux
 Set-Location frontend
 npm install
 npm run package
-npm run package:win
 ```
 
 The generated installer files are written to `frontend/release/`.
@@ -237,7 +235,7 @@ backend/venv/bin/python backend/scripts/demo_feature_seven.py
 ```powershell
 py -3.14 -m venv backend\venv
 .\backend\venv\Scripts\Activate.ps1
-python -m pip install -e ".\backend[dev,ai,vision]"
+python -m pip install -e "./backend[dev,ai,vision]"
 python backend/scripts/demo_feature_seven.py
 ```
 

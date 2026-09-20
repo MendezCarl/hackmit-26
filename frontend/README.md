@@ -36,21 +36,13 @@ Bloom's optional Zoom cue detects desktop process names locally; it does not
 use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is
 only a reminder to open Bloom and remains independent of Zoom's meeting data.
 
-Build a local installer with:
-
-**macOS/Linux**
+Build a local installer for the current OS with `npm run package`, or target a
+platform explicitly:
 
 ```sh
-npm run package
-npm run package:mac
-npm run package:linux
-```
-
-**Windows (PowerShell)**
-
-```powershell
-npm run package
-npm run package:win
+npm run package:mac    # unsigned universal dmg + zip
+npm run package:win    # NSIS installer + zip
+npm run package:linux  # AppImage + deb
 ```
 
 The repository release workflow builds platform installers on version tags and
