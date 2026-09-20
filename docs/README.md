@@ -22,6 +22,8 @@ Every developer or agent should read context in this order:
 ```text
 docs/
 ├── README.md
+├── ai_provider_tool_calling_plan.md
+├── professor_metrics_dashboard.md
 ├── product/
 │   ├── product_overview.md
 │   ├── student_user_story.md
@@ -63,8 +65,8 @@ docs/
 | WebSocket event | Unified API contracts, AsyncAPI file, event schema, contract tests |
 | ML signal rule | Student story, signal evaluation, timestamp model, privacy boundary |
 | Zoom integration | Zoom integration, timestamp model, API contract, consent flow |
-| OpenAI integration | Recovery evaluation, token-cost baseline, privacy boundary |
-| Professor metrics | Professor story, aggregation privacy rules, summary contract |
+| OpenAI or Muse integration | AI provider tool-calling plan, recovery evaluation, token-cost baseline, privacy boundary |
+| Professor metrics | Professor metrics dashboard plan, professor story, aggregation privacy rules, summary contract |
 | Dropbox integration | Product overview, privacy boundary, API contract |
 
 ## Documentation rules
