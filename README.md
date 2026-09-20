@@ -64,8 +64,12 @@ defaults to `http://127.0.0.1:8000` when unset.
 ## Deploying the backend (Render)
 
 Create a Render Blueprint with **New → Blueprint** and connect this repository.
-Set `OPENAI_API_KEY` and/or `MUSE_API_KEY` in the Render dashboard; GitHub Actions
-secrets are not visible to Render. For Electron, set
+Provider keys reach Render through `.github/workflows/deploy-backend.yml`, which
+runs on pushes to `main`: it copies the `OPENAI_API_KEY` and `MUSE_API_KEY`
+GitHub secrets into the service via the Render API and triggers a deploy. It
+requires two more GitHub secrets, `RENDER_API_KEY` (Render account settings →
+API Keys) and `RENDER_SERVICE_ID` (the `srv-...` id in the service URL). You
+can also paste the keys into the Render dashboard directly. For Electron, set
 `BLOOM_BACKEND_URL=https://<service>.onrender.com`. The free tier sleeps after
 15 minutes of inactivity, and the in-memory store resets whenever the service
 restarts. Render's generated `APP_SECRET` is used for production signing.
