@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
 from new_plan.fixtures import headers, setup
 
 from app.config import Settings
@@ -18,7 +19,11 @@ from app.storage.in_memory import (
     ParticipantRecord,
     UserRecord,
 )
-from app.storage.mongo import MongoCollectionMapping, create_mongo_store
+from app.storage.mongo import (
+    MongoCollectionMapping,
+    build_mongo_store,
+    create_mongo_store,
+)
 
 
 class DeleteResult:
@@ -71,6 +76,17 @@ class FakeCollection:
     def count_documents(self, _query: dict[str, object]) -> int:
         """Return the number of stored documents."""
         return len(self.documents)
+
+
+class FakeDatabase:
+    """Database-like collection registry for app-composition tests."""
+
+    def __init__(self) -> None:
+        self.collections: dict[str, FakeCollection] = {}
+
+    def __getitem__(self, name: str) -> FakeCollection:
+        """Return the named fake collection."""
+        return self.collections.setdefault(name, FakeCollection())
 
 
 def test_mapping_roundtrips_models_dataclasses_lists_and_dicts() -> None:
@@ -182,6 +198,112 @@ def test_create_app_without_mongodb_uri_uses_in_memory_store() -> None:
     app = create_app(Settings(app_env="test", mongodb_uri=None))
 
     assert isinstance(app.state.store, InMemoryStore)
+
+
+def test_app_roundtrips_mutated_records_with_mongo_mappings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """App services persist top-level and nested mutations through mappings."""
+    store = build_mongo_store(FakeDatabase())
+    monkeypatch.setattr(
+        "app.storage.mongo.create_mongo_store",
+        lambda _uri, _database_name: store,
+    )
+    client = TestClient(create_app(Settings(app_env="test", mongodb_uri="mongodb://fake")))
+
+    registration = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "mongo-student@example.com",
+            "password": "correct-horse-battery",
+            "display_name": "Mongo Student",
+            "role": "student",
+        },
+    )
+    assert registration.status_code == 201, registration.text
+    token = registration.json()["access_token"]
+    auth = {"Authorization": f"Bearer {token}"}
+
+    consent = client.put(
+        "/api/v1/users/me/consent",
+        headers=auth,
+        json={"analytics_opt_in": True},
+    )
+    assert consent.status_code == 200, consent.text
+    assert client.get("/api/v1/users/me/consent", headers=auth).json()["analytics_opt_in"]
+
+    session_response = client.post(
+        "/api/v1/sessions",
+        headers=auth,
+        json={
+            "lecture_id": "lecture-1",
+            "course_id": "course-1",
+            "title": "Mongo lecture",
+            "mode": "in_person",
+        },
+    )
+    assert session_response.status_code == 201, session_response.text
+    session_id = session_response.json()["session_id"]
+    base = f"/api/v1/sessions/{session_id}"
+
+    transcript = client.post(
+        base + "/transcript-chunks/batch",
+        headers=auth,
+        json={
+            "lecture_id": "lecture-1",
+            "chunks": [
+                {
+                    "chunk_id": "mongo-chunk-1",
+                    "session_id": session_id,
+                    "start_ms": 0,
+                    "end_ms": 30_000,
+                    "text": "A synthetic Mongo-backed transcript.",
+                    "source": "local_transcription",
+                    "is_final": True,
+                    "revision": 1,
+                }
+            ],
+        },
+    )
+    assert transcript.status_code == 202, transcript.text
+
+    events = client.post(
+        base + "/events/batch",
+        headers=auth,
+        json={
+            "lecture_id": "lecture-1",
+            "events": [
+                {
+                    "event_id": "mongo-event-1",
+                    "session_id": session_id,
+                    "event_type": "possible_missed_window",
+                    "start_ms": 0,
+                    "end_ms": 30_000,
+                    "signals": ["possible_missed_window"],
+                    "confidence": 0.8,
+                }
+            ],
+        },
+    )
+    assert events.status_code == 202, events.text
+    assert client.app.state.signal_service.list_session_event_ids(session_id) == [
+        "mongo-event-1"
+    ]
+
+    recovery = client.post(
+        base + "/recovery/jobs",
+        headers=auth,
+        json={"start_ms": 0, "end_ms": 30_000},
+    )
+    assert recovery.status_code == 202, recovery.text
+    job_id = recovery.json()["job_id"]
+    job = client.get(base + f"/recovery/jobs/{job_id}", headers=auth)
+    assert job.status_code == 200, job.text
+    assert job.json()["status"] == "completed"
+
+    ended = client.post(base + "/end", headers=auth)
+    assert ended.status_code == 200, ended.text
+    assert client.get(base, headers=auth).json()["status"] == "ended"
 
 
 def test_invalid_mongodb_uri_is_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:
