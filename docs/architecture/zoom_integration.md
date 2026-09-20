@@ -160,6 +160,39 @@ the event notification URL at `POST /api/v1/integrations/zoom/webhooks`.
 - On `session.ended` for the active session the renderer marks that session
   ended, drops the live status line, and unsubscribes the main-process socket.
 
+### Drift recovery overlay
+
+When the local camera signal raises a `possible_missed_window` event the
+student stays in Zoom: recovery happens inside Bloom's small always-on-top
+overlay window (`frontend/src/main/zoom_overlay_window.ts`), never by
+focusing the main window.
+
+```
+Main renderer ──overlay:show-drift {session_id,event_id,start_ms,end_ms}──► Main process
+                                                                             │ validates, stores pending window
+                                                                             │ showInactive() on the display under the cursor
+Overlay ◄── prompt "Drifted? / Get recovery card" ───────────────────────────┘
+Overlay ──overlay:action {action:'recover'}──► Main process
+                                                │ pauses 45 s auto-close, grows overlay to 520 px
+                                                │ BackendClient (token stays in main):
+                                                │   POST /sessions/{id}/recovery-cards → GET .../recovery-cards/{card_id}
+Overlay ◄── overlay:recovery-state loading|ready|failed ◄┘
+Main renderer ◄── recovery:card-created {session_id,event_id,card} (ready only)
+```
+
+- `overlay:action {action:'open', view:'recovery-summary'}` is the only path
+  that calls `openMainWindow`; it is offered as a secondary "Open in Bloom"
+  button once a card is ready. "Back to Zoom"/"Dismiss" hide the overlay.
+- Concurrent `recover` requests share one in-flight backend call. A failed
+  request keeps the pending window so "Retry" reuses it; a delivered card
+  clears it.
+- The hidden main renderer applies `recovery:card-created` only for the active
+  session, deduplicates by `card_id`, and clears the matching pending drift
+  prompt so the dashboard and summary page match the overlay.
+- The overlay renderer receives only recovery states; it never sees the
+  bearer token or the backend URL.
+- The professor "Zoom detected → Start session" overlay is unchanged.
+
 ## Testing
 
 `backend/tests/test_zoom_rtms.py` drives the full path with an in-process fake

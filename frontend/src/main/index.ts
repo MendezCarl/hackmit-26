@@ -1,9 +1,21 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron/main';
 import { registerBackendIpc } from './backend_ipc.js';
+import {
+  DriftRecoveryController,
+  parseDriftRecoveryRequest,
+  planOverlayAction,
+} from './drift_recovery.js';
 import { SessionEventsBridge } from './session_events.js';
 import { createBloomTray, openMainWindow, updateTrayZoomStatus } from './tray.js';
-import { hideZoomOverlay, showZoomOverlay } from './zoom_overlay_window.js';
+import {
+  OVERLAY_CARD_HEIGHT_PX,
+  hideZoomOverlay,
+  pauseZoomOverlayAutoClose,
+  resizeZoomOverlay,
+  sendToZoomOverlay,
+  showZoomOverlay,
+} from './zoom_overlay_window.js';
 import { ZoomProcessMonitor } from './zoom_monitor.js';
 
 type BloomRole = 'professor' | 'student' | null;
@@ -14,6 +26,11 @@ let isQuitting = false;
 let zoomRunning = false;
 let zoomMonitor: ZoomProcessMonitor | undefined;
 let sessionEvents: SessionEventsBridge | undefined;
+let driftRecovery: DriftRecoveryController | undefined;
+
+const sendToMainWindow = (channel: string, payload: unknown): void => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+};
 
 /**
  * Resolves the Bloom window icon for development or packaged execution.
@@ -71,14 +88,24 @@ const registerDesktopIpc = (): void => {
     currentRole = role;
     if (zoomRunning && roleChanged && role !== null) showZoomOverlay(currentRole);
   });
-  ipcMain.on('overlay:action', (_event, action: { action?: string }) => {
-    if (action?.action === 'open') {
+  ipcMain.on('overlay:action', (_event, message: unknown) => {
+    const plan = planOverlayAction(message);
+    if (plan.kind === 'recover') {
+      // Recovery happens inside the overlay; the main window must stay hidden so
+      // the student never loses the Zoom window.
+      pauseZoomOverlayAutoClose();
+      resizeZoomOverlay(OVERLAY_CARD_HEIGHT_PX);
+      void driftRecovery?.recover();
+      return;
+    }
+    if (plan.kind === 'open') {
       openMainWindow(createWindow);
-      mainWindow?.webContents.send('zoom:overlay-open');
+      sendToMainWindow('zoom:overlay-open', { view: plan.view });
     }
     hideZoomOverlay();
   });
-  ipcMain.on('overlay:show-drift', () => {
+  ipcMain.on('overlay:show-drift', (_event, rawRequest: unknown) => {
+    driftRecovery?.setPending(parseDriftRecoveryRequest(rawRequest));
     showZoomOverlay(currentRole === 'student' ? 'student' : null, 'drift');
   });
   ipcMain.on('session-events:subscribe', (_event, sessionId: unknown) => {
@@ -94,8 +121,16 @@ app.on('before-quit', () => {
 
 void app.whenReady().then(() => {
   const backendClient = registerBackendIpc();
-  sessionEvents = new SessionEventsBridge(backendClient, (channel, payload) => {
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+  sessionEvents = new SessionEventsBridge(backendClient, sendToMainWindow);
+  driftRecovery = new DriftRecoveryController(backendClient, (state) => {
+    sendToZoomOverlay('overlay:recovery-state', state);
+    if (state.status === 'ready') {
+      sendToMainWindow('recovery:card-created', {
+        session_id: state.request.session_id,
+        event_id: state.request.event_id,
+        card: state.card,
+      });
+    }
   });
   registerDesktopIpc();
   if (process.platform === 'darwin') {

@@ -43,6 +43,7 @@ import {
   loadTranscriptWorkspace,
   loadZoomRtmsStatus,
   linkZoomMeeting,
+  applyOverlayRecoveryCard,
   recordRecoveryCard,
   recordSubmittedEvent,
   refreshAvailableSessions,
@@ -458,7 +459,12 @@ const bindStudentActions = (): void => {
           if (!event) return;
           setPendingDriftPrompt(event);
           renderApplication();
-          window.bloomDesktop.showDriftPrompt();
+          window.bloomDesktop.showDriftPrompt({
+            session_id: session.session_id,
+            event_id: event.event_id,
+            start_ms: event.start_ms,
+            end_ms: event.end_ms,
+          });
         },
         onError: (message) => {
           cameraMonitorSessionId = null;
@@ -649,10 +655,16 @@ const bindZoomDesktop = (): void => {
     // rather than waiting for the next poll.
     if (running) void pollAvailableSessions();
   });
-  window.bloomDesktop.onZoomOverlayOpen(() => {
+  window.bloomDesktop.onRecoveryCardCreated((payload) => {
+    if (!applyOverlayRecoveryCard(payload)) return;
+    renderApplication();
+  });
+  window.bloomDesktop.onZoomOverlayOpen((payload) => {
     const role = getBackendSessionState().user?.role;
     if (role === 'professor') {
       window.location.hash = buildRouteHash('home');
+    } else if (role === 'student' && payload?.view === 'recovery-summary') {
+      window.location.hash = buildRouteHash('student-summary');
     } else if (role === 'student') {
       window.location.hash = buildRouteHash('student-dashboard');
       window.setTimeout(() => {
