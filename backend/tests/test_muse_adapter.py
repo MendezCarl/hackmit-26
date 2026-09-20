@@ -194,7 +194,7 @@ def test_muse_grounding_diagnostics_contain_counts_without_transcript_text(
     record = next(
         record
         for record in caplog.records
-        if record.message == "recovery_grounding_rejected"
+        if record.message.startswith("recovery_grounding_rejected")
     )
     assert record.total_facts == 2
     assert record.kept_facts == 1

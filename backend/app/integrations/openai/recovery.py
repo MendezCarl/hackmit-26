@@ -25,6 +25,16 @@ from app.recovery.evidence_matching import is_quote_grounded
 logger = logging.getLogger(__name__)
 
 
+def _log_grounding_rejection(**counts: str | int) -> None:
+    """Emit a text-free grounding diagnostic readable by plain log formatters.
+
+    Args:
+        counts: Reason code and integer counts only; never quote or transcript text.
+    """
+    summary = " ".join(f"{key}={value}" for key, value in counts.items())
+    logger.warning("recovery_grounding_rejected %s", summary, extra=counts)
+
+
 class OpenAIUsage(ModelMetadata):
     """Measured token usage preserved without inventing pricing or savings."""
 
@@ -114,10 +124,7 @@ class OpenAIRecoveryGenerator:
         try:
             draft = RecoveryDraft.model_validate(response.output_parsed)
         except ValidationError as exc:
-            logger.warning(
-                "recovery_grounding_rejected",
-                extra={"reason": "draft_schema", "error_count": len(exc.errors())},
-            )
+            _log_grounding_rejection(reason="draft_schema", error_count=len(exc.errors()))
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
                 "The recap could not be validated against its sources.",
@@ -141,10 +148,7 @@ class OpenAIRecoveryGenerator:
             "ungrounded_quote_count": ungrounded_quote_count,
         }
         if len(kept_facts) != len(draft.facts):
-            logger.warning(
-                "recovery_grounding_rejected",
-                extra={**grounding_diagnostics, "reason": "fact_grounding"},
-            )
+            _log_grounding_rejection(reason="fact_grounding", **grounding_diagnostics)
         if not kept_facts:
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
@@ -155,10 +159,7 @@ class OpenAIRecoveryGenerator:
             response.usage is None
             or min(response.usage.input_tokens, response.usage.output_tokens) < 0
         ):
-            logger.warning(
-                "recovery_grounding_rejected",
-                extra={**grounding_diagnostics, "reason": "missing_usage"},
-            )
+            _log_grounding_rejection(reason="missing_usage", **grounding_diagnostics)
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
                 "The recap could not be validated against its sources.",
