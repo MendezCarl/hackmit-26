@@ -73,8 +73,9 @@ URL). For persistence, create a MongoDB Atlas free M0 cluster, create a
 database user, allow `0.0.0.0/0` under Network Access because Render's free tier
 has no static IP, and store its `mongodb+srv://` URI as the `MONGODB_URI`
 GitHub secret. The workflow's provider/database secret list is
-`OPENAI_API_KEY`, `MUSE_API_KEY`, and `MONGODB_URI`, alongside
-`RENDER_API_KEY` and `RENDER_SERVICE_ID`. Without `MONGODB_URI`, the backend
+`OPENAI_API_KEY` (or `OPENAI_KEY`), `MUSE_API_KEY`, and `MONGODB_URI` (or
+`MONGODB_URL`), alongside `RENDER_API_KEY` and `RENDER_SERVICE_ID`; the Render
+env vars are always `OPENAI_API_KEY` and `MONGODB_URI`. Without a Mongo URI, the backend
 stays in-memory. You can also
 paste provider and Mongo keys into the Render dashboard directly. For Electron,
 set `BLOOM_BACKEND_URL=https://<service>.onrender.com`. The free tier sleeps
