@@ -1,6 +1,17 @@
 import { join } from 'node:path';
-import { app, BrowserWindow } from 'electron/main';
+import { app, BrowserWindow, ipcMain } from 'electron/main';
 import { registerBackendIpc } from './backend_ipc.js';
+import { createBloomTray, openMainWindow, updateTrayZoomStatus } from './tray.js';
+import { hideZoomOverlay, showZoomOverlay } from './zoom_overlay_window.js';
+import { ZoomProcessMonitor } from './zoom_monitor.js';
+
+type BloomRole = 'professor' | 'student' | null;
+
+let mainWindow: BrowserWindow | null = null;
+let currentRole: BloomRole = null;
+let isQuitting = false;
+let zoomRunning = false;
+let zoomMonitor: ZoomProcessMonitor | undefined;
 
 /**
  * Resolves the Bloom window icon for development or packaged execution.
@@ -18,10 +29,11 @@ const getWindowIconPath = (): string => {
 /**
  * Creates Bloom's primary desktop window with an isolated renderer context.
  *
- * @returns Nothing; the created window is managed by Electron.
+ * @returns The created or existing primary window.
  */
-const createWindow = (): void => {
-  const mainWindow = new BrowserWindow({
+const createWindow = (): BrowserWindow => {
+  if (mainWindow && !mainWindow.isDestroyed()) return mainWindow;
+  mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
     minWidth: 760,
@@ -35,19 +47,73 @@ const createWindow = (): void => {
   });
 
   void mainWindow.loadFile(join(__dirname, '..', 'index.html'));
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow?.webContents.send('zoom:detected', { running: zoomRunning });
+  });
+  mainWindow.on('close', (event) => {
+    if (!isQuitting && process.platform !== 'darwin') {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+  return mainWindow;
 };
+
+const registerDesktopIpc = (): void => {
+  ipcMain.on('app:set-role', (_event, role: BloomRole) => {
+    if (role === null || role === 'professor' || role === 'student') {
+      currentRole = role;
+      if (zoomRunning) showZoomOverlay(currentRole);
+    }
+  });
+  ipcMain.on('overlay:action', (_event, action: { action?: string }) => {
+    if (action?.action === 'open') {
+      openMainWindow(createWindow);
+      mainWindow?.webContents.send('zoom:overlay-open');
+    }
+    hideZoomOverlay();
+  });
+};
+
+app.on('before-quit', () => {
+  isQuitting = true;
+  zoomMonitor?.stop();
+});
 
 void app.whenReady().then(() => {
   registerBackendIpc();
+  registerDesktopIpc();
   if (process.platform === 'darwin') {
     app.dock?.setIcon(getWindowIconPath());
   }
 
+  createBloomTray(createWindow, () => {
+    isQuitting = true;
+    app.quit();
+  });
   createWindow();
+  zoomMonitor = new ZoomProcessMonitor();
+  zoomMonitor.on('change', (running) => {
+    zoomRunning = running;
+    updateTrayZoomStatus(running);
+    if (running) {
+      showZoomOverlay(currentRole);
+      mainWindow?.webContents.send('zoom:detected', { running: true });
+    } else {
+      hideZoomOverlay();
+      mainWindow?.webContents.send('zoom:detected', { running: false });
+    }
+  });
+  zoomMonitor.start();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else {
+      openMainWindow(createWindow);
     }
   });
 });
