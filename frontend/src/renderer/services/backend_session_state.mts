@@ -23,6 +23,10 @@ export type BackendSessionState = {
   professorMetricsError: string | null;
   externalTextConsentGranted: boolean;
   externalTextConsentNote: string | null;
+  cameraSignalsEnabled: boolean;
+  cameraSignalsStatus: 'off' | 'watching' | 'error';
+  cameraSignalsError: string | null;
+  pendingDriftPrompt: SignalEvent | null;
   consent: ConsentSettings | null;
   backendState: 'checking' | 'connected' | 'offline';
   routeError: string | null;
@@ -52,6 +56,10 @@ const state: BackendSessionState = {
   professorMetricsError: null,
   externalTextConsentGranted: false,
   externalTextConsentNote: null,
+  cameraSignalsEnabled: false,
+  cameraSignalsStatus: 'off',
+  cameraSignalsError: null,
+  pendingDriftPrompt: null,
   consent: null,
   backendState: 'checking',
   routeError: null,
@@ -93,6 +101,12 @@ export function setBackendSessions(sessions: LectureSession[]): void {
 /** Stores the current lecture session. */
 export function setActiveSession(session: LectureSession | null): void {
   state.activeSession = session;
+  if (!session) {
+    state.cameraSignalsEnabled = false;
+    state.cameraSignalsStatus = 'off';
+    state.cameraSignalsError = null;
+    state.pendingDriftPrompt = null;
+  }
 }
 
 /** Stores the session selected by an educator lecture route. */
@@ -181,6 +195,25 @@ export function setExternalTextConsentNote(note: string | null): void {
   state.externalTextConsentNote = note;
 }
 
+/** Stores whether local camera drift detection is enabled. */
+export function setCameraSignalsEnabled(enabled: boolean): void {
+  state.cameraSignalsEnabled = enabled;
+}
+
+/** Stores the local camera monitor status and optional error. */
+export function setCameraSignalsStatus(
+  status: BackendSessionState['cameraSignalsStatus'],
+  error: string | null = null,
+): void {
+  state.cameraSignalsStatus = status;
+  state.cameraSignalsError = error;
+}
+
+/** Stores the latest local drift event awaiting a recovery-card choice. */
+export function setPendingDriftPrompt(event: SignalEvent | null): void {
+  state.pendingDriftPrompt = event;
+}
+
 /** Stores the account's consent settings. */
 export function setConsent(consent: ConsentSettings | null): void {
   state.consent = consent;
@@ -225,6 +258,10 @@ export function clearBackendSessionState(): void {
   state.professorMetricsError = null;
   state.externalTextConsentGranted = false;
   state.externalTextConsentNote = null;
+  state.cameraSignalsEnabled = false;
+  state.cameraSignalsStatus = 'off';
+  state.cameraSignalsError = null;
+  state.pendingDriftPrompt = null;
   state.consent = null;
   state.backendState = 'checking';
   state.routeError = null;

@@ -48,7 +48,7 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
   const { StudentDashboardPage } = await import(
     '../../dist/renderer/features/lecture-session/student_dashboard_page.mjs'
   );
-  const page = StudentDashboardPage({
+  const dashboardModel = {
     isDemo: false,
     user: { user_id: 'user-1', display_name: 'Alex', email: 'alex@example.test', role: 'student' },
     activeSession: {
@@ -70,6 +70,10 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
     zoomBannerDismissed: false,
     externalTextConsentGranted: false,
     externalTextConsentNote: null,
+    cameraSignalsEnabled: false,
+    cameraSignalsStatus: 'off',
+    cameraSignalsError: null,
+    pendingDriftPrompt: null,
     submittedEvents: [
       {
         event_id: 'event-1',
@@ -81,14 +85,32 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
         signals: ['local_detector'],
       },
     ],
-  });
+  };
+  const page = StudentDashboardPage(dashboardModel);
 
   assert.match(page, /data-zoom-recovery-cue/);
   assert.match(page, /Possible missed moment/);
   assert.match(page, /Marked for review, not scored/);
   assert.match(page, /data-external-text-consent/);
   assert.match(page, /Allow bounded transcript text to be sent to the AI provider for recovery cards/);
+  assert.match(page, /data-camera-signals/);
+  assert.match(page, /Camera off/);
+  assert.match(page, /<input type="checkbox" data-camera-signals\s*\/>/);
   assert.doesNotMatch(page, /attention score/i);
+  const driftPage = StudentDashboardPage({
+    ...dashboardModel,
+    pendingDriftPrompt: {
+      event_id: 'event-2',
+      session_id: 'session-1',
+      event_type: 'phone_visible',
+      start_ms: 120000,
+      end_ms: 126000,
+      confidence: 0.8,
+      signals: ['phone_visible'],
+    },
+  });
+  assert.match(driftPage, /data-request-recovery="event-2"/);
+  assert.match(driftPage, /Looks like you may have drifted around 02:00/);
 });
 
 test('educator home renders metrics and course links', async () => {

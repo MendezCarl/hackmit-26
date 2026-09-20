@@ -524,6 +524,7 @@ p {
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-3);
   border-radius: 22px;
   padding: clamp(1.4rem, 3vw, 2.2rem);
 }
@@ -1911,6 +1912,27 @@ body {
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: var(--shadow);
+}
+
+.camera-signals label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.camera-signals p,
+.drift-prompt p {
+  margin: 0;
+}
+
+.drift-prompt {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.drift-prompt .secondary-button,
+.drift-prompt .primary-button {
+  width: fit-content;
 }
 
 .panel__header {

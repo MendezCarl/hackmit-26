@@ -21,8 +21,8 @@ supports the attribution requirement for open-source code and pretrained models.
   geometry, never pixels. The videos are otherwise used to evaluate the detectors and choose
   rule thresholds. Too little labelled data exists to
   train a network that would generalize (three unique six-second student clips).
-- **No model file or video is committed.** `models/`, `*.onnx`, and `data/local/`
-  are gitignored. The operator supplies the model and manifest, as the worker requires.
+- **The approved person detector is committed for the Electron app.** Evaluation
+  videos remain under `data/local/` and are never committed.
 
 ## How the pipeline works
 
@@ -39,6 +39,20 @@ video frame -> [1] pretrained detector -> [2] hand-written temporal rules -> [3]
 3. **Derived event (project contract).** Only `DeliveryEvent` records leave the
    worker. They contain no frames, boxes, faces, or identities.
 
+## In-app student drift detection
+
+The Electron renderer captures camera frames only after explicit student consent.
+ONNX Runtime Web preprocesses and runs the approved person detector in the renderer;
+raw frames, canvases, and detection rows never leave the device. The renderer sends
+only derived `phone_visible` and `student_left_frame` `SignalEvent` records to the
+local backend, where they can support a compassionate recovery-card prompt. These
+signals describe possible missed content and do not prove attention, focus, or
+comprehension.
+
+The committed artifact is `frontend/models/person_detector.onnx` with manifest
+`frontend/models/person_detector.manifest.json`; its SHA-256 is
+`558b5f9013a792225ade2e22fcd07811fbe177cc942bb5a465b9718c3aedcdbe`.
+
 ## External components and attribution
 
 | Component | Use | License | Reference |
@@ -49,7 +63,7 @@ video frame -> [1] pretrained detector -> [2] hand-written temporal rules -> [3]
 | MobileNetV3 | Backbone | Research paper | Howard et al., "Searching for MobileNetV3", ICCV 2019. [arXiv:1905.02244](https://arxiv.org/abs/1905.02244) |
 | COCO dataset | Data the detector was pretrained on (not used directly by this project) | Annotations CC BY 4.0; images carry their original Flickr licenses | Lin et al., "Microsoft COCO: Common Objects in Context", ECCV 2014. [arXiv:1405.0312](https://arxiv.org/abs/1405.0312) |
 | PyTorch | One-time model export only; not an application dependency | BSD-style | Paszke et al., "PyTorch: An Imperative Style, High-Performance Deep Learning Library", NeurIPS 2019. [arXiv:1912.01703](https://arxiv.org/abs/1912.01703) |
-| ONNX Runtime | CPU inference in the worker | MIT | [onnxruntime.ai](https://onnxruntime.ai) |
+| ONNX Runtime Web | CPU inference in the Electron renderer | MIT | [onnxruntime.ai](https://onnxruntime.ai) |
 | OpenCV | Frame decoding, resizing, region analysis | Apache-2.0 | [opencv.org](https://opencv.org) |
 | YuNet face detector (`face_detection_yunet_2023mar.onnx`, 232,589 bytes, sha256 `8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4`) | Face box and 5 landmarks for the student head-turn signal | MIT per the OpenCV Zoo model listing (verify) | Wu et al., "YuNet: A Tiny Millisecond-level Face Detector", Machine Intelligence Research, 2023; model from [OpenCV Zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet), run through OpenCV `FaceDetectorYN` |
 | certifi | CA bundle used once so the weight download could verify TLS | MPL-2.0 | [pypi.org/project/certifi](https://pypi.org/project/certifi/) |
@@ -63,7 +77,7 @@ have not been legally reviewed. Verify them before redistributing any model file
   the ONNX output is `Nx6` rows of normalized `x1, y1, x2, y2, score, class`.
 - Artifact: `models/person_detector.onnx`, 14,218,221 bytes, opset 17, input
   `[1, 3, 320, 320]` float RGB.
-- SHA-256: `120f360445455983b7bb3a4608dd2fc3e38caf0ea9697466dff9392d35f9cd4c`.
+- SHA-256: `558b5f9013a792225ade2e22fcd07811fbe177cc942bb5a465b9718c3aedcdbe`.
 - Manifest: `models/person_detector.manifest.json`, with `is_approved: true` set by
   the operator for local evaluation only.
 - Person class id is 1 in torchvision's 91-index COCO scheme. The same model also

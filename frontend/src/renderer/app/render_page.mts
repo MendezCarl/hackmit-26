@@ -46,6 +46,10 @@ export function renderPage(
         zoomBannerDismissed: state?.zoomBannerDismissed ?? false,
         externalTextConsentGranted: state?.externalTextConsentGranted ?? false,
         externalTextConsentNote: state?.externalTextConsentNote ?? null,
+        cameraSignalsEnabled: state?.cameraSignalsEnabled ?? false,
+        cameraSignalsStatus: state?.cameraSignalsStatus ?? 'off',
+        cameraSignalsError: state?.cameraSignalsError ?? null,
+        pendingDriftPrompt: state?.pendingDriftPrompt ?? null,
       }),
     'student-summary': () =>
       StudentSummaryPage({

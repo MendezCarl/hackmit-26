@@ -312,6 +312,7 @@ interface BloomDesktopApi {
   onZoomDetected: (callback: (payload: ZoomDetectedPayload) => void) => () => void;
   onZoomOverlayOpen: (callback: () => void) => () => void;
   overlayAction: (action: 'open' | 'dismiss') => void;
+  showDriftPrompt: () => void;
   getOverlayRole: () => BloomRole;
 }
 interface Window {

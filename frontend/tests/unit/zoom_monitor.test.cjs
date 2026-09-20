@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { readFile } = require('node:fs/promises');
+const { access, readFile } = require('node:fs/promises');
 const { join } = require('node:path');
 
 test('parseZoomRunning detects Zoom.exe in Windows CSV output', async () => {
@@ -34,4 +34,9 @@ test('overlay HTML loads the emitted renderer module', async () => {
     'utf8',
   );
   assert.match(overlayHtml, /src="\.\/renderer\/overlay\.mjs"/);
+});
+
+test('build packages the ONNX runtime and approved detector', async () => {
+  await access(join(__dirname, '../../dist/vendor/ort/ort-wasm-simd-threaded.wasm'));
+  await access(join(__dirname, '../../dist/models/person_detector.onnx'));
 });
