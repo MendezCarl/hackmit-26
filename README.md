@@ -33,6 +33,28 @@ npm run dev
 
 The Electron renderer expects the backend at `http://127.0.0.1:8000`.
 
+The current prototype follows the documented process and feature boundaries without adding a UI framework dependency:
+
+```text
+frontend/
+├── index.html
+├── src/
+│   ├── main/                  # Electron main process
+│   ├── preload/               # Safe renderer bridge
+│   ├── assets/                # Bloom product assets
+│   └── renderer/
+│       ├── app/               # Routing and page composition
+│       ├── components/        # Reusable presentation components
+│       ├── features/          # Pages grouped by product feature
+│       ├── fixtures/          # Synthetic prototype content
+│       └── types/             # Frontend boundary types
+└── tests/
+    ├── unit/
+    └── component/
+```
+
+See the [frontend wireframe implementation](docs/product/frontend_wireframe_implementation.md) for the implemented routes and component inventory, and the [repository structure](docs/architecture/repository_structure_and_branch_workflow.md) for the target React/Vite architecture.
+
 ## Backend
 
 ```sh

@@ -25,6 +25,7 @@ docs/
 ├── ai_provider_tool_calling_plan.md
 ├── professor_metrics_dashboard.md
 ├── product/
+│   ├── frontend_wireframe_implementation.md
 │   ├── product_overview.md
 │   ├── student_user_story.md
 │   ├── professor_user_story.md
@@ -70,6 +71,8 @@ docs/
 | OpenAI or Muse integration | AI provider tool-calling plan, recovery evaluation, token-cost baseline, privacy boundary |
 | Professor metrics | Professor metrics dashboard plan, professor story, aggregation privacy rules, summary contract |
 | Dropbox integration | Product overview, privacy boundary, API contract |
+
+The current Electron wireframe routes and reusable component inventory are documented in [Frontend Wireframe Implementation](product/frontend_wireframe_implementation.md).
 
 ## Documentation rules
 
