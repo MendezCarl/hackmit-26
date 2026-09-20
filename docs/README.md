@@ -2,7 +2,26 @@
 
 This directory is the context hub for developers and coding agents. Repository-level agent instructions live in `AGENTS.md`; task-specific product and technical context lives here.
 
-The repository currently contains a minimal Electron JavaScript frontend and FastAPI skeleton. The documents in this directory describe the target architecture; agents must distinguish planned structure from already implemented code.
+The baseline application contains a minimal Electron JavaScript frontend and
+FastAPI entry point. Backend signal/timeline, professor aggregation, and Dropbox
+features have been implemented and pushed on separate feature branches; they are
+not automatically mounted in the baseline app. Many architecture documents still
+describe the target system. Distinguish those plans from verified implementation.
+
+## Implemented backend work
+
+- [Backend implementation status](implementation/backend_status.md): completed
+  features, privacy boundaries, commit/CI evidence, packaging fix, and remaining work.
+- [Feature branch guide](../backend/FEATURE_BRANCHES.md): branch names and local worktrees.
+- [Feature runbook](../backend/LECTURE_FEATURES.md): branch selection and local-only combined demo.
+- [Phone observations](../backend/PHONE_SIGNALS.md): weak-signal rules and professor exclusions.
+- [Implemented feature API handoff](api/lecture_features.md): actual routes and host dependencies.
+
+These shared documents are maintained on the three existing feature branches.
+Only the feature installed on the checked-out branch is runnable there.
+
+The detailed status report records work verified on 2026-09-19. It is not a claim
+that the feature branches have been merged or that live providers are verified.
 
 ## Required reading order
 
@@ -19,10 +38,17 @@ Every developer or agent should read context in this order:
 
 ## Documentation structure
 
+The tree below describes the planned documentation structure; some indexed files
+have not been created. The implementation report above describes the work that
+exists and links to its evidence.
+
 ```text
 docs/
 ├── README.md
+├── ai_provider_tool_calling_plan.md
+├── professor_metrics_dashboard.md
 ├── product/
+│   ├── frontend_wireframe_implementation.md
 │   ├── product_overview.md
 │   ├── student_user_story.md
 │   ├── professor_user_story.md
@@ -31,6 +57,7 @@ docs/
 │   ├── system_overview.md
 │   ├── timestamp_model.md
 │   ├── local_media_boundary.md
+│   ├── local_object_detection.md
 │   └── zoom_integration.md
 ├── api/
 │   ├── unified_api_contracts.md
@@ -62,10 +89,13 @@ docs/
 | Backend REST endpoint | Unified API contracts, Pydantic schemas, API tests |
 | WebSocket event | Unified API contracts, AsyncAPI file, event schema, contract tests |
 | ML signal rule | Student story, signal evaluation, timestamp model, privacy boundary |
+| Local object detection | Local object detection architecture, local-media boundary, signal evaluation, professor metrics plan |
 | Zoom integration | Zoom integration, timestamp model, API contract, consent flow |
-| OpenAI integration | Recovery evaluation, token-cost baseline, privacy boundary |
-| Professor metrics | Professor story, aggregation privacy rules, summary contract |
+| OpenAI or Muse integration | AI provider tool-calling plan, recovery evaluation, token-cost baseline, privacy boundary |
+| Professor metrics | Professor metrics dashboard plan, professor story, aggregation privacy rules, summary contract |
 | Dropbox integration | Product overview, privacy boundary, API contract |
+
+The current Electron wireframe routes and reusable component inventory are documented in [Frontend Wireframe Implementation](product/frontend_wireframe_implementation.md).
 
 ## Documentation rules
 
@@ -93,3 +123,16 @@ If documentation and implementation disagree, resolve the conflict in this order
 6. Markdown explanation or example
 
 The team should fix all mismatches in the same pull request.
+
+## New learning plans and implementation
+
+- [Professor metrics plan](professor_metrics_dashboard.md)
+- [AI provider/tool-calling plan](ai_provider_tool_calling_plan.md)
+- [Local object detection plan](architecture/local_object_detection.md)
+- [Implementation report](implementation/new_plan_execution.md): current host baseline, verified behavior and remaining gates.
+- [Contract decisions](decisions/adr_0002_learning_plan_contracts.md): differences resolved against the existing API.
+- [New API handoff](api/learning_plan_contracts.md)
+- [Backend runbook](../backend/NEW_PLAN_FEATURES.md)
+
+The plan documents remain proposals. The implementation report distinguishes code
+from mocked verification, policy approval and live-provider/model evaluation.

@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "JobFailure": {
+      "description": "A typed, recoverable failure attached to a failed job.",
+      "properties": {
+        "message": {
+          "description": "Human-readable, compassionate failure explanation.",
+          "title": "Message",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/JobFailureReason",
+          "description": "Stable typed failure reason."
+        }
+      },
+      "required": [
+        "reason",
+        "message"
+      ],
+      "title": "JobFailure",
+      "type": "object"
+    },
+    "JobFailureReason": {
+      "description": "Typed, recoverable failure reasons for recovery jobs.",
+      "enum": [
+        "missing_transcript_context",
+        "provider_refused",
+        "provider_timeout",
+        "provider_malformed_output",
+        "validation_failed",
+        "internal_error"
+      ],
+      "title": "JobFailureReason",
+      "type": "string"
+    },
+    "JobStatus": {
+      "description": "Lifecycle state of a recovery job.",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Recovery generation job for one requested interval.",
+  "properties": {
+    "cache_status": {
+      "anyOf": [
+        {
+          "enum": [
+            "miss",
+            "hit"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Whether generation reused a cached card.",
+      "title": "Cache Status"
+    },
+    "card_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Card reference when completed.",
+      "title": "Card Id"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UTC ISO 8601 completion time ending in Z.",
+      "title": "Completed At"
+    },
+    "created_at": {
+      "description": "UTC ISO 8601 creation time ending in Z.",
+      "title": "Created At",
+      "type": "string"
+    },
+    "failure": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/JobFailure"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Typed failure when failed."
+    },
+    "job_id": {
+      "description": "Unique recovery-job identifier.",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "requested_end_ms": {
+      "description": "Requested interval end in ms.",
+      "exclusiveMinimum": 0,
+      "title": "Requested End Ms",
+      "type": "integer"
+    },
+    "requested_start_ms": {
+      "description": "Requested interval start in ms.",
+      "minimum": 0,
+      "title": "Requested Start Ms",
+      "type": "integer"
+    },
+    "session_id": {
+      "description": "Session the job belongs to.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus",
+      "description": "Current job status."
+    }
+  },
+  "required": [
+    "job_id",
+    "session_id",
+    "status",
+    "requested_start_ms",
+    "requested_end_ms",
+    "created_at"
+  ],
+  "title": "RecoveryJob",
+  "type": "object"
+}

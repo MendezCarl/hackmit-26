@@ -19,8 +19,13 @@ venv/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+*.egg-info/
 
 # Environment files
 .env
 .env.*
 !.env.example
+!.env.*.example
+
+# Build outputs
+release/

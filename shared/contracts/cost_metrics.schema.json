@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Provider usage metrics for one recovery generation.",
+  "properties": {
+    "baseline_method": {
+      "description": "Baseline comparison method; never implies fake responses save money.",
+      "title": "Baseline Method",
+      "type": "string"
+    },
+    "cache_status": {
+      "description": "``miss`` or ``hit`` for this generation.",
+      "title": "Cache Status",
+      "type": "string"
+    },
+    "data_label": {
+      "description": "``synthetic`` for mock usage; ``measured`` for real provider calls.",
+      "title": "Data Label",
+      "type": "string"
+    },
+    "input_usage": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "description": "Measured input usage, e.g. ``{\"characters\": 1200}``.",
+      "title": "Input Usage",
+      "type": "object"
+    },
+    "job_id": {
+      "description": "Recovery job the metrics belong to.",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "latency_ms": {
+      "description": "Generation latency in milliseconds.",
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "model": {
+      "description": "Model identifier used.",
+      "title": "Model",
+      "type": "string"
+    },
+    "output_usage": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "description": "Measured output usage.",
+      "title": "Output Usage",
+      "type": "object"
+    },
+    "provider_mode": {
+      "description": "Mock or live provider mode.",
+      "title": "Provider Mode",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session the job belongs to.",
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "session_id",
+    "provider_mode",
+    "model",
+    "input_usage",
+    "output_usage",
+    "cache_status",
+    "latency_ms",
+    "baseline_method",
+    "data_label"
+  ],
+  "title": "CostMetrics",
+  "type": "object"
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Current participant's revocable anonymous reporting permission.",
+  "properties": {
+    "is_allowed": {
+      "title": "Is Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "is_allowed"
+  ],
+  "title": "AggregationConsent",
+  "type": "object"
+}

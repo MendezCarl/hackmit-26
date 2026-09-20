@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Recommendation": {
+      "additionalProperties": false,
+      "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.",
+      "properties": {
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "observation": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Observation",
+          "type": "string"
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "suggested_action": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "observation",
+        "suggested_action"
+      ],
+      "title": "Recommendation",
+      "type": "object"
+    },
+    "RecommendationReview": {
+      "additionalProperties": false,
+      "description": "Professor feedback on a revision-bound suggestion.",
+      "properties": {
+        "recommendation_index": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Recommendation Index",
+          "type": "integer"
+        },
+        "report_revision": {
+          "maxLength": 64,
+          "minLength": 64,
+          "title": "Report Revision",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "reviewed",
+            "dismissed",
+            "resolved"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_revision",
+        "recommendation_index",
+        "status"
+      ],
+      "title": "RecommendationReview",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Recommendations retain report revision, provider provenance and uncertainty.",
+  "properties": {
+    "provider_mode": {
+      "enum": [
+        "mock",
+        "live"
+      ],
+      "title": "Provider Mode",
+      "type": "string"
+    },
+    "recommendations": {
+      "items": {
+        "$ref": "#/$defs/Recommendation"
+      },
+      "title": "Recommendations",
+      "type": "array"
+    },
+    "report_revision": {
+      "title": "Report Revision",
+      "type": "string"
+    },
+    "reviews": {
+      "items": {
+        "$ref": "#/$defs/RecommendationReview"
+      },
+      "maxItems": 5,
+      "title": "Reviews",
+      "type": "array"
+    },
+    "session_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "available",
+        "insufficient_evidence"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "report_revision",
+    "status",
+    "provider_mode",
+    "recommendations"
+  ],
+  "title": "RecommendationReport",
+  "type": "object"
+}
