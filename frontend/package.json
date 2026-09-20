@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Bloom Electron desktop app with a Python FastAPI backend.",
-  "main": "dist/main.js",
+  "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc && cp src/index.html src/styles.css dist/ && cp -R src/assets dist/",
+    "build": "rm -rf dist && tsc && cp index.html dist/ && cp src/renderer/styles.css dist/ && cp -R src/assets dist/",
     "dev": "npm run build && electron .",
     "start": "npm run build && electron .",
+    "test": "npm run build && node --test tests/**/*.test.cjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

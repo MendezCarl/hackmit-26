@@ -1,0 +1,174 @@
+{
+  "$defs": {
+    "SignalIntervalAggregate": {
+      "description": "Anonymous aggregate for one interval with high signal density.",
+      "properties": {
+        "dominant_event_types": {
+          "description": "Most common event types; never individual confidence values.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dominant Event Types",
+          "type": "array"
+        },
+        "end_ms": {
+          "description": "Interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_count": {
+          "description": "Anonymous event count in the interval.",
+          "minimum": 0,
+          "title": "Event Count",
+          "type": "integer"
+        },
+        "start_ms": {
+          "description": "Interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_count",
+        "dominant_event_types"
+      ],
+      "title": "SignalIntervalAggregate",
+      "type": "object"
+    },
+    "TimelineBucket": {
+      "description": "Anonymous aggregate event count for one fixed time bucket.",
+      "properties": {
+        "end_ms": {
+          "description": "Bucket end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_count": {
+          "description": "Anonymous event count in the bucket.",
+          "minimum": 0,
+          "title": "Event Count",
+          "type": "integer"
+        },
+        "start_ms": {
+          "description": "Bucket start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_count"
+      ],
+      "title": "TimelineBucket",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Anonymous, aggregated, threshold-safe professor report.\n\nNever includes student IDs, names, device IDs, or individual confidence\nvalues. Small groups are suppressed.",
+  "properties": {
+    "aggregation_window_ms": {
+      "description": "Fixed bucket width in ms.",
+      "minimum": 1,
+      "title": "Aggregation Window Ms",
+      "type": "integer"
+    },
+    "generated_at": {
+      "description": "UTC ISO 8601 generation time ending in Z.",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "highest_signal_intervals": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/SignalIntervalAggregate"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Anonymous dense intervals; null while suppressed.",
+      "title": "Highest Signal Intervals"
+    },
+    "is_suppressed": {
+      "description": "True when the group is too small to release aggregates.",
+      "title": "Is Suppressed",
+      "type": "boolean"
+    },
+    "minimum_group_size": {
+      "description": "Approved minimum group-size threshold.",
+      "minimum": 1,
+      "title": "Minimum Group Size",
+      "type": "integer"
+    },
+    "participant_count": {
+      "description": "Unique participating, opted-in users, not events; deduplicated.",
+      "minimum": 0,
+      "title": "Participant Count",
+      "type": "integer"
+    },
+    "session_id": {
+      "description": "Session the summary describes.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "suggested_actions": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Compassionate suggestions; null while suppressed.",
+      "title": "Suggested Actions"
+    },
+    "summary_id": {
+      "description": "Unique summary identifier.",
+      "title": "Summary Id",
+      "type": "string"
+    },
+    "timeline_buckets": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/TimelineBucket"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Anonymous buckets; null while suppressed.",
+      "title": "Timeline Buckets"
+    }
+  },
+  "required": [
+    "summary_id",
+    "session_id",
+    "participant_count",
+    "minimum_group_size",
+    "aggregation_window_ms",
+    "is_suppressed",
+    "generated_at"
+  ],
+  "title": "ProfessorSummary",
+  "type": "object"
+}

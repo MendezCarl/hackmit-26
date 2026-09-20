@@ -30,6 +30,13 @@ These instructions apply to all coding agents working anywhere in this repositor
 
 The repository currently contains a minimal Electron JavaScript skeleton. React and TypeScript are the target architecture. Do not rewrite the existing skeleton merely to match the target; migrate it only through an explicit, reviewed task.
 
+Backend implementation history and verified feature status are recorded in
+[`docs/implementation/backend_status.md`](docs/implementation/backend_status.md).
+It distinguishes the baseline app, pushed feature branches, the local combined
+checkout, mocked providers, and planned recovery work. Use it as a navigation
+and handoff reference; verify the current branch and code before relying on a
+recorded status. It does not replace these rules or the API contract precedence.
+
 ## Naming standards
 
 Names must describe behavior or domain purpose. Avoid vague names such as `helper`, `utils`, `data`, `thing`, `temp`, `manager`, `process_data`, or `handle_stuff` unless the surrounding type gives them a precise meaning.

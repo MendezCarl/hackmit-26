@@ -1,0 +1,97 @@
+# Lecture feature branches
+
+Status: Three independent feature branches committed and pushed to origin
+
+Owner: Backend team
+
+Last updated: 2026-09-19
+
+The combined implementation of these three features remains in the main working folder on
+`feature/backend-lecture-features` and remains uncommitted. The three isolated
+feature branches were committed and pushed after user approval. No branches
+were merged into `backend`, `dev`, or `main`.
+
+For feature behavior, privacy limits, the CI packaging repair, and verified run
+links, see the [implementation report](../docs/implementation/backend_status.md).
+This guide records the branch state verified on 2026-09-19, not a complete product.
+
+## Isolated feature workspaces
+
+The working folders below describe the original developer workspace; they are
+not shipped in clones. The runbook links open committed files on GitHub.
+
+| Feature | Branch | Working folder | Runbook |
+|---|---|---|---|
+| 2: signals, transcripts, timeline, simulated Zoom | `feature/backend-signal-timeline` | `backend/.feature-worktrees/signal-timeline` | [Feature 2](https://github.com/MendezCarl/hackmit-26/blob/138cff9/backend/FEATURE_2.md) |
+| 4: professor aggregation | `feature/backend-professor-aggregation` | `backend/.feature-worktrees/professor-aggregation` | [Feature 4](https://github.com/MendezCarl/hackmit-26/blob/c772618/backend/FEATURE_4.md) |
+| 6: Dropbox materials and derived export | `feature/backend-dropbox-integration` | `backend/.feature-worktrees/dropbox-integration` | [Feature 6](https://github.com/MendezCarl/hackmit-26/blob/5c58361/backend/FEATURE_6.md) |
+
+These are separate Git worktrees: each folder has its own checked-out branch,
+working files and index. Enter/open the appropriate folder instead of trying to
+check out its already-active branch in the original working folder.
+
+```sh
+# In the original developer workspace only:
+cd backend/.feature-worktrees/signal-timeline
+git status --short --branch
+```
+
+Each branch contains its feature commit plus a packaging fix and tracks its matching branch on
+`origin` (GitHub). The feature files are now included in commit history and
+available in fresh clones. The commit table records the version whose checks were
+verified; later documentation-only commits do not change those runtime results.
+
+Shared documentation is published directly on these existing feature branches.
+No separate documentation branch is required. Each branch keeps its own feature
+runbook alongside the shared status report and navigation documents.
+
+The worktree paths above are local conveniences and are not included in a clone.
+A fresh clone can check out the named remote branch directly. Each feature branch
+contains its own `backend/FEATURE_2.md`, `FEATURE_4.md`, or `FEATURE_6.md` runbook.
+
+| Branch | Verified implementation/packaging commit |
+|---|---|
+| `feature/backend-signal-timeline` | `138cff9` |
+| `feature/backend-professor-aggregation` | `c772618` |
+| `feature/backend-dropbox-integration` | `5c58361` |
+
+## What was separated
+
+- Each worktree has only its feature's business services/routes and feature tests.
+- Shared payload models, typed service interfaces, authorization boundary,
+  repository adapter, bounded JSON/error handling and app composition are
+  identical across the worktrees. A sibling feature's DTO is a shared contract,
+  not its implementation or registered endpoint.
+- The app discovers only a fixed catalog of installed feature modules. The tests
+  explicitly verify that the other two features' endpoints are absent.
+- Professor tests seed synthetic upstream records directly, so they do not require
+  the signal-ingestion service to be implemented on that branch.
+- Each feature has distinct OpenAPI/JSON Schema artifacts, its own CI file and
+  requirements entry point. Only feature 2 has a transcript AsyncAPI document.
+- The original combined end-to-end implementation and its tests remain preserved
+  in the original working folder.
+
+## Validation
+
+| Worktree | Passing tests | Opt-in Mongo test |
+|---|---:|---|
+| Signal/timeline | 60 | Skipped: no local database |
+| Professor aggregation | 14 | Skipped: no local database |
+| Dropbox integration | 20 | Skipped: no local database |
+
+All suites use synthetic identities and content. The new feature/baseline contract
+checks, Ruff checks, formatting and Mypy checks are run per worktree. No real
+Dropbox or Zoom account is contacted. Live database/provider verification remains
+separate, as in the original implementation.
+
+## Before opening pull requests
+
+Each feature commit includes the identical common support needed to run its
+branch independently. Review shared support consistently across pull requests
+and keep future shared edits synchronized. Cross-team review of public contract
+changes is still required. No frontend code has been changed.
+
+`backend/venv/` is the local dependency environment. `backend/hackmit_26_backend.egg-info/`
+was generated by editable Python installation; `top_level.txt` and `SOURCES.txt`
+are packaging metadata, not handwritten application features. Both the environment
+and packaging metadata are ignored by Git.

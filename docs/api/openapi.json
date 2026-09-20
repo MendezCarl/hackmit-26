@@ -1,8 +1,23 @@
 {
   "components": {
     "schemas": {
+      "AggregationConsent": {
+        "additionalProperties": false,
+        "description": "Current participant's revocable anonymous reporting permission.",
+        "properties": {
+          "is_allowed": {
+            "title": "Is Allowed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_allowed"
+        ],
+        "title": "AggregationConsent",
+        "type": "object"
+      },
       "ApiStatusResponse": {
-        "description": "Response describing whether the API skeleton is ready.",
+        "description": "Response describing whether the API is ready.",
         "properties": {
           "message": {
             "description": "Human-readable API status message.",
@@ -17,6 +32,1070 @@
           "message"
         ],
         "title": "ApiStatusResponse",
+        "type": "object"
+      },
+      "ArtifactExport": {
+        "additionalProperties": false,
+        "description": "Export an existing own recovery card; request bodies cannot supply file contents.",
+        "properties": {
+          "card_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "filename": {
+            "pattern": "^[a-zA-Z0-9_-]{1,80}\\.md$",
+            "title": "Filename",
+            "type": "string"
+          },
+          "is_confirmed": {
+            "title": "Is Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "card_id",
+          "filename",
+          "is_confirmed"
+        ],
+        "title": "ArtifactExport",
+        "type": "object"
+      },
+      "AuthSession": {
+        "description": "Issued credentials for one authenticated account.",
+        "properties": {
+          "access_token": {
+            "description": "Signed JWT access token.",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "description": "Token type.",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserProfile",
+            "description": "The authenticated account's profile."
+          }
+        },
+        "required": [
+          "user",
+          "access_token"
+        ],
+        "title": "AuthSession",
+        "type": "object"
+      },
+      "BatchReceipt": {
+        "additionalProperties": false,
+        "description": "Accepted records and exact retries; conflicting identifiers fail atomically.",
+        "properties": {
+          "accepted": {
+            "minimum": 0.0,
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "duplicates": {
+            "minimum": 0.0,
+            "title": "Duplicates",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "duplicates"
+        ],
+        "title": "BatchReceipt",
+        "type": "object"
+      },
+      "ConfirmEventRequest": {
+        "additionalProperties": false,
+        "description": "Student correction of a previously ingested signal event.",
+        "properties": {
+          "user_confirmed": {
+            "description": "True when the student confirms missed content.",
+            "title": "User Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "user_confirmed"
+        ],
+        "title": "ConfirmEventRequest",
+        "type": "object"
+      },
+      "ConsentSettings": {
+        "description": "Stored consent choices for one account.",
+        "properties": {
+          "analytics_opt_in": {
+            "default": false,
+            "description": "Whether the user opted into anonymous aggregated analytics.",
+            "title": "Analytics Opt In",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 time the consent was last updated.",
+            "title": "Updated At"
+          }
+        },
+        "title": "ConsentSettings",
+        "type": "object"
+      },
+      "CostMetrics": {
+        "description": "Provider usage metrics for one recovery generation.",
+        "properties": {
+          "baseline_method": {
+            "description": "Baseline comparison method; never implies fake responses save money.",
+            "title": "Baseline Method",
+            "type": "string"
+          },
+          "cache_status": {
+            "description": "``miss`` or ``hit`` for this generation.",
+            "title": "Cache Status",
+            "type": "string"
+          },
+          "data_label": {
+            "description": "``synthetic`` for mock usage; ``measured`` for real provider calls.",
+            "title": "Data Label",
+            "type": "string"
+          },
+          "input_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Measured input usage, e.g. ``{\"characters\": 1200}``.",
+            "title": "Input Usage",
+            "type": "object"
+          },
+          "job_id": {
+            "description": "Recovery job the metrics belong to.",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "latency_ms": {
+            "description": "Generation latency in milliseconds.",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "description": "Model identifier used.",
+            "title": "Model",
+            "type": "string"
+          },
+          "output_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Measured output usage.",
+            "title": "Output Usage",
+            "type": "object"
+          },
+          "provider_mode": {
+            "description": "Mock or live provider mode.",
+            "title": "Provider Mode",
+            "type": "string"
+          },
+          "session_id": {
+            "description": "Session the job belongs to.",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "session_id",
+          "provider_mode",
+          "model",
+          "input_usage",
+          "output_usage",
+          "cache_status",
+          "latency_ms",
+          "baseline_method",
+          "data_label"
+        ],
+        "title": "CostMetrics",
+        "type": "object"
+      },
+      "Course": {
+        "description": "One course owned and taught by a professor.",
+        "properties": {
+          "code": {
+            "description": "Course catalog code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "course_id": {
+            "description": "Unique course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "Professor user who owns the course.",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Human-readable course title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_id",
+          "owner_id",
+          "title",
+          "code",
+          "created_at"
+        ],
+        "title": "Course",
+        "type": "object"
+      },
+      "CoverageBatch": {
+        "additionalProperties": false,
+        "description": "Atomic coverage ingestion; no more than 100 interval records.",
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceCoverage"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "title": "CoverageBatch",
+        "type": "object"
+      },
+      "CreateCourseRequest": {
+        "additionalProperties": false,
+        "description": "Request creating a course.",
+        "properties": {
+          "code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "code"
+        ],
+        "title": "CreateCourseRequest",
+        "type": "object"
+      },
+      "CreateLectureRequest": {
+        "additionalProperties": false,
+        "description": "Request creating a lecture record.",
+        "properties": {
+          "course_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Course Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_id",
+          "title"
+        ],
+        "title": "CreateLectureRequest",
+        "type": "object"
+      },
+      "CreateRecoveryJobRequest": {
+        "additionalProperties": false,
+        "description": "Request to recover content for one lecture interval.",
+        "properties": {
+          "end_ms": {
+            "description": "Half-open interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "source_event_ids": {
+            "description": "Signal events that motivated this request; validated against the session.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Event Ids",
+            "type": "array"
+          },
+          "start_ms": {
+            "description": "Half-open interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "CreateRecoveryJobRequest",
+        "type": "object"
+      },
+      "CreateSessionRequest": {
+        "additionalProperties": false,
+        "description": "Request to start one running occurrence of a lecture.",
+        "properties": {
+          "course_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Course Id",
+            "type": "string"
+          },
+          "lecture_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/SessionMode"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "zoom_meeting_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoom Meeting Id"
+          }
+        },
+        "required": [
+          "lecture_id",
+          "course_id",
+          "title",
+          "mode"
+        ],
+        "title": "CreateSessionRequest",
+        "type": "object"
+      },
+      "DeliveryBatch": {
+        "additionalProperties": false,
+        "description": "Bounded delivery events; the URL and verified actor define session scope.",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryEvent"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "DeliveryBatch",
+        "type": "object"
+      },
+      "DeliveryEvent": {
+        "additionalProperties": false,
+        "description": "Derived lecture-delivery issue, separate from student recovery observations.",
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "detector_version": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_.-]+$",
+            "title": "Detector Version",
+            "type": "string"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/DeliveryEvidence"
+          },
+          "signal_type": {
+            "enum": [
+              "presenter_out_of_frame",
+              "board_or_screen_occluded",
+              "slide_text_low_legibility"
+            ],
+            "title": "Signal Type",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "event_id",
+          "signal_type",
+          "confidence",
+          "detector_version",
+          "evidence"
+        ],
+        "title": "DeliveryEvent",
+        "type": "object"
+      },
+      "DeliveryEvidence": {
+        "additionalProperties": false,
+        "description": "Bounded derived observations; boxes, frame paths and identities are forbidden.",
+        "properties": {
+          "performance_profile": {
+            "enum": [
+              "low_power",
+              "balanced",
+              "performance"
+            ],
+            "title": "Performance Profile",
+            "type": "string"
+          },
+          "positive_sample_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Positive Sample Count",
+            "type": "integer"
+          },
+          "sample_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Sample Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sample_count",
+          "positive_sample_count",
+          "performance_profile"
+        ],
+        "title": "DeliveryEvidence",
+        "type": "object"
+      },
+      "DeliveryFinding": {
+        "additionalProperties": false,
+        "description": "Professor-visible delivery evidence contains no detector identity or student data.",
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "signal_type": {
+            "enum": [
+              "presenter_out_of_frame",
+              "board_or_screen_occluded",
+              "slide_text_low_legibility"
+            ],
+            "title": "Signal Type",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "suggested_action": {
+            "title": "Suggested Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "signal_type",
+          "confidence",
+          "suggested_action"
+        ],
+        "title": "DeliveryFinding",
+        "type": "object"
+      },
+      "DemoCostComparison": {
+        "additionalProperties": false,
+        "description": "Compare fixture text sizes without claiming measured provider savings.\n\nTokens use a character heuristic, not a model tokenizer. Dollar values use\na deliberately hypothetical rate, exclude prompts/output, and are not bills.",
+        "properties": {
+          "baseline_method": {
+            "const": "all_final_fixture_transcript_text",
+            "default": "all_final_fixture_transcript_text",
+            "title": "Baseline Method",
+            "type": "string"
+          },
+          "cache_hits": {
+            "minimum": 0.0,
+            "title": "Cache Hits",
+            "type": "integer"
+          },
+          "data_label": {
+            "const": "synthetic_estimate",
+            "default": "synthetic_estimate",
+            "title": "Data Label",
+            "type": "string"
+          },
+          "estimated_input_reduction_ratio": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Input Reduction Ratio",
+            "type": "number"
+          },
+          "estimation_method": {
+            "const": "ceil_unicode_characters_div_4",
+            "default": "ceil_unicode_characters_div_4",
+            "title": "Estimation Method",
+            "type": "string"
+          },
+          "full_transcript_characters": {
+            "minimum": 0.0,
+            "title": "Full Transcript Characters",
+            "type": "integer"
+          },
+          "full_transcript_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Full Transcript Estimated Tokens",
+            "type": "integer"
+          },
+          "full_transcript_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Full Transcript Illustrative Input Usd",
+            "type": "number"
+          },
+          "generation_calls_avoided": {
+            "minimum": 0.0,
+            "title": "Generation Calls Avoided",
+            "type": "integer"
+          },
+          "illustrative_input_reduction_usd": {
+            "minimum": 0.0,
+            "title": "Illustrative Input Reduction Usd",
+            "type": "number"
+          },
+          "illustrative_input_usd_per_million_tokens": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Illustrative Input Usd Per Million Tokens",
+            "type": "number"
+          },
+          "measured_input_tokens": {
+            "title": "Measured Input Tokens",
+            "type": "null"
+          },
+          "measured_output_tokens": {
+            "title": "Measured Output Tokens",
+            "type": "null"
+          },
+          "measured_savings_usd": {
+            "title": "Measured Savings Usd",
+            "type": "null"
+          },
+          "mock_generation_calls": {
+            "minimum": 0.0,
+            "title": "Mock Generation Calls",
+            "type": "integer"
+          },
+          "pricing_basis": {
+            "const": "hypothetical_not_provider_pricing",
+            "default": "hypothetical_not_provider_pricing",
+            "title": "Pricing Basis",
+            "type": "string"
+          },
+          "provider_api_calls": {
+            "const": 0,
+            "default": 0,
+            "title": "Provider Api Calls",
+            "type": "integer"
+          },
+          "scope": {
+            "const": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "default": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "title": "Scope",
+            "type": "string"
+          },
+          "selected_context_characters": {
+            "minimum": 0.0,
+            "title": "Selected Context Characters",
+            "type": "integer"
+          },
+          "selected_context_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Selected Context Estimated Tokens",
+            "type": "integer"
+          },
+          "selected_context_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Selected Context Illustrative Input Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "full_transcript_characters",
+          "selected_context_characters",
+          "full_transcript_estimated_tokens",
+          "selected_context_estimated_tokens",
+          "estimated_input_reduction_ratio",
+          "full_transcript_illustrative_input_usd",
+          "selected_context_illustrative_input_usd",
+          "illustrative_input_reduction_usd",
+          "mock_generation_calls",
+          "cache_hits",
+          "generation_calls_avoided"
+        ],
+        "title": "DemoCostComparison",
+        "type": "object"
+      },
+      "DemoRunRequest": {
+        "additionalProperties": false,
+        "description": "Empty optional body: client identities, media and provider overrides are forbidden.",
+        "properties": {},
+        "title": "DemoRunRequest",
+        "type": "object"
+      },
+      "DemoRunResult": {
+        "description": "Summary of one fully synthetic demo run.",
+        "properties": {
+          "cached_recovery_job": {
+            "$ref": "#/components/schemas/RecoveryJob",
+            "description": "Repeated recovery job demonstrating cache reuse."
+          },
+          "professor_metrics": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Coverage-aware anonymous report using the synthetic policy."
+          },
+          "professor_metrics_suppressed": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Same safe report with too few synthetic participants."
+          },
+          "professor_summary": {
+            "$ref": "#/components/schemas/ProfessorSummary",
+            "description": "Anonymous professor summary for the run."
+          },
+          "professor_summary_suppressed": {
+            "$ref": "#/components/schemas/ProfessorSummary",
+            "description": "Summary demonstrating small-group suppression."
+          },
+          "recovery_card": {
+            "$ref": "#/components/schemas/RecoveryCard",
+            "description": "Generated recovery card."
+          },
+          "recovery_job": {
+            "$ref": "#/components/schemas/RecoveryJob",
+            "description": "First recovery job result."
+          },
+          "session": {
+            "$ref": "#/components/schemas/LectureSession",
+            "description": "Created synthetic lecture session."
+          },
+          "submitted_event_ids": {
+            "description": "Synthetic missed-window events submitted by participants.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Submitted Event Ids",
+            "type": "array"
+          },
+          "token_cost_comparison": {
+            "$ref": "#/components/schemas/DemoCostComparison",
+            "description": "Input-only heuristic comparison, never measured savings."
+          },
+          "transcript_chunk_ids": {
+            "description": "Ingested synthetic transcript chunk ids.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Transcript Chunk Ids",
+            "type": "array"
+          },
+          "usage_records": {
+            "description": "Synthetic generation and cache ledger entries.",
+            "items": {
+              "$ref": "#/components/schemas/CostMetrics"
+            },
+            "title": "Usage Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session",
+          "transcript_chunk_ids",
+          "submitted_event_ids",
+          "recovery_job",
+          "recovery_card",
+          "cached_recovery_job",
+          "professor_summary",
+          "professor_summary_suppressed",
+          "professor_metrics",
+          "professor_metrics_suppressed",
+          "token_cost_comparison",
+          "usage_records"
+        ],
+        "title": "DemoRunResult",
+        "type": "object"
+      },
+      "DemoTokenRequest": {
+        "description": "Synthetic actor to mint a demo access token for.",
+        "properties": {
+          "course_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Id"
+          },
+          "role": {
+            "description": "``student`` or ``professor``.",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "DemoTokenRequest",
+        "type": "object"
+      },
+      "DemoTokenResponse": {
+        "description": "Issued synthetic access token.",
+        "properties": {
+          "access_token": {
+            "description": "Signed demo access token.",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "role": {
+            "description": "Synthetic role.",
+            "title": "Role",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "description": "Token type.",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Synthetic user id.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "user_id",
+          "role"
+        ],
+        "title": "DemoTokenResponse",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "additionalProperties": false,
+        "description": "Machine-readable error code and message.",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable error code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured details; never secrets.",
+            "title": "Details"
+          },
+          "message": {
+            "description": "Human-readable error explanation.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "description": "Repository-standard error envelope used by every endpoint.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody",
+            "description": "The typed error body."
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "EventBatchResponse": {
+        "description": "Response summarizing one accepted signal-event batch.",
+        "properties": {
+          "accepted_event_ids": {
+            "description": "Newly accepted event identifiers.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Accepted Event Ids",
+            "type": "array"
+          },
+          "recovery_eligible_event_ids": {
+            "description": "Event ids passing the configurable missed-window rule.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Recovery Eligible Event Ids",
+            "type": "array"
+          },
+          "session_id": {
+            "description": "Session the batch was ingested into.",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "accepted_event_ids",
+          "recovery_eligible_event_ids"
+        ],
+        "title": "EventBatchResponse",
+        "type": "object"
+      },
+      "EvidenceCoverage": {
+        "additionalProperties": false,
+        "description": "A local observation interval, including detector-unavailable periods.\n\nIdentity is resolved from JWT. Available means observations ran, not attention.",
+        "properties": {
+          "coverage_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Coverage Id",
+            "type": "string"
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_available": {
+            "title": "Is Available",
+            "type": "boolean"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "coverage_id",
+          "is_available"
+        ],
+        "title": "EvidenceCoverage",
+        "type": "object"
+      },
+      "ExportReceipt": {
+        "additionalProperties": false,
+        "description": "Receipt distinguishes synthetic destination writes from real provider success.",
+        "properties": {
+          "export_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "export_id",
+          "provider_mode",
+          "filename"
+        ],
+        "title": "ExportReceipt",
+        "type": "object"
+      },
+      "ExternalTextConsent": {
+        "additionalProperties": false,
+        "description": "Separate, revocable permission for bounded text to the chosen AI provider.",
+        "properties": {
+          "is_allowed": {
+            "title": "Is Allowed",
+            "type": "boolean"
+          },
+          "provider": {
+            "const": "openai",
+            "default": "openai",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "is_allowed"
+        ],
+        "title": "ExternalTextConsent",
+        "type": "object"
+      },
+      "FolderSelection": {
+        "additionalProperties": false,
+        "description": "Explicit selection of a provider-authorized folder identifier.",
+        "properties": {
+          "folder_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Folder Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id"
+        ],
+        "title": "FolderSelection",
+        "type": "object"
+      },
+      "GroundedFact": {
+        "additionalProperties": false,
+        "description": "A claim and an exact evidence quote from a selected transcript chunk.",
+        "properties": {
+          "chunk_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "evidence_quote": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Evidence Quote",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "chunk_id",
+          "evidence_quote"
+        ],
+        "title": "GroundedFact",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
         "type": "object"
       },
       "HealthResponse": {
@@ -36,6 +1115,1637 @@
         ],
         "title": "HealthResponse",
         "type": "object"
+      },
+      "IngestEventsRequest": {
+        "additionalProperties": false,
+        "description": "Batch ingestion of timestamped signal events.",
+        "properties": {
+          "events": {
+            "description": "Events to ingest.",
+            "items": {
+              "$ref": "#/components/schemas/SignalEvent"
+            },
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          },
+          "lecture_id": {
+            "description": "Lecture record identifier; validated against the session.",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Lecture Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lecture_id",
+          "events"
+        ],
+        "title": "IngestEventsRequest",
+        "type": "object"
+      },
+      "IngestTranscriptRequest": {
+        "additionalProperties": false,
+        "description": "Batch ingestion of timestamped transcript chunks.",
+        "properties": {
+          "chunks": {
+            "description": "Chunks to ingest.",
+            "items": {
+              "$ref": "#/components/schemas/TranscriptChunk"
+            },
+            "minItems": 1,
+            "title": "Chunks",
+            "type": "array"
+          },
+          "lecture_id": {
+            "description": "Lecture record identifier; validated against the session.",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Lecture Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lecture_id",
+          "chunks"
+        ],
+        "title": "IngestTranscriptRequest",
+        "type": "object"
+      },
+      "JobFailure": {
+        "description": "A typed, recoverable failure attached to a failed job.",
+        "properties": {
+          "message": {
+            "description": "Human-readable, compassionate failure explanation.",
+            "title": "Message",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/JobFailureReason",
+            "description": "Stable typed failure reason."
+          }
+        },
+        "required": [
+          "reason",
+          "message"
+        ],
+        "title": "JobFailure",
+        "type": "object"
+      },
+      "JobFailureReason": {
+        "description": "Typed, recoverable failure reasons for recovery jobs.",
+        "enum": [
+          "missing_transcript_context",
+          "provider_refused",
+          "provider_timeout",
+          "provider_malformed_output",
+          "validation_failed",
+          "internal_error"
+        ],
+        "title": "JobFailureReason",
+        "type": "string"
+      },
+      "JobStatus": {
+        "description": "Lifecycle state of a recovery job.",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "failed"
+        ],
+        "title": "JobStatus",
+        "type": "string"
+      },
+      "Lecture": {
+        "description": "One lecture record belonging to a course.",
+        "properties": {
+          "course_id": {
+            "description": "Owning course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "lecture_id": {
+            "description": "Unique lecture-record identifier.",
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "Professor user who owns the lecture.",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Human-readable lecture title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lecture_id",
+          "course_id",
+          "owner_id",
+          "title",
+          "created_at"
+        ],
+        "title": "Lecture",
+        "type": "object"
+      },
+      "LectureInterval": {
+        "additionalProperties": false,
+        "description": "Half-open lecture-relative interval, in integer milliseconds.",
+        "properties": {
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "LectureInterval",
+        "type": "object"
+      },
+      "LectureSession": {
+        "description": "One running occurrence of a lecture on the shared lecture clock.",
+        "properties": {
+          "course_id": {
+            "description": "Owning course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 end time.",
+            "title": "Ended At"
+          },
+          "lecture_id": {
+            "description": "Identifier of the underlying lecture record.",
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/SessionMode",
+            "description": "How the session is held."
+          },
+          "owner_id": {
+            "description": "Authenticated user who started the session.",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "session_clock_origin": {
+            "description": "UTC ISO 8601 origin of the shared lecture clock.",
+            "title": "Session Clock Origin",
+            "type": "string"
+          },
+          "session_id": {
+            "description": "Unique identifier for this occurrence.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "started_at": {
+            "description": "UTC ISO 8601 start time ending in Z.",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus",
+            "description": "Current lifecycle state."
+          },
+          "title": {
+            "description": "Human-readable lecture-session title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "zoom_meeting_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Zoom meeting identifier when authorized.",
+            "title": "Zoom Meeting Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "lecture_id",
+          "owner_id",
+          "course_id",
+          "title",
+          "mode",
+          "status",
+          "started_at",
+          "session_clock_origin"
+        ],
+        "title": "LectureSession",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "description": "Existing-account login credentials.",
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "MetricsBucket": {
+        "additionalProperties": false,
+        "description": "One fixed bucket; suppression hides counts, ratios and evidence alike.",
+        "properties": {
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_hotspot": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Hotspot"
+          },
+          "possible_missed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "suppressed",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Action"
+          },
+          "transcript_chunk_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Transcript Chunk Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "status"
+        ],
+        "title": "MetricsBucket",
+        "type": "object"
+      },
+      "ModelMetadata": {
+        "additionalProperties": false,
+        "description": "Provider metadata recorded with every generated card.",
+        "properties": {
+          "data_label": {
+            "default": "synthetic",
+            "description": "Synthetic for mock usage; measured only for real provider calls.",
+            "enum": [
+              "synthetic",
+              "measured"
+            ],
+            "title": "Data Label",
+            "type": "string"
+          },
+          "input_character_count": {
+            "description": "Bounded input size.",
+            "minimum": 0.0,
+            "title": "Input Character Count",
+            "type": "integer"
+          },
+          "input_token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measured input tokens; ``None`` for mock generation.",
+            "title": "Input Token Count"
+          },
+          "latency_ms": {
+            "description": "Generation latency in milliseconds.",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "description": "Model identifier used for generation.",
+            "title": "Model",
+            "type": "string"
+          },
+          "output_character_count": {
+            "description": "Generated output size.",
+            "minimum": 0.0,
+            "title": "Output Character Count",
+            "type": "integer"
+          },
+          "output_schema_version": {
+            "description": "Version of the output schema.",
+            "title": "Output Schema Version",
+            "type": "string"
+          },
+          "output_token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measured output tokens; ``None`` for mock generation.",
+            "title": "Output Token Count"
+          },
+          "prompt_version": {
+            "description": "Version of the recovery prompt.",
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider name, e.g. ``mock`` or ``openai``.",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_mode": {
+            "description": "Execution mode; mock responses are labeled synthetic.",
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "provider_mode",
+          "prompt_version",
+          "output_schema_version",
+          "input_character_count",
+          "output_character_count",
+          "latency_ms"
+        ],
+        "title": "ModelMetadata",
+        "type": "object"
+      },
+      "ParticipantResponse": {
+        "description": "Response for one participant registration.",
+        "properties": {
+          "participant_count": {
+            "description": "Registered participant count.",
+            "minimum": 1.0,
+            "title": "Participant Count",
+            "type": "integer"
+          },
+          "session_id": {
+            "description": "Session joined.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Authenticated user who joined.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "user_id",
+          "participant_count"
+        ],
+        "title": "ParticipantResponse",
+        "type": "object"
+      },
+      "ProfessorMetrics": {
+        "additionalProperties": false,
+        "description": "Coverage-aware teaching report; missing learning outcomes are never invented.",
+        "properties": {
+          "bucket_ms": {
+            "title": "Bucket Ms",
+            "type": "integer"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/MetricsBucket"
+            },
+            "title": "Buckets",
+            "type": "array"
+          },
+          "continuity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedRatio"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delivery_findings": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryFinding"
+            },
+            "title": "Delivery Findings",
+            "type": "array"
+          },
+          "minimum_group_size": {
+            "title": "Minimum Group Size",
+            "type": "integer"
+          },
+          "policy_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "recovery_outcomes_status": {
+            "const": "not_collected",
+            "default": "not_collected",
+            "title": "Recovery Outcomes Status",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "suppressed",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "policy_version",
+          "status",
+          "minimum_group_size",
+          "bucket_ms",
+          "buckets"
+        ],
+        "title": "ProfessorMetrics",
+        "type": "object"
+      },
+      "ProfessorSummary": {
+        "description": "Anonymous, aggregated, threshold-safe professor report.\n\nNever includes student IDs, names, device IDs, or individual confidence\nvalues. Small groups are suppressed.",
+        "properties": {
+          "aggregation_window_ms": {
+            "description": "Fixed bucket width in ms.",
+            "minimum": 1.0,
+            "title": "Aggregation Window Ms",
+            "type": "integer"
+          },
+          "generated_at": {
+            "description": "UTC ISO 8601 generation time ending in Z.",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "highest_signal_intervals": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SignalIntervalAggregate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Anonymous dense intervals; null while suppressed.",
+            "title": "Highest Signal Intervals"
+          },
+          "is_suppressed": {
+            "description": "True when the group is too small to release aggregates.",
+            "title": "Is Suppressed",
+            "type": "boolean"
+          },
+          "minimum_group_size": {
+            "description": "Approved minimum group-size threshold.",
+            "minimum": 1.0,
+            "title": "Minimum Group Size",
+            "type": "integer"
+          },
+          "participant_count": {
+            "description": "Unique participating, opted-in users, not events; deduplicated.",
+            "minimum": 0.0,
+            "title": "Participant Count",
+            "type": "integer"
+          },
+          "session_id": {
+            "description": "Session the summary describes.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "suggested_actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compassionate suggestions; null while suppressed.",
+            "title": "Suggested Actions"
+          },
+          "summary_id": {
+            "description": "Unique summary identifier.",
+            "title": "Summary Id",
+            "type": "string"
+          },
+          "timeline_buckets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TimelineBucket"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Anonymous buckets; null while suppressed.",
+            "title": "Timeline Buckets"
+          }
+        },
+        "required": [
+          "summary_id",
+          "session_id",
+          "participant_count",
+          "minimum_group_size",
+          "aggregation_window_ms",
+          "is_suppressed",
+          "generated_at"
+        ],
+        "title": "ProfessorSummary",
+        "type": "object"
+      },
+      "Recommendation": {
+        "additionalProperties": false,
+        "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.",
+        "properties": {
+          "end_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "observation": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Observation",
+            "type": "string"
+          },
+          "start_ms": {
+            "maximum": 28800000.0,
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "suggested_action": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Suggested Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "observation",
+          "suggested_action"
+        ],
+        "title": "Recommendation",
+        "type": "object"
+      },
+      "RecommendationReport": {
+        "additionalProperties": false,
+        "description": "Recommendations retain report revision, provider provenance and uncertainty.",
+        "properties": {
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "report_revision": {
+            "title": "Report Revision",
+            "type": "string"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationReview"
+            },
+            "maxItems": 5,
+            "title": "Reviews",
+            "type": "array"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "report_revision",
+          "status",
+          "provider_mode",
+          "recommendations"
+        ],
+        "title": "RecommendationReport",
+        "type": "object"
+      },
+      "RecommendationReview": {
+        "additionalProperties": false,
+        "description": "Professor feedback on a revision-bound suggestion.",
+        "properties": {
+          "recommendation_index": {
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Recommendation Index",
+            "type": "integer"
+          },
+          "report_revision": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Report Revision",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "reviewed",
+              "dismissed",
+              "resolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_revision",
+          "recommendation_index",
+          "status"
+        ],
+        "title": "RecommendationReview",
+        "type": "object"
+      },
+      "RecoveryCard": {
+        "description": "A grounded, compassionate explanation of missed lecture content.",
+        "properties": {
+          "card_id": {
+            "description": "Unique recovery-card identifier.",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "example_from_lecture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Closest lecture excerpt to the missed interval.",
+            "title": "Example From Lecture"
+          },
+          "follow_up_question": {
+            "description": "Suggested follow-up for the student.",
+            "title": "Follow Up Question",
+            "type": "string"
+          },
+          "key_facts": {
+            "description": "Grounded facts from the lecture context.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Key Facts",
+            "type": "array"
+          },
+          "model_metadata": {
+            "$ref": "#/components/schemas/ModelMetadata",
+            "description": "Provider and usage metadata."
+          },
+          "session_id": {
+            "description": "Session the card was generated for.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source_event_ids": {
+            "description": "Signal events that motivated this card.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Event Ids",
+            "type": "array"
+          },
+          "source_timestamps": {
+            "description": "Source references and timestamps grounding the card.",
+            "items": {
+              "$ref": "#/components/schemas/SourceTimestamp"
+            },
+            "title": "Source Timestamps",
+            "type": "array"
+          },
+          "topic": {
+            "description": "Short topic label for what was missed.",
+            "title": "Topic",
+            "type": "string"
+          },
+          "what_you_missed": {
+            "description": "Compassionate explanation of the missed content.",
+            "title": "What You Missed",
+            "type": "string"
+          }
+        },
+        "required": [
+          "card_id",
+          "session_id",
+          "source_event_ids",
+          "topic",
+          "what_you_missed",
+          "key_facts",
+          "source_timestamps",
+          "follow_up_question",
+          "model_metadata",
+          "created_at"
+        ],
+        "title": "RecoveryCard",
+        "type": "object"
+      },
+      "RecoveryDraft": {
+        "additionalProperties": false,
+        "description": "Provider output; trusted IDs, timestamps and metadata are supplied by backend.",
+        "properties": {
+          "explanation": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/GroundedFact"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Facts",
+            "type": "array"
+          },
+          "follow_up_question": {
+            "maxLength": 400,
+            "minLength": 1,
+            "title": "Follow Up Question",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "explanation",
+          "facts",
+          "follow_up_question"
+        ],
+        "title": "RecoveryDraft",
+        "type": "object"
+      },
+      "RecoveryJob": {
+        "description": "Recovery generation job for one requested interval.",
+        "properties": {
+          "cache_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "miss",
+                  "hit"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether generation reused a cached card.",
+            "title": "Cache Status"
+          },
+          "card_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Card reference when completed.",
+            "title": "Card Id"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 completion time ending in Z.",
+            "title": "Completed At"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobFailure"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Typed failure when failed."
+          },
+          "job_id": {
+            "description": "Unique recovery-job identifier.",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "requested_end_ms": {
+            "description": "Requested interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "Requested End Ms",
+            "type": "integer"
+          },
+          "requested_start_ms": {
+            "description": "Requested interval start in ms.",
+            "minimum": 0.0,
+            "title": "Requested Start Ms",
+            "type": "integer"
+          },
+          "session_id": {
+            "description": "Session the job belongs to.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus",
+            "description": "Current job status."
+          }
+        },
+        "required": [
+          "job_id",
+          "session_id",
+          "status",
+          "requested_start_ms",
+          "requested_end_ms",
+          "created_at"
+        ],
+        "title": "RecoveryJob",
+        "type": "object"
+      },
+      "RegisterParticipantRequest": {
+        "additionalProperties": false,
+        "description": "Opt-in registration for aggregation; identity comes from authentication.",
+        "properties": {},
+        "title": "RegisterParticipantRequest",
+        "type": "object"
+      },
+      "RegisterUserRequest": {
+        "additionalProperties": false,
+        "description": "New-account registration; roles are chosen here, never in bodies later.",
+        "properties": {
+          "display_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email.",
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Account password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "role": {
+            "description": "Requested account role.",
+            "enum": [
+              "student",
+              "professor"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "display_name",
+          "role"
+        ],
+        "title": "RegisterUserRequest",
+        "type": "object"
+      },
+      "ReleasedRatio": {
+        "additionalProperties": false,
+        "description": "A ratio with its denominator; absent means insufficient or suppressed evidence.",
+        "properties": {
+          "denominator": {
+            "exclusiveMinimum": 0.0,
+            "title": "Denominator",
+            "type": "integer"
+          },
+          "numerator": {
+            "minimum": 0.0,
+            "title": "Numerator",
+            "type": "integer"
+          },
+          "ratio": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Ratio",
+            "type": "number"
+          }
+        },
+        "required": [
+          "numerator",
+          "denominator",
+          "ratio"
+        ],
+        "title": "ReleasedRatio",
+        "type": "object"
+      },
+      "SessionMode": {
+        "description": "How a lecture session is held.",
+        "enum": [
+          "zoom",
+          "in_person"
+        ],
+        "title": "SessionMode",
+        "type": "string"
+      },
+      "SessionStatus": {
+        "description": "Lifecycle state of a lecture session.",
+        "enum": [
+          "created",
+          "active",
+          "ending",
+          "ended",
+          "failed"
+        ],
+        "title": "SessionStatus",
+        "type": "string"
+      },
+      "SignalEvent": {
+        "additionalProperties": false,
+        "description": "A coarse, privacy-preserving missed-content signal.\n\nRaw webcam frames, continuous raw audio, and screenshots never reach the\nserver; only timestamped derived signals do.",
+        "properties": {
+          "client_generated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 time the client generated the event.",
+            "title": "Client Generated At"
+          },
+          "confidence": {
+            "description": "Finite client confidence between 0 and 1, never an attention score.",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_ms": {
+            "description": "Half-open interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "description": "possible_missed_window | face_absent | head_away | window_unfocused | ...",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Event Type",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "signals": {
+            "description": "Coarse signal names from the local client.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Signals",
+            "type": "array"
+          },
+          "start_ms": {
+            "description": "Half-open interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "user_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Student correction: confirmed or denied missed content.",
+            "title": "User Confirmed"
+          }
+        },
+        "required": [
+          "event_id",
+          "session_id",
+          "event_type",
+          "start_ms",
+          "end_ms",
+          "confidence"
+        ],
+        "title": "SignalEvent",
+        "type": "object"
+      },
+      "SignalIntervalAggregate": {
+        "description": "Anonymous aggregate for one interval with high signal density.",
+        "properties": {
+          "dominant_event_types": {
+            "description": "Most common event types; never individual confidence values.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Dominant Event Types",
+            "type": "array"
+          },
+          "end_ms": {
+            "description": "Interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_count": {
+            "description": "Anonymous event count in the interval.",
+            "minimum": 0.0,
+            "title": "Event Count",
+            "type": "integer"
+          },
+          "start_ms": {
+            "description": "Interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "event_count",
+          "dominant_event_types"
+        ],
+        "title": "SignalIntervalAggregate",
+        "type": "object"
+      },
+      "SourceTimestamp": {
+        "additionalProperties": false,
+        "description": "A grounded source reference with lecture-relative timestamps.",
+        "properties": {
+          "chunk_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source transcript chunk.",
+            "title": "Chunk Id"
+          },
+          "end_ms": {
+            "description": "Half-open interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source system name.",
+            "title": "Source"
+          },
+          "start_ms": {
+            "description": "Half-open interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "SourceTimestamp",
+        "type": "object"
+      },
+      "TimelineBucket": {
+        "description": "Anonymous aggregate event count for one fixed time bucket.",
+        "properties": {
+          "end_ms": {
+            "description": "Bucket end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "event_count": {
+            "description": "Anonymous event count in the bucket.",
+            "minimum": 0.0,
+            "title": "Event Count",
+            "type": "integer"
+          },
+          "start_ms": {
+            "description": "Bucket start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms",
+          "event_count"
+        ],
+        "title": "TimelineBucket",
+        "type": "object"
+      },
+      "ToolRecoveryResult": {
+        "additionalProperties": false,
+        "description": "A validated tool-assisted draft; no permanent card or provider billing claims in mock mode.",
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/RecoveryDraft"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "provider_mode": {
+            "enum": [
+              "mock",
+              "live"
+            ],
+            "title": "Provider Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft",
+          "provider_mode"
+        ],
+        "title": "ToolRecoveryResult",
+        "type": "object"
+      },
+      "TranscriptBatchResponse": {
+        "description": "Response summarizing one accepted transcript batch.",
+        "properties": {
+          "accepted_chunk_ids": {
+            "description": "Newly accepted chunk identifiers.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Accepted Chunk Ids",
+            "type": "array"
+          },
+          "session_id": {
+            "description": "Session the batch was ingested into.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "superseded_chunk_ids": {
+            "description": "Chunk ids corrected by a higher revision in this batch.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Superseded Chunk Ids",
+            "type": "array"
+          },
+          "transcript_revision": {
+            "description": "Latest revision in the session timeline after ingest.",
+            "minimum": 0.0,
+            "title": "Transcript Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "accepted_chunk_ids",
+          "superseded_chunk_ids",
+          "transcript_revision"
+        ],
+        "title": "TranscriptBatchResponse",
+        "type": "object"
+      },
+      "TranscriptChunk": {
+        "additionalProperties": false,
+        "description": "One timestamped transcript chunk on the shared lecture clock.",
+        "properties": {
+          "chunk_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_ms": {
+            "description": "Half-open interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "is_final": {
+            "default": true,
+            "description": "False for provisional chunks awaiting correction.",
+            "title": "Is Final",
+            "type": "boolean"
+          },
+          "revision": {
+            "default": 1,
+            "description": "Version used to invalidate cached cards on correction.",
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "session_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/TranscriptSource",
+            "description": "Transcript origin."
+          },
+          "speaker_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Speaker label when permitted.",
+            "title": "Speaker Label"
+          },
+          "start_ms": {
+            "description": "Half-open interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "text": {
+            "description": "Transcript text for this chunk.",
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "session_id",
+          "start_ms",
+          "end_ms",
+          "text",
+          "source"
+        ],
+        "title": "TranscriptChunk",
+        "type": "object"
+      },
+      "TranscriptSource": {
+        "description": "Where a transcript chunk originated.",
+        "enum": [
+          "zoom_rtms",
+          "local_transcription",
+          "external_transcription"
+        ],
+        "title": "TranscriptSource",
+        "type": "string"
+      },
+      "TranscriptWindowResponse": {
+        "description": "Response for one timeline read.",
+        "properties": {
+          "chunks": {
+            "description": "Final chunks in the window.",
+            "items": {
+              "$ref": "#/components/schemas/TranscriptChunk"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "end_ms": {
+            "description": "Requested interval end in ms.",
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "session_id": {
+            "description": "Session the window was read from.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "start_ms": {
+            "description": "Requested interval start in ms.",
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "transcript_revision": {
+            "description": "Timeline revision served.",
+            "minimum": 0.0,
+            "title": "Transcript Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "start_ms",
+          "end_ms",
+          "transcript_revision",
+          "chunks"
+        ],
+        "title": "TranscriptWindowResponse",
+        "type": "object"
+      },
+      "UpdateConsentRequest": {
+        "additionalProperties": false,
+        "description": "Request updating one consent choice.",
+        "properties": {
+          "analytics_opt_in": {
+            "description": "New analytics opt-in value.",
+            "title": "Analytics Opt In",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "analytics_opt_in"
+        ],
+        "title": "UpdateConsentRequest",
+        "type": "object"
+      },
+      "UserProfile": {
+        "description": "Public profile of one account; password hashes are never exposed.",
+        "properties": {
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable display name.",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email address.",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "description": "``student`` or ``professor``.",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Unique user identifier.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "display_name",
+          "created_at"
+        ],
+        "title": "UserProfile",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
       }
     }
   },
@@ -49,7 +2759,7 @@
   "paths": {
     "/api/status": {
       "get": {
-        "description": "Return a human-readable readiness message for the frontend skeleton.\n\nReturns:\n    A typed status response confirming that the API is ready.",
+        "description": "Return a human-readable readiness message for the frontend.\n\nReturns:\n    A typed status response confirming that the API is ready.",
         "operationId": "read_api_status_api_status_get",
         "responses": {
           "200": {
@@ -69,9 +2779,2591 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Verify credentials and issue a fresh access token.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Log in to an existing account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Create one account and issue its first access token.\n\nThe role chosen here is embedded in future verified JWTs; roles never\ncome from any other request body.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register a new account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/courses": {
+      "get": {
+        "description": "List every course the authenticated professor owns.",
+        "operationId": "list_courses_api_v1_courses_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Course"
+                  },
+                  "title": "Response List Courses Api V1 Courses Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List owned courses",
+        "tags": [
+          "courses"
+        ]
+      },
+      "post": {
+        "description": "Create one course owned by the authenticated professor.",
+        "operationId": "create_course_api_v1_courses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCourseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}": {
+      "delete": {
+        "description": "Delete one owned course and its lecture records.",
+        "operationId": "delete_course_api_v1_courses__course_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete an owned course",
+        "tags": [
+          "courses"
+        ]
+      },
+      "get": {
+        "description": "Return one course for its owner.",
+        "operationId": "get_course_api_v1_courses__course_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an owned course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/v1/demo/runs": {
+      "post": {
+        "description": "Requires APP_ENV=demo; no JWT needed because all data is synthetic and isolated. Optional empty JSON body only. Returns a sourced mock card, anonymous reports and an input-only heuristic cost illustration. No provider calls or persistent session IDs. Non-demo access: 404; invalid fields: 422; oversized body: 413; generation failure: 502.",
+        "operationId": "run_demo_api_v1_demo_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DemoRunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoRunResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Run the synthetic end-to-end demo",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
+    "/api/v1/demo/token": {
+      "post": {
+        "description": "Mint a short-lived token for a named synthetic actor.",
+        "operationId": "mint_demo_token_api_v1_demo_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mint a synthetic demo access token",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
+    "/api/v1/lectures": {
+      "get": {
+        "description": "List lecture records for one course the professor owns.",
+        "operationId": "list_lectures_api_v1_lectures_get",
+        "parameters": [
+          {
+            "description": "Owning course identifier.",
+            "in": "query",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "description": "Owning course identifier.",
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lecture"
+                  },
+                  "title": "Response List Lectures Api V1 Lectures Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List lectures for one course",
+        "tags": [
+          "lectures"
+        ]
+      },
+      "post": {
+        "description": "Create one lecture record inside a course the professor owns.",
+        "operationId": "create_lecture_api_v1_lectures_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLectureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lecture"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a lecture record",
+        "tags": [
+          "lectures"
+        ]
+      }
+    },
+    "/api/v1/lectures/{lecture_id}": {
+      "delete": {
+        "description": "Delete one owned lecture record.",
+        "operationId": "delete_lecture_api_v1_lectures__lecture_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lecture_id",
+            "required": true,
+            "schema": {
+              "title": "Lecture Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete an owned lecture record",
+        "tags": [
+          "lectures"
+        ]
+      },
+      "get": {
+        "description": "Return one lecture record for its owner.",
+        "operationId": "get_lecture_api_v1_lectures__lecture_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lecture_id",
+            "required": true,
+            "schema": {
+              "title": "Lecture Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lecture"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an owned lecture record",
+        "tags": [
+          "lectures"
+        ]
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "description": "Start one running occurrence of a lecture on the shared clock.\n\nThe authenticated user becomes the session owner. The ``lecture_id``\nidentifies the lecture record and the returned ``session_id`` identifies\nthis occurrence.",
+        "operationId": "create_session_api_v1_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LectureSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a lecture session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "get": {
+        "description": "Return the session for an authenticated owner, participant, or professor.",
+        "operationId": "read_session_api_v1_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LectureSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve a lecture session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/aggregation-consent": {
+      "put": {
+        "description": "JWT participant changes only their own aggregation consent. Withdrawal removes coverage and affects every subsequent report. It does not change external text consent.",
+        "operationId": "update_aggregation_consent_api_v1_sessions__session_id__aggregation_consent_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AggregationConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregationConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Update Aggregation Consent",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/artifacts/exports": {
+      "post": {
+        "description": "JWT card owner confirms create-only export to their selected folder. Accepts a card reference, not arbitrary text or raw media. Mock receipts do not imply live Dropbox success.",
+        "operationId": "export_card_api_v1_sessions__session_id__artifacts_exports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactExport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Export Card",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/artifacts/folder": {
+      "put": {
+        "description": "JWT member selects their own authorized course folder. Default destination is synthetic in demo/test only.",
+        "operationId": "select_folder_api_v1_sessions__session_id__artifacts_folder_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderSelection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Select Folder",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/cost/metrics": {
+      "get": {
+        "description": "Return recorded provider usage, labeled synthetic in mock mode.",
+        "operationId": "read_cost_metrics_api_v1_sessions__session_id__cost_metrics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CostMetrics"
+                  },
+                  "title": "Response Read Cost Metrics Api V1 Sessions  Session Id  Cost Metrics Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List cost metrics for the session",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/coverage/batch": {
+      "post": {
+        "description": "JWT student membership and current aggregation consent required. Accepts bounded availability intervals only. Exact retries are duplicates; conflicting batches are atomic. No raw media or identity claims.",
+        "operationId": "ingest_coverage_api_v1_sessions__session_id__coverage_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoverageBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Ingest Coverage",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/delivery-events/batch": {
+      "post": {
+        "description": "Course-professor JWT required. Accepts only local derived delivery events. Frames, boxes, file paths and student identity are forbidden. Conflicts reject the entire batch.",
+        "operationId": "ingest_delivery_api_v1_sessions__session_id__delivery_events_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Ingest Delivery",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/end": {
+      "post": {
+        "description": "Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected.",
+        "operationId": "end_session_api_v1_sessions__session_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LectureSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "End Session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/events/batch": {
+      "post": {
+        "description": "Ingest coarse, timestamped missed-content signal events.\n\nRaw webcam frames, continuous raw audio, and screenshots are never\naccepted; unexpected fields are rejected by contract validation.",
+        "operationId": "ingest_events_api_v1_sessions__session_id__events_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestEventsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest a batch of signal events",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/events/{event_id}/confirmation": {
+      "post": {
+        "description": "Apply the student's confirmation or denial of missed content.",
+        "operationId": "confirm_event_api_v1_sessions__session_id__events__event_id__confirmation_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalEvent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Correct a signal event",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/external-text-consent": {
+      "put": {
+        "description": "JWT member updates only their own provider-specific permission. Separate from signal/aggregation consent. Revocation clears their recovery cache; previously exported external copies are not deleted.",
+        "operationId": "update_external_consent_api_v1_sessions__session_id__external_text_consent_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalTextConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalTextConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Update External Consent",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/participants": {
+      "post": {
+        "description": "Opt the authenticated user into anonymous, aggregated participation.",
+        "operationId": "register_participant_api_v1_sessions__session_id__participants_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RegisterParticipantRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register as a session participant",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor-metrics": {
+      "get": {
+        "description": "Authorized course professor, ended session and configured policy required. Returns fixed buckets with safe counts or suppression; unknown coverage is never healthy continuity. Phone observations are excluded.",
+        "operationId": "read_metrics_api_v1_sessions__session_id__professor_metrics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessorMetrics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Read Metrics",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor-recommendations": {
+      "post": {
+        "description": "Course-professor JWT and released evidence required. Mock by default; live mode additionally requires external-text consent. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider.",
+        "operationId": "generate_recommendations_api_v1_sessions__session_id__professor_recommendations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Generate Recommendations",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor-recommendations/reviews": {
+      "put": {
+        "description": "Course-professor JWT required. Store reviewed/dismissed/resolved state against a current report revision. Stale evidence returns a conflict.",
+        "operationId": "review_recommendation_api_v1_sessions__session_id__professor_recommendations_reviews_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationReview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Review Recommendation",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/professor/summary": {
+      "get": {
+        "description": "Return an anonymous, aggregated summary for the course professor.\n\nAggregates are suppressed below the configured minimum group size and\nnever include student identifiers or individual confidence values.",
+        "operationId": "read_professor_summary_api_v1_sessions__session_id__professor_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessorSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read the anonymous professor summary",
+        "tags": [
+          "professor"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery-cards": {
+      "post": {
+        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.\n\nSupplying an ``Idempotency-Key`` header makes the request safe to retry:\nthe same key returns the original job instead of creating a duplicate.",
+        "operationId": "create_recovery_job_api_v1_sessions__session_id__recovery_cards_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Retries with the same key return the original job.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Retries with the same key return the original job.",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecoveryJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryJob"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request recovery using the unified contract path",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery-cards/{card_id}": {
+      "get": {
+        "description": "Return one personal recovery card exclusively to its requesting student.",
+        "operationId": "read_recovery_card_unified",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "title": "Card Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read a private recovery card",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery/cards/{card_id}": {
+      "get": {
+        "description": "Return one personal recovery card exclusively to its requesting student.",
+        "operationId": "read_recovery_card_api_v1_sessions__session_id__recovery_cards__card_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "title": "Card Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve a recovery card",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery/jobs": {
+      "post": {
+        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.\n\nSupplying an ``Idempotency-Key`` header makes the request safe to retry:\nthe same key returns the original job instead of creating a duplicate.",
+        "operationId": "create_recovery_job_api_v1_sessions__session_id__recovery_jobs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Retries with the same key return the original job.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Retries with the same key return the original job.",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecoveryJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryJob"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request a recovery card for an interval",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery/jobs/{job_id}": {
+      "get": {
+        "description": "Return the job status, card reference, or typed failure.",
+        "operationId": "read_recovery_job_api_v1_sessions__session_id__recovery_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryJob"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve a recovery job",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/recovery/tool-runs": {
+      "post": {
+        "description": "Student JWT required. Run bounded read-only tools within the requested interval. Mock by default. Live mode requires separate provider consent; no raw media, phone observations or cross-user history is sent.",
+        "operationId": "run_tools_api_v1_sessions__session_id__recovery_tool_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LectureInterval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolRecoveryResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Run Tools",
+        "tags": [
+          "recovery"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript": {
+      "get": {
+        "description": "Read final transcript chunks overlapping ``[start_ms, end_ms)``.",
+        "operationId": "read_transcript_window_api_v1_sessions__session_id__transcript_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Half-open interval start in ms.",
+            "in": "query",
+            "name": "start_ms",
+            "required": true,
+            "schema": {
+              "description": "Half-open interval start in ms.",
+              "minimum": 0,
+              "title": "Start Ms",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Half-open interval end in ms.",
+            "in": "query",
+            "name": "end_ms",
+            "required": true,
+            "schema": {
+              "description": "Half-open interval end in ms.",
+              "exclusiveMinimum": 0,
+              "title": "End Ms",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptWindowResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read transcript chunks for an interval",
+        "tags": [
+          "transcript"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript-chunks/batch": {
+      "post": {
+        "description": "Ingest timestamped transcript chunks from Zoom RTMS or local worker.",
+        "operationId": "ingest_transcript_api_v1_sessions__session_id__transcript_chunks_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestTranscriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest transcript chunks using the unified contract path",
+        "tags": [
+          "transcript"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/transcript/batch": {
+      "post": {
+        "description": "Ingest timestamped transcript chunks from Zoom RTMS or local worker.",
+        "operationId": "ingest_transcript_api_v1_sessions__session_id__transcript_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestTranscriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest a batch of transcript chunks",
+        "tags": [
+          "transcript"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Return the authenticated account's public profile.",
+        "operationId": "read_current_user_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read the authenticated account",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/consent": {
+      "get": {
+        "description": "Return the authenticated account's consent choices.",
+        "operationId": "read_consent_api_v1_users_me_consent_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read stored consent settings",
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Store the account's analytics opt-in choice.",
+        "operationId": "update_consent_api_v1_users_me_consent_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update stored consent settings",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/health": {
       "get": {
-        "description": "Return the current process liveness state.\n\nReturns:\n    A typed response whose status is ``ok`` while the process is running.",
+        "description": "Return the current process liveness state.\n\nReturns:\n    A typed response whose status is ``ok`` while the process runs.",
         "operationId": "read_health_health_get",
         "responses": {
           "200": {
@@ -96,6 +5388,30 @@
     {
       "description": "Liveness and API readiness endpoints.",
       "name": "system"
+    },
+    {
+      "description": "Lecture-session lifecycle.",
+      "name": "sessions"
+    },
+    {
+      "description": "Coarse signal events and participants.",
+      "name": "signals"
+    },
+    {
+      "description": "Transcript ingestion and timeline reads.",
+      "name": "transcript"
+    },
+    {
+      "description": "Recovery jobs, cards, and cost metrics.",
+      "name": "recovery"
+    },
+    {
+      "description": "Anonymous, threshold-safe summaries.",
+      "name": "professor"
+    },
+    {
+      "description": "Gated synthetic demo orchestration.",
+      "name": "demo"
     }
   ]
 }

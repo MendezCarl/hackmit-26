@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "TranscriptSource": {
+      "description": "Where a transcript chunk originated.",
+      "enum": [
+        "zoom_rtms",
+        "local_transcription",
+        "external_transcription"
+      ],
+      "title": "TranscriptSource",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One timestamped transcript chunk on the shared lecture clock.",
+  "properties": {
+    "chunk_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Chunk Id",
+      "type": "string"
+    },
+    "end_ms": {
+      "description": "Half-open interval end in ms.",
+      "exclusiveMinimum": 0,
+      "title": "End Ms",
+      "type": "integer"
+    },
+    "is_final": {
+      "default": true,
+      "description": "False for provisional chunks awaiting correction.",
+      "title": "Is Final",
+      "type": "boolean"
+    },
+    "revision": {
+      "default": 1,
+      "description": "Version used to invalidate cached cards on correction.",
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "session_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Session Id",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/TranscriptSource",
+      "description": "Transcript origin."
+    },
+    "speaker_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Speaker label when permitted.",
+      "title": "Speaker Label"
+    },
+    "start_ms": {
+      "description": "Half-open interval start in ms.",
+      "minimum": 0,
+      "title": "Start Ms",
+      "type": "integer"
+    },
+    "text": {
+      "description": "Transcript text for this chunk.",
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "chunk_id",
+    "session_id",
+    "start_ms",
+    "end_ms",
+    "text",
+    "source"
+  ],
+  "title": "TranscriptChunk",
+  "type": "object"
+}
