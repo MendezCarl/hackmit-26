@@ -16,6 +16,9 @@ KNOWN_ENVIRONMENTS = (DEVELOPMENT_ENV, TEST_ENV, DEMO_ENV, PRODUCTION_ENV)
 MOCK_PROVIDER_MODE = "mock"
 LIVE_PROVIDER_MODE = "live"
 KNOWN_PROVIDER_MODES = (MOCK_PROVIDER_MODE, LIVE_PROVIDER_MODE)
+OPENAI_LIVE_PROVIDER = "openai"
+MUSE_LIVE_PROVIDER = "meta_muse"
+KNOWN_LIVE_PROVIDERS = (OPENAI_LIVE_PROVIDER, MUSE_LIVE_PROVIDER)
 
 DEFAULT_DEMO_SECRET = "dev-only-secret-change-me-before-production"
 
@@ -73,7 +76,11 @@ class Settings(BaseModel):
 
     - ``APP_ENV``: ``development``, ``test``, ``demo``, or ``production``.
     - ``PROVIDER_MODE``: ``mock`` (deterministic synthetic cards) or ``live``.
+    - ``LIVE_PROVIDER``: ``openai`` or ``meta_muse`` when ``PROVIDER_MODE=live``.
     - ``APP_SECRET``: signing secret for JWT access tokens.
+    - ``OPENAI_API_KEY`` and ``OPENAI_MODEL``: OpenAI live-provider settings.
+    - ``MUSE_API_KEY``, ``MUSE_MODEL``, and ``MUSE_BASE_URL``: Meta Muse
+      live-provider settings.
     - Threshold and limit knobs documented per field below.
     """
 
@@ -143,6 +150,24 @@ class Settings(BaseModel):
         default="gpt-4o-mini",
         description="Model used by the live OpenAI adapter.",
     )
+    live_provider: str = Field(
+        default=OPENAI_LIVE_PROVIDER,
+        description=(
+            "Which cloud provider serves PROVIDER_MODE=live: openai or meta_muse."
+        ),
+    )
+    muse_api_key: str | None = Field(
+        default=None,
+        description="Meta Model API key for the Muse adapter; never logged or returned.",
+    )
+    muse_model: str = Field(
+        default="muse-spark-1.2",
+        description="Model used by the live Meta Muse adapter.",
+    )
+    muse_base_url: str = Field(
+        default="https://api.meta.ai/v1",
+        description="Base URL for the OpenAI-compatible Meta Model API.",
+    )
 
     def is_demo_or_test(self) -> bool:
         """Return whether privileged demo/test helpers are available."""
@@ -180,11 +205,17 @@ def _settings_from_environment() -> Settings:
         max_transcript_text_chars=_read_int("MAX_TRANSCRIPT_TEXT_CHARS", 4_000),
         openai_api_key=os.environ.get("OPENAI_API_KEY"),
         openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        live_provider=os.environ.get("LIVE_PROVIDER", OPENAI_LIVE_PROVIDER),
+        muse_api_key=os.environ.get("MUSE_API_KEY"),
+        muse_model=os.environ.get("MUSE_MODEL", "muse-spark-1.2"),
+        muse_base_url=os.environ.get("MUSE_BASE_URL", "https://api.meta.ai/v1"),
     )
     if settings.app_env not in KNOWN_ENVIRONMENTS:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")
     if settings.provider_mode not in KNOWN_PROVIDER_MODES:
         raise ValueError(f"Unknown PROVIDER_MODE: {settings.provider_mode}")
+    if settings.live_provider not in KNOWN_LIVE_PROVIDERS:
+        raise ValueError(f"Unknown LIVE_PROVIDER: {settings.live_provider}")
     if settings.app_env == PRODUCTION_ENV and settings.app_secret == DEFAULT_DEMO_SECRET:
         raise ValueError("Production requires a real APP_SECRET.")
     return settings

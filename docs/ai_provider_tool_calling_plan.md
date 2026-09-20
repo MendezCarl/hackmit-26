@@ -49,7 +49,8 @@ Meta Muse can use the same product-level pattern. Muse Spark is designed for age
 
 Use Muse Spark for cloud tool-calling workflows. Muse Voice Transcribe is a separate speech-to-text capability and should not be treated as the tool-calling model.
 
-**TEAM DECISION: Select the Muse model and Meta Model API version used for the first integration.**
+The first Muse integration uses `muse-spark-1.2` via the OpenAI-compatible
+Responses API (`https://api.meta.ai/v1`).
 
 **TEAM DECISION: Decide whether Muse Voice Transcribe is excluded, optional with explicit cloud-audio consent, or allowed by default. The privacy-first recommendation is to exclude it from the default path.**
 
