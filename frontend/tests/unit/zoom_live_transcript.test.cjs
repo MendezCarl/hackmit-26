@@ -110,7 +110,7 @@ test('applySessionEvent merges live Zoom chunks, honours revisions, and ignores 
   state.setActiveSession(SESSION);
   state.setTranscriptChunks([buildChunk({ chunk_id: 'local-1', start_ms: 5000, end_ms: 6000, source: 'local_transcription' })]);
 
-  assert.equal(live.applySessionEvent(buildEnvelope(buildChunk())), true);
+  assert.equal(live.applySessionEvent(buildEnvelope(buildChunk())), 'transcript_changed');
   assert.deepEqual(
     state.getBackendSessionState().transcriptChunks.map((chunk) => chunk.chunk_id),
     ['zoom_rtms:stream-1:1000:2000', 'local-1'],
@@ -123,11 +123,11 @@ test('applySessionEvent merges live Zoom chunks, honours revisions, and ignores 
   // A higher revision replaces the text; a lower one is ignored.
   assert.equal(
     live.applySessionEvent(buildEnvelope(buildChunk({ revision: 2, text: 'Glycolysis splits glucose in two.' }))),
-    true,
+    'transcript_changed',
   );
   assert.equal(
     live.applySessionEvent(buildEnvelope(buildChunk({ revision: 1, text: 'stale' }))),
-    false,
+    'ignored',
   );
   assert.equal(
     state.getBackendSessionState().transcriptChunks[0].text,
@@ -137,14 +137,63 @@ test('applySessionEvent merges live Zoom chunks, honours revisions, and ignores 
   // Events for another session or with a non-transcript type never touch state.
   assert.equal(
     live.applySessionEvent(buildEnvelope(buildChunk({ session_id: 'session-2' }), { session_id: 'session-2' })),
-    false,
+    'ignored',
   );
   assert.equal(
     live.applySessionEvent(buildEnvelope({ user_id: 'u1' }, { event_type: 'session.connected' })),
-    false,
+    'ignored',
   );
-  assert.equal(live.applySessionEvent(buildEnvelope({ chunk_id: 'x' })), false);
+  assert.equal(live.applySessionEvent(buildEnvelope({ chunk_id: 'x' })), 'ignored');
   assert.equal(state.getBackendSessionState().transcriptChunks.length, 2);
+});
+
+test('applySessionEvent marks the active session ended once and drops the live feed', async () => {
+  installFakeDesktop();
+  const state = await import('../../dist/renderer/services/backend_session_state.mjs');
+  const live = await import('../../dist/renderer/services/live_session_events.mjs');
+  const { describeLiveTranscriptFeed } = await import(
+    '../../dist/renderer/features/recovery-cards/student_summary_page.mjs'
+  );
+  state.clearBackendSessionState();
+  state.setActiveSession(SESSION);
+  state.setLiveEventsConnection({ session_id: 'session-1', state: 'connected' });
+
+  // Another session ending never touches the active one.
+  assert.equal(
+    live.applySessionEvent(
+      buildEnvelope({ ...SESSION, session_id: 'session-2', status: 'ended' }, { event_type: 'session.ended', session_id: 'session-2' }),
+    ),
+    'ignored',
+  );
+  assert.equal(state.getBackendSessionState().activeSession.status, 'active');
+
+  const endedPayload = { ...SESSION, status: 'ended', ended_at: '2026-01-01T01:00:00.000Z' };
+  assert.equal(
+    live.applySessionEvent(buildEnvelope(endedPayload, { event_type: 'session.ended' })),
+    'session_ended',
+  );
+  const ended = state.getBackendSessionState().activeSession;
+  assert.equal(ended.status, 'ended');
+  assert.equal(ended.ended_at, '2026-01-01T01:00:00.000Z');
+  assert.equal(
+    describeLiveTranscriptFeed({
+      isDemo: false,
+      session: ended,
+      courses: [],
+      joinedSessions: [],
+      submittedEvents: [],
+      recoveryCards: [],
+      transcript: [buildChunk()],
+      liveEventsConnection: state.getBackendSessionState().liveEventsConnection,
+    }),
+    '',
+  );
+
+  // A replayed end is idempotent.
+  assert.equal(
+    live.applySessionEvent(buildEnvelope(endedPayload, { event_type: 'session.ended' })),
+    'ignored',
+  );
 });
 
 test('syncLiveSessionSubscription follows the active session and closes on end', async () => {

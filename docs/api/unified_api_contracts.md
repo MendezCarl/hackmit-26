@@ -281,7 +281,7 @@ Prefer an authorization header when the client/runtime permits it. If a query to
 | `recovery_card.failed` | `JobFailure` | Report a recoverable failure |
 | `professor_summary.ready` | `ProfessorSummaryAvailable` | Notify authorized professor clients |
 | `integration.status_changed` | `IntegrationStatus` | Report Zoom/Dropbox state |
-| `session.ended` | `LectureSession` | End the live session |
+| `session.ended` | `LectureSession` | Published once by `POST /sessions/{id}/end`; any Zoom RTMS stream is closed and clients leave live state |
 | `error.occurred` | `ErrorResponse` | Report a typed connection error |
 
 ### Client-to-server events

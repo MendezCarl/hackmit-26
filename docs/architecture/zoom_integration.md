@@ -65,9 +65,12 @@ Student / professor (Electron) ◄──────── /ws/v1/sessions/{id} 
 ```
 
 Keep-alive requests (`msg_type` 12) are answered with `msg_type` 13 on both
-sockets. On `meeting.rtms_stopped`, stream close, or backend shutdown the stream
-task is cancelled and the status becomes `stopped` (or `failed` with a
-sanitized reason).
+sockets. On `meeting.rtms_stopped`, stream close, backend shutdown, or the
+owner ending the lecture (`POST /sessions/{id}/end`) the stream task is
+cancelled and the status becomes `stopped` (or `failed` with a sanitized
+reason). Ending the lecture also publishes one `session.ended` envelope
+(payload: the ended `LectureSession`) so every connected client leaves its live
+state without polling.
 
 ## Timestamp mapping
 
@@ -154,6 +157,8 @@ the event notification URL at `POST /api/v1/integrations/zoom/webhooks`.
   payload `session_id` match the active session, merges by `chunk_id` and
   `revision`, sorts by `start_ms`, and repaints just the transcript tab so the
   student's current tab is preserved.
+- On `session.ended` for the active session the renderer marks that session
+  ended, drops the live status line, and unsubscribes the main-process socket.
 
 ## Testing
 

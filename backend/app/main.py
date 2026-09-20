@@ -165,7 +165,7 @@ def create_app(
     cost_ledger = CostLedger()
     generator = ValidatedGenerator(recovery_generator or DeterministicRecoveryGenerator())
 
-    session_service = SessionService(store, settings, session_access)
+    session_service = SessionService(store, settings, session_access, event_publisher)
     signal_service = SignalService(store, settings, session_access, event_publisher)
     timeline_reader = InMemoryTimelineReader(store)
     transcript_service = TranscriptService(
