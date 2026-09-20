@@ -1098,6 +1098,201 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HardcodedCacheMetrics": {
+        "description": "Synthetic cache-reuse numbers.",
+        "properties": {
+          "cache_hit_rate": {
+            "description": "Hardcoded synthetic fraction of requests served from cache.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Cache Hit Rate",
+            "type": "number"
+          },
+          "cached_cards_served": {
+            "description": "Hardcoded synthetic count of cards served from cache.",
+            "minimum": 0.0,
+            "title": "Cached Cards Served",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cache_hit_rate",
+          "cached_cards_served"
+        ],
+        "title": "HardcodedCacheMetrics",
+        "type": "object"
+      },
+      "HardcodedDemoMetrics": {
+        "description": "Judge-facing demo metrics; every field is hardcoded synthetic data.",
+        "properties": {
+          "cache": {
+            "$ref": "#/components/schemas/HardcodedCacheMetrics"
+          },
+          "data_label": {
+            "const": "synthetic_demo",
+            "default": "synthetic_demo",
+            "description": "Always ``synthetic_demo``; these are not live measurements.",
+            "title": "Data Label",
+            "type": "string"
+          },
+          "disclaimer": {
+            "description": "Explicit statement that every value is synthetic.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "is_live_measured": {
+            "const": false,
+            "default": false,
+            "description": "Always ``false``; no live provider or usage data is involved.",
+            "title": "Is Live Measured",
+            "type": "boolean"
+          },
+          "latency": {
+            "$ref": "#/components/schemas/HardcodedLatencyMetrics"
+          },
+          "professor_participation": {
+            "$ref": "#/components/schemas/HardcodedProfessorParticipationMetrics"
+          },
+          "recovery": {
+            "$ref": "#/components/schemas/HardcodedRecoveryMetrics"
+          },
+          "token_savings": {
+            "$ref": "#/components/schemas/HardcodedTokenSavingsMetrics"
+          }
+        },
+        "required": [
+          "disclaimer",
+          "recovery",
+          "token_savings",
+          "cache",
+          "professor_participation",
+          "latency"
+        ],
+        "title": "HardcodedDemoMetrics",
+        "type": "object"
+      },
+      "HardcodedLatencyMetrics": {
+        "description": "Synthetic recovery latency numbers.",
+        "properties": {
+          "average_recovery_latency_ms": {
+            "description": "Hardcoded synthetic average recovery latency in ms.",
+            "minimum": 0.0,
+            "title": "Average Recovery Latency Ms",
+            "type": "integer"
+          },
+          "p95_recovery_latency_ms": {
+            "description": "Hardcoded synthetic 95th-percentile latency in ms.",
+            "minimum": 0.0,
+            "title": "P95 Recovery Latency Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "average_recovery_latency_ms",
+          "p95_recovery_latency_ms"
+        ],
+        "title": "HardcodedLatencyMetrics",
+        "type": "object"
+      },
+      "HardcodedProfessorParticipationMetrics": {
+        "description": "Synthetic anonymous aggregation-participation counts.",
+        "properties": {
+          "average_participants_per_released_summary": {
+            "description": "Hardcoded synthetic unique participating users per summary.",
+            "minimum": 0.0,
+            "title": "Average Participants Per Released Summary",
+            "type": "integer"
+          },
+          "minimum_group_size": {
+            "description": "Privacy threshold used by the demo configuration.",
+            "minimum": 1.0,
+            "title": "Minimum Group Size",
+            "type": "integer"
+          },
+          "released_summaries": {
+            "description": "Hardcoded synthetic professor summaries released.",
+            "minimum": 0.0,
+            "title": "Released Summaries",
+            "type": "integer"
+          },
+          "suppressed_summaries": {
+            "description": "Hardcoded synthetic summaries suppressed for privacy.",
+            "minimum": 0.0,
+            "title": "Suppressed Summaries",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "released_summaries",
+          "suppressed_summaries",
+          "average_participants_per_released_summary",
+          "minimum_group_size"
+        ],
+        "title": "HardcodedProfessorParticipationMetrics",
+        "type": "object"
+      },
+      "HardcodedRecoveryMetrics": {
+        "description": "Synthetic missed-window recovery counts.",
+        "properties": {
+          "recovered_missed_windows": {
+            "description": "Hardcoded synthetic count of recovered missed windows.",
+            "minimum": 0.0,
+            "title": "Recovered Missed Windows",
+            "type": "integer"
+          },
+          "recovery_rate": {
+            "description": "Hardcoded synthetic fraction of missed windows recovered.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Recovery Rate",
+            "type": "number"
+          },
+          "total_missed_windows": {
+            "description": "Hardcoded synthetic count of detected missed windows.",
+            "minimum": 0.0,
+            "title": "Total Missed Windows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_missed_windows",
+          "recovered_missed_windows",
+          "recovery_rate"
+        ],
+        "title": "HardcodedRecoveryMetrics",
+        "type": "object"
+      },
+      "HardcodedTokenSavingsMetrics": {
+        "description": "Synthetic token-cost illustration vs a full-context baseline.",
+        "properties": {
+          "full_context_baseline_tokens": {
+            "description": "Hardcoded synthetic full-transcript baseline tokens.",
+            "minimum": 0.0,
+            "title": "Full Context Baseline Tokens",
+            "type": "integer"
+          },
+          "selected_context_tokens_per_card": {
+            "description": "Hardcoded synthetic input tokens for selected-context recovery.",
+            "minimum": 0.0,
+            "title": "Selected Context Tokens Per Card",
+            "type": "integer"
+          },
+          "token_savings_rate": {
+            "description": "Hardcoded synthetic fraction of tokens avoided vs baseline.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Token Savings Rate",
+            "type": "number"
+          }
+        },
+        "required": [
+          "selected_context_tokens_per_card",
+          "full_context_baseline_tokens",
+          "token_savings_rate"
+        ],
+        "title": "HardcodedTokenSavingsMetrics",
+        "type": "object"
+      },
       "HealthResponse": {
         "description": "Response returned by the liveness endpoint.",
         "properties": {
@@ -3003,6 +3198,38 @@
         "summary": "Read an owned course",
         "tags": [
           "courses"
+        ]
+      }
+    },
+    "/api/v1/demo/metrics": {
+      "get": {
+        "description": "Judge-facing demo numbers gated on APP_ENV=demo. Every value is a hardcoded synthetic figure, labeled `synthetic_demo`, and never live measured data. Non-demo access: 404.",
+        "operationId": "read_hardcoded_demo_metrics_api_v1_demo_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardcodedDemoMetrics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Read hardcoded synthetic demo metrics",
+        "tags": [
+          "demo"
         ]
       }
     },

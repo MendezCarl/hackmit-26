@@ -19,6 +19,10 @@ from app.config import DEMO_ENV, TEST_ENV
 from app.contracts.learning import StrictPayload
 from app.contracts.models import ErrorResponse
 from app.core.errors import AppError, ErrorCode
+from app.demo.hardcoded_metrics import (
+    HardcodedDemoMetrics,
+    build_hardcoded_demo_metrics,
+)
 from app.demo.runner import DemoRunner, DemoRunResult
 from app.demo.runtime import build_demo_runner
 
@@ -89,6 +93,23 @@ def run_demo(
         )
     response.headers["Cache-Control"] = "no-store"
     return runner.run()
+
+
+@router.get(
+    "/metrics",
+    response_model=HardcodedDemoMetrics,
+    summary="Read hardcoded synthetic demo metrics",
+    description="Judge-facing demo numbers gated on APP_ENV=demo. Every value is a hardcoded synthetic figure, labeled `synthetic_demo`, and never live measured data. Non-demo access: 404.",
+    responses={code: {"model": ErrorResponse} for code in (404,)},
+)
+def read_hardcoded_demo_metrics(
+    response: Response,
+    _mode: Annotated[None, Depends(require_demo_mode)],
+) -> HardcodedDemoMetrics:
+    """Return the fixed synthetic metrics used only for the live demo."""
+
+    response.headers["Cache-Control"] = "no-store"
+    return build_hardcoded_demo_metrics()
 
 
 @router.post(
