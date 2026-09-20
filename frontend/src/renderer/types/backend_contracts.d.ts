@@ -295,6 +295,38 @@ interface ProfessorMetrics {
   }>;
   recovery_outcomes_status: 'not_collected';
 }
+type RecommendationMedium = 'explanation' | 'pace' | 'example' | 'terminology';
+type RecommendationEvidenceScope = 'intervals_only' | 'lecture_transcript';
+interface RecommendationEvidence {
+  text: string;
+  chunk_id: string;
+  evidence_quote: string;
+}
+interface Recommendation {
+  start_ms: number;
+  end_ms: number;
+  observation: string;
+  suggested_action: string;
+  topic?: string | null;
+  medium?: RecommendationMedium | null;
+  evidence?: RecommendationEvidence[];
+}
+type RecommendationReviewStatus = 'reviewed' | 'dismissed' | 'resolved';
+interface RecommendationReview {
+  report_revision: string;
+  recommendation_index: number;
+  status: RecommendationReviewStatus;
+}
+interface RecommendationReport {
+  session_id: string;
+  report_revision: string;
+  status: 'available' | 'insufficient_evidence';
+  provider_mode: 'mock' | 'live';
+  evidence_scope?: RecommendationEvidenceScope;
+  evidence_note?: string | null;
+  recommendations: Recommendation[];
+  reviews?: RecommendationReview[];
+}
 interface ConsentSettings {
   analytics_opt_in?: boolean;
   updated_at?: string | null;
@@ -371,6 +403,11 @@ type BackendApi = {
   endSession: (sessionId: string) => Promise<LectureSession>;
   readProfessorSummary: (sessionId: string) => Promise<ProfessorSummary>;
   readProfessorMetrics: (sessionId: string) => Promise<ProfessorMetrics>;
+  generateProfessorRecommendations: (sessionId: string) => Promise<RecommendationReport>;
+  reviewProfessorRecommendation: (
+    sessionId: string,
+    review: RecommendationReview,
+  ) => Promise<RecommendationReview>;
   readConsent: () => Promise<ConsentSettings>;
   updateConsent: (request: UpdateConsentRequest) => Promise<ConsentSettings>;
 };

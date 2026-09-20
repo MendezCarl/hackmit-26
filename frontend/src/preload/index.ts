@@ -54,6 +54,10 @@ const backendApi: BackendApi = {
   endSession: (sessionId) => invokeBackend('endSession', [sessionId]),
   readProfessorSummary: (sessionId) => invokeBackend('readProfessorSummary', [sessionId]),
   readProfessorMetrics: (sessionId) => invokeBackend('readProfessorMetrics', [sessionId]),
+  generateProfessorRecommendations: (sessionId) =>
+    invokeBackend('generateProfessorRecommendations', [sessionId]),
+  reviewProfessorRecommendation: (sessionId, review) =>
+    invokeBackend('reviewProfessorRecommendation', [sessionId, review]),
   readConsent: () => invokeBackend('readConsent', []),
   updateConsent: (request) => invokeBackend('updateConsent', [request]),
 };

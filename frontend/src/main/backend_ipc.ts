@@ -63,6 +63,10 @@ export function registerBackendIpc(
     endSession: (sessionId) => client.endSession(sessionId),
     readProfessorSummary: (sessionId) => client.readProfessorSummary(sessionId),
     readProfessorMetrics: (sessionId) => client.readProfessorMetrics(sessionId),
+    generateProfessorRecommendations: (sessionId) =>
+      client.generateProfessorRecommendations(sessionId),
+    reviewProfessorRecommendation: (sessionId, review) =>
+      client.reviewProfessorRecommendation(sessionId, review),
     readConsent: () => client.readConsent(),
     updateConsent: (request) => client.updateConsent(request),
   };

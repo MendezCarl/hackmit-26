@@ -3,8 +3,10 @@ import { escapeHtml } from '../../components/html_text.mjs';
 import { LectureTimeline } from '../../components/lecture_timeline.mjs';
 import { MetricCard } from '../../components/metric_card.mjs';
 import { MomentDetail } from '../../components/moment_detail.mjs';
+import { TeachingMomentsPanel } from '../../components/teaching_moments_panel.mjs';
 import { ZoomLiveTranscriptPanel } from '../../components/zoom_live_transcript_panel.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
+import type { TeachingMomentsState } from '../../services/backend_session_state.mjs';
 import {
   buildMomentsFromMetrics,
   buildMomentsFromSummary,
@@ -23,6 +25,7 @@ export type LectureSummaryPageModel = {
   summary: ProfessorSummary | null;
   metrics: ProfessorMetrics | null;
   zoomStatus?: ZoomRtmsStatus | null;
+  teachingMoments?: TeachingMomentsState | null;
   routeError?: string | null;
 };
 
@@ -102,6 +105,9 @@ export function LectureSummaryPage(model: LectureSummaryPageModel = FIXTURE_MODE
     ? 'Withheld'
     : String(model.summary?.participant_count ?? 'Withheld');
   const actions = model.summary?.suggested_actions?.map((action) => `<li>${escapeHtml(action)}</li>`).join('');
+  const teachingMoments = model.teachingMoments
+    ? TeachingMomentsPanel({ session: model.session, state: model.teachingMoments })
+    : '';
   return AppShell({
     route: 'lecture',
     role: 'educator',
@@ -119,6 +125,7 @@ export function LectureSummaryPage(model: LectureSummaryPageModel = FIXTURE_MODE
       ${model.session.status === 'active' ? `<section class="panel session-banner"><strong>Session is active</strong><span>Join code: ${escapeHtml(model.session.join_code)}</span><button class="danger-button" type="button" data-end-session="${escapeHtml(model.session.session_id)}">End session</button></section>${ZoomLiveTranscriptPanel({ session: model.session, status: model.zoomStatus ?? null })}` : ''}
       ${selected ? `${LectureTimeline(moments, selected.momentId, formatLectureTime(duration))}<section class="report-grid"><div>${MomentDetail(selected, 'educator')}</div></section>` : '<section class="panel"><p class="empty-state">No report intervals are available for this session.</p></section>'}
       ${actions ? `<section class="panel"><h2>Suggested actions</h2><ul>${actions}</ul></section>` : ''}
+      ${teachingMoments}
       ${(model.metrics?.delivery_findings ?? []).map((finding) => `<section class="panel delivery-section"><div><p class="eyebrow">Delivery note · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${escapeHtml(finding.signal_type)}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${escapeHtml(finding.suggested_action)}</div></section>`).join('')}
     `,
   });

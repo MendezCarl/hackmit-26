@@ -2,7 +2,9 @@ import { AppShell } from '../../components/app_shell.mjs';
 import { escapeHtml } from '../../components/html_text.mjs';
 import { LectureTimeline } from '../../components/lecture_timeline.mjs';
 import { MomentDetail } from '../../components/moment_detail.mjs';
+import { TeachingMomentsPanel } from '../../components/teaching_moments_panel.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
+import type { TeachingMomentsState } from '../../services/backend_session_state.mjs';
 import {
   buildMomentsFromMetrics,
   buildMomentsFromSummary,
@@ -19,6 +21,7 @@ export type EducatorSummaryModel = {
   metrics: ProfessorMetrics | null;
   summaryError?: string | null;
   metricsError?: string | null;
+  teachingMoments?: TeachingMomentsState | null;
   routeError?: string | null;
   isLoading?: boolean;
 };
@@ -91,6 +94,10 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
   const continuity = metrics?.continuity
     ? `<p class="summary-meta">Continuity: ${Math.round(metrics.continuity.ratio * 100)}%</p>`
     : '';
+  const teachingMoments =
+    session && model.teachingMoments
+      ? TeachingMomentsPanel({ session, state: model.teachingMoments })
+      : '';
 
   return AppShell({
     route: 'educator-summary',
@@ -107,6 +114,7 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
       ${metrics ? `<p class="summary-meta">Metrics status: ${escapeHtml(metrics.status)}</p>${continuity}` : ''}
       ${selected ? `${LectureTimeline(moments, selected.momentId, formatLectureTime(duration))}<section class="report-grid"><div>${MomentDetail(selected, 'educator')}</div><aside class="evidence-card"><p class="eyebrow">Anonymous participants</p><strong>${summary?.participant_count ?? 'Withheld'}</strong><p>Identity-safe aggregates only.</p></aside></section>` : '<p class="empty-state">No report intervals are available for this session.</p>'}
       ${actions ? `<section class="section-block"><h2>Suggested actions</h2><ul>${actions}</ul></section>` : ''}
+      ${teachingMoments}
       ${deliveryFindings.map((finding) => `<section class="section-block delivery-section"><div class="delivery-icon" aria-hidden="true">◖</div><div><p class="eyebrow">Delivery quality · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${escapeHtml(finding.signal_type)}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${escapeHtml(finding.suggested_action)}</div></section>`).join('')}
     `,
   });

@@ -259,6 +259,23 @@ export class BackendClient {
       `/api/v1/sessions/${encodeURIComponent(sessionId)}/professor-metrics`,
     );
   }
+  /** Generates teaching moments on explicit professor request; never called automatically. */
+  async generateProfessorRecommendations(sessionId: string): Promise<RecommendationReport> {
+    return this.request(
+      'POST',
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/professor-recommendations`,
+    );
+  }
+  async reviewProfessorRecommendation(
+    sessionId: string,
+    review: RecommendationReview,
+  ): Promise<RecommendationReview> {
+    return this.request(
+      'PUT',
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/professor-recommendations/reviews`,
+      { body: review },
+    );
+  }
   async readConsent(): Promise<ConsentSettings> {
     return this.request('GET', '/api/v1/users/me/consent');
   }
