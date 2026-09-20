@@ -1,7 +1,13 @@
 import { AppShell } from '../../components/app_shell.mjs';
 import { SettingRow } from '../../components/setting_row.mjs';
 
-export type AccountModel = { isDemo: boolean; user: UserProfile | null; consent: ConsentSettings | null };
+export type AccountModel = {
+  isDemo: boolean;
+  user: UserProfile | null;
+  consent: ConsentSettings | null;
+  routeError?: string | null;
+  isLoading?: boolean;
+};
 const FIXTURE_MODEL: AccountModel = { isDemo: true, user: null, consent: null };
 
 /**
@@ -18,10 +24,12 @@ export function AccountPage(model: AccountModel = FIXTURE_MODEL): string {
     title: 'Privacy and preferences',
     demoMode: model.isDemo,
     content: `
+      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.routeError ? `<p class="empty-state">Account unavailable: ${model.routeError}</p>` : ''}
       <section class="settings-layout">
         <article class="settings-card">
           <h2>Profile</h2>
-          <div class="profile-summary"><span class="avatar avatar--large">${user?.display_name?.slice(0, 2).toUpperCase() ?? 'AM'}</span><div><strong>${user?.display_name ?? 'Alex Morgan'}</strong><p>${user?.email ?? 'alex.morgan@example.edu'}</p></div><button class="secondary-button" type="button">Edit profile</button></div>
+          <div class="profile-summary"><span class="avatar avatar--large">${user?.display_name?.slice(0, 2).toUpperCase() ?? '--'}</span><div><strong>${user?.display_name ?? 'Profile unavailable'}</strong><p>${user?.email ?? 'No profile loaded'}</p></div><button class="secondary-button" type="button" disabled>Edit profile unavailable</button></div>
         </article>
         <article class="settings-card">
           <h2>On-device processing</h2>

@@ -3,8 +3,20 @@ import { AppShell } from '../../components/app_shell.mjs';
 import { MetricCard } from '../../components/metric_card.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
 
-export type EducatorDashboardModel = { isDemo: boolean; courses: Course[]; lecturesByCourse: Record<string, Lecture[]>; activeSession: LectureSession | null };
-const FIXTURE_MODEL: EducatorDashboardModel = { isDemo: true, courses: [], lecturesByCourse: {}, activeSession: null };
+export type EducatorDashboardModel = {
+  isDemo: boolean;
+  courses: Course[];
+  lecturesByCourse: Record<string, Lecture[]>;
+  activeSession: LectureSession | null;
+  routeError?: string | null;
+  isLoading?: boolean;
+};
+const FIXTURE_MODEL: EducatorDashboardModel = {
+  isDemo: true,
+  courses: [],
+  lecturesByCourse: {},
+  activeSession: null,
+};
 
 /**
  * Builds the educator course-insights dashboard.
@@ -12,6 +24,8 @@ const FIXTURE_MODEL: EducatorDashboardModel = { isDemo: true, courses: [], lectu
  * @returns Educator dashboard markup with anonymous synthetic metrics.
  */
 export function EducatorDashboardPage(model: EducatorDashboardModel = FIXTURE_MODEL): string {
+  if (!model.isDemo) return buildRealEducatorDashboard(model);
+
   const courses = model.courses;
   const lectures = courses.flatMap((course) => model.lecturesByCourse[course.course_id] ?? []);
   return AppShell({
@@ -58,6 +72,37 @@ export function EducatorDashboardPage(model: EducatorDashboardModel = FIXTURE_MO
         </div>
       </section>
       <section class="section-block"><h2>Lectures</h2><div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row"><span><strong>${lecture.title}</strong><small>${lecture.course_id}</small></span><button class="primary-button" type="button" data-start-session="${lecture.lecture_id}" data-course-id="${lecture.course_id}" data-lecture-title="${lecture.title}">Start session</button></div>`).join('')}</div></section>
+    `,
+  });
+}
+
+function buildRealEducatorDashboard(model: EducatorDashboardModel): string {
+  const lectures = model.courses.flatMap(
+    (course) => model.lecturesByCourse[course.course_id] ?? [],
+  );
+  return AppShell({
+    route: 'educator-dashboard',
+    role: 'educator',
+    eyebrow: 'Educator workspace',
+    title: 'Your courses and sessions',
+    demoMode: false,
+    content: `
+      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.routeError ? `<p class="empty-state">Workspace unavailable: ${model.routeError}</p>` : ''}
+      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${model.activeSession.title}</h2><p>Join code: <strong>${model.activeSession.session_id}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
+      <section class="section-block">
+        <form data-course-form><p class="eyebrow">Course setup</p><label>Course code<input name="code" required /></label><label>Course title<input name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form>
+        <form data-lecture-form><label>Course<select name="course_id" required>${model.courses.map((course) => `<option value="${course.course_id}">${course.code} · ${course.title}</option>`).join('')}</select></label><label>Lecture title<input name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form>
+        <p class="form-message" data-educator-message></p>
+      </section>
+      <section class="section-block">
+        <h2>Courses</h2>
+        ${model.courses.length ? `<div class="lecture-row-list">${model.courses.map((course) => `<div class="lecture-row"><span><strong>${course.title}</strong><small>${course.code}</small></span><span>${course.course_id}</span></div>`).join('')}</div>` : '<p class="empty-state">No courses yet. Create a course to start a lecture.</p>'}
+      </section>
+      <section class="section-block">
+        <h2>Lectures</h2>
+        ${lectures.length ? `<div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row"><span><strong>${lecture.title}</strong><small>${lecture.course_id}</small></span><button class="primary-button" type="button" data-start-session="${lecture.lecture_id}" data-course-id="${lecture.course_id}" data-lecture-title="${lecture.title}">Start session</button></div>`).join('')}</div>` : '<p class="empty-state">No lectures yet. Create a lecture after adding a course.</p>'}
+      </section>
     `,
   });
 }

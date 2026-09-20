@@ -8,9 +8,17 @@ export type LectureLibraryModel = {
   courses: Course[];
   lectures: Lecture[];
   joinedSessions: LectureSession[];
+  routeError?: string | null;
+  isLoading?: boolean;
 };
 
-const FIXTURE_MODEL: LectureLibraryModel = { isDemo: true, role: 'student', courses: [], lectures: [], joinedSessions: [] };
+const FIXTURE_MODEL: LectureLibraryModel = {
+  isDemo: true,
+  role: 'student',
+  courses: [],
+  lectures: [],
+  joinedSessions: [],
+};
 
 /**
  * Builds the searchable lecture summary catalog.
@@ -18,30 +26,50 @@ const FIXTURE_MODEL: LectureLibraryModel = { isDemo: true, role: 'student', cour
  * @returns Lecture library markup populated with synthetic lecture fixtures.
  */
 export function LectureLibraryPage(model: LectureLibraryModel = FIXTURE_MODEL): string {
-  const realLectures = model.lectures.map((lecture) => LectureCard(lecture.title, 'Backend lecture', 'Session available', 'ready')).join('');
-  const joined = model.joinedSessions.map((session) => LectureCard(session.title, session.status, 'Current run', 'ready')).join('');
+  const realLectures = model.lectures
+    .map((lecture) => LectureCard(lecture.title, lecture.course_id, 'Session available', 'ready'))
+    .join('');
+  const joined = model.joinedSessions
+    .map((session) => LectureCard(session.title, session.course_id, session.status, 'ready'))
+    .join('');
   return AppShell({
     route: 'lecture-library',
     role: model.role,
-    eyebrow: 'BIO 101',
-    title: 'Lecture library',
+    eyebrow: model.isDemo
+      ? 'BIO 101'
+      : model.role === 'educator'
+        ? 'Educator library'
+        : 'Joined sessions',
+    title: model.isDemo
+      ? 'Lecture library'
+      : model.role === 'educator'
+        ? 'Your lectures'
+        : 'Your joined lectures',
     demoMode: model.isDemo,
     content: `
+      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.routeError ? `<p class="empty-state">Library unavailable: ${model.routeError}</p>` : ''}
       <div class="library-toolbar">
         <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search lectures</span><input type="search" placeholder="Search lecture titles" data-library-search /></label>
         <label class="filter-field"><span class="sr-only">Filter by status</span><select data-library-filter><option value="all">All summaries</option><option value="review">Needs review</option><option value="ready">Summary ready</option></select></label>
       </div>
       <section class="lecture-grid" aria-live="polite" data-lecture-grid>
-        ${(model.isDemo ? LECTURE_LIBRARY.map((lecture, index) =>
-          LectureCard(
-            lecture.lectureTitle,
-            lecture.lectureDate,
-            lecture.durationLabel,
-            index === 0 ? 'review' : 'ready',
-          ),
-        ).join('') : model.role === 'educator' ? realLectures : joined)}
+        ${
+          model.isDemo
+            ? LECTURE_LIBRARY.map((lecture, index) =>
+                LectureCard(
+                  lecture.lectureTitle,
+                  lecture.lectureDate,
+                  lecture.durationLabel,
+                  index === 0 ? 'review' : 'ready',
+                ),
+              ).join('')
+            : model.role === 'educator'
+              ? realLectures
+              : joined
+        }
       </section>
-      <p class="empty-state" data-library-empty ${model.isDemo || realLectures || joined ? 'hidden' : ''}>No lectures yet. Join a lecture or ask your professor for a session code.</p>
+      <p class="empty-state" data-library-empty ${model.isDemo || realLectures || joined ? 'hidden' : ''}>${model.role === 'educator' ? 'No lectures yet. Create a course and lecture to build your library.' : 'No lectures joined yet. Join a lecture from your dashboard.'}</p>
     `,
   });
 }

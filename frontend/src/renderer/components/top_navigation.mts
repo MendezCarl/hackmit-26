@@ -7,7 +7,11 @@ import { AppRoute, buildRouteHash } from '../app/router.mjs';
  * @param role - Active demo role used to build the role-switch link.
  * @returns Header markup for authenticated pages.
  */
-export function TopNavigation(route: AppRoute, role: 'student' | 'educator'): string {
+export function TopNavigation(
+  route: AppRoute,
+  role: 'student' | 'educator',
+  profileName = 'Account',
+): string {
   const roleRoute = role === 'student' ? 'educator-dashboard' : 'student-dashboard';
   const roleLabel = role === 'student' ? 'Educator view' : 'Student view';
 
@@ -24,8 +28,8 @@ export function TopNavigation(route: AppRoute, role: 'student' | 'educator'): st
         </span>
         <a class="role-switch" href="${buildRouteHash(roleRoute)}">${roleLabel}</a>
         <a class="profile-link ${route === 'account' ? 'is-active' : ''}" href="${buildRouteHash('account')}" aria-label="Open account settings">
-          <span class="avatar">AM</span>
-          <span class="profile-link__copy"><strong>Alex Morgan</strong><small>${role === 'student' ? 'Student' : 'Educator'}</small></span>
+          <span class="avatar">${profileName.slice(0, 2).toUpperCase()}</span>
+          <span class="profile-link__copy"><strong>${profileName}</strong><small>${role === 'student' ? 'Student' : 'Educator'}</small></span>
         </a>
       </div>
     </header>

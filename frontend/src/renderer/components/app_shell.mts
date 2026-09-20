@@ -11,6 +11,7 @@ export type AppShellOptions = {
   content: string;
   showSidebar?: boolean;
   demoMode?: boolean;
+  profileName?: string;
 };
 
 /**
@@ -20,10 +21,16 @@ export type AppShellOptions = {
  * @returns Complete application markup for the selected page.
  */
 export function AppShell(options: AppShellOptions): string {
-  const sidebar = options.showSidebar === false ? '' : CourseSidebar(options.route, options.role);
-  const layoutClass = options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';
+  const sidebar =
+    options.showSidebar === false
+      ? ''
+      : CourseSidebar(options.route, options.role, options.demoMode !== false);
+  const layoutClass =
+    options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';
   const navigation =
-    options.route === 'login' ? LoginNavigation() : TopNavigation(options.route, options.role);
+    options.route === 'login'
+      ? LoginNavigation()
+      : TopNavigation(options.route, options.role, options.profileName);
   const pageHeading =
     options.title || options.eyebrow
       ? `
