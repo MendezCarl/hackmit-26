@@ -129,6 +129,24 @@ No privacy-settings endpoint can enable raw webcam or raw system-audio upload be
 | `PATCH` | `/api/v1/sessions/{session_id}` | Update allowed session metadata | `UpdateSessionRequest` | `LectureSession` |
 | `POST` | `/api/v1/sessions/{session_id}/end` | End a session idempotently | `EndSessionRequest` | `LectureSession` |
 | `GET` | `/api/v1/sessions` | List professor-owned lecture sessions, optionally filtered by lecture or course | `lecture_id`, `course_id` query parameters | `LectureSession[]` |
+| `GET` | `/api/v1/sessions/available` | List active sessions the caller can join without a code: courses they are enrolled in, or the session whose `zoom_meeting_id` matches the locally detected Zoom meeting | `zoom_meeting_id` query parameter | `AvailableLectureSession[]` |
+
+### Course enrollment
+
+Enrollment is the persistent student-to-course link that makes lecture joining
+seamless: once enrolled, the desktop app detects the course's live sessions and
+offers a one-click join instead of asking for a code. Registering as a
+participant via `POST /api/v1/sessions/{session_id}/participants` also enrolls
+students in that session's course. Auto-join defaults to off because joining
+opts the student into anonymous aggregation. Enrollment stores only
+`user_id` and `course_id` plus the course title/code; no media or signals.
+
+| Method | Path | Purpose | Request | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/enrollments` | Enroll the authenticated student by course code (idempotent; `409 duplicate` when the code is ambiguous across professors) | `EnrollCourseRequest` | `CourseEnrollment` |
+| `GET` | `/api/v1/enrollments` | List the caller's enrollments, newest first | None | `CourseEnrollment[]` |
+| `PATCH` | `/api/v1/enrollments/{enrollment_id}` | Toggle whether live lectures for the course join without a prompt | `UpdateEnrollmentRequest` | `CourseEnrollment` |
+| `DELETE` | `/api/v1/enrollments/{enrollment_id}` | Leave the course | None | `204 No Content` |
 
 ### Privacy-preserving signal events
 

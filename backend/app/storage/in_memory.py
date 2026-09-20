@@ -15,6 +15,7 @@ from app.contracts.models import (
     ConsentSettings,
     CostMetrics,
     Course,
+    CourseEnrollment,
     Lecture,
     LectureSession,
     RecoveryCard,
@@ -69,6 +70,8 @@ class InMemoryStore:
     users: MutableMapping[str, UserRecord] = field(default_factory=dict)
     courses: MutableMapping[str, Course] = field(default_factory=dict)
     lectures: MutableMapping[str, Lecture] = field(default_factory=dict)
+    # enrollment_id -> student course membership.
+    enrollments: MutableMapping[str, CourseEnrollment] = field(default_factory=dict)
     sessions: MutableMapping[str, LectureSession] = field(default_factory=dict)
     session_join_codes: MutableMapping[str, str] = field(default_factory=dict)
     participants: MutableMapping[str, dict[str, ParticipantRecord]] = field(

@@ -8,6 +8,7 @@ import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
 import {
   clearBackendSessionState,
+  dismissAvailableSession,
   getBackendSessionState,
   setActiveSession,
   setBackendCourses,
@@ -27,15 +28,21 @@ import {
 } from './services/backend_session_state.mjs';
 import {
   checkBackendHealth,
+  enrollInCourse,
   joinLectureSession,
+  joinResolvedSession,
+  leaveCourse,
   loadAccountWorkspace,
   loadCourseWorkspace,
   loadEducatorWorkspace,
   loadLectureWorkspace,
   loadProfessorReport,
+  loadStudentWorkspace,
   loadTranscriptWorkspace,
   recordRecoveryCard,
   recordSubmittedEvent,
+  refreshAvailableSessions,
+  setEnrollmentAutoJoin,
 } from './services/lecture_workspace.mjs';
 import {
   buildMomentsFromEvents,
@@ -66,8 +73,51 @@ const readFormValues = (form: HTMLFormElement): Record<string, string> =>
   );
 
 let sessionClockTimer: number | undefined;
+let availableSessionsTimer: number | undefined;
 let zoomDesktopBound = false;
 let cameraMonitorSessionId: string | null = null;
+
+/** How often the student dashboard asks the backend for newly live lectures. */
+const AVAILABLE_SESSIONS_POLL_MS = 20_000;
+
+const isStudentDashboardActive = (): boolean =>
+  resolveRoute(window.location.hash) === 'student-dashboard' &&
+  getBackendSessionState().user?.role === 'student';
+
+/** Stable fingerprint of the live-lecture prompt state, used to skip no-op repaints. */
+const availableSessionsFingerprint = (): string => {
+  const state = getBackendSessionState();
+  return [
+    state.activeSession?.session_id ?? '',
+    ...state.availableSessions.map((entry) => `${entry.session.session_id}:${entry.is_joined}`),
+  ].join('|');
+};
+
+/**
+ * Re-checks live lectures for the student and repaints only when the prompt set changed.
+ * Auto-join (opt-in per course) may switch the active session, so camera state is
+ * reconciled through the normal render path.
+ */
+const pollAvailableSessions = async (): Promise<void> => {
+  if (!isStudentDashboardActive()) return;
+  const before = availableSessionsFingerprint();
+  try {
+    await refreshAvailableSessions();
+  } catch {
+    return;
+  }
+  if (before !== availableSessionsFingerprint() && isStudentDashboardActive()) renderApplication();
+};
+
+const bindAvailableSessionsPolling = (): void => {
+  if (availableSessionsTimer !== undefined) window.clearInterval(availableSessionsTimer);
+  availableSessionsTimer = undefined;
+  if (!isStudentDashboardActive()) return;
+  availableSessionsTimer = window.setInterval(
+    () => void pollAvailableSessions(),
+    AVAILABLE_SESSIONS_POLL_MS,
+  );
+};
 
 const resetCameraSignalState = (): void => {
   setCameraSignalsEnabled(false);
@@ -276,6 +326,77 @@ const bindStudentActions = (): void => {
       if (message) message.textContent = formErrorMessage(error);
     }
   });
+  document.querySelectorAll<HTMLButtonElement>('[data-join-available-session]').forEach((button) =>
+    button.addEventListener('click', async () => {
+      const sessionId = button.dataset.joinAvailableSession;
+      const entry = getBackendSessionState().availableSessions.find(
+        (candidate) => candidate.session.session_id === sessionId,
+      );
+      if (!entry) return;
+      const message = button
+        .closest('[data-live-lecture-prompt]')
+        ?.querySelector<HTMLElement>('[data-live-lecture-message]');
+      button.disabled = true;
+      try {
+        const previousSessionId = getBackendSessionState().activeSession?.session_id;
+        await joinResolvedSession(entry.session);
+        if (previousSessionId !== entry.session.session_id) {
+          stopCameraForSessionChange(entry.session);
+        }
+        renderApplication();
+      } catch (error) {
+        button.disabled = false;
+        if (message) message.textContent = formErrorMessage(error);
+      }
+    }),
+  );
+  document.querySelectorAll<HTMLButtonElement>('[data-dismiss-available-session]').forEach((button) =>
+    button.addEventListener('click', () => {
+      const sessionId = button.dataset.dismissAvailableSession;
+      if (sessionId) dismissAvailableSession(sessionId);
+      renderApplication();
+    }),
+  );
+  const enrollForm = document.querySelector<HTMLFormElement>('[data-enroll-course-form]');
+  enrollForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const courseCode = String(new FormData(enrollForm).get('course_code') ?? '').trim();
+    const message = enrollForm.querySelector<HTMLElement>('[data-enroll-message]');
+    try {
+      await enrollInCourse(courseCode);
+      renderApplication();
+    } catch (error) {
+      if (message) message.textContent = formErrorMessage(error);
+    }
+  });
+  document.querySelectorAll<HTMLInputElement>('[data-enrollment-auto-join]').forEach((input) =>
+    input.addEventListener('change', async () => {
+      const enrollmentId = input.dataset.enrollmentAutoJoin;
+      if (!enrollmentId) return;
+      try {
+        await setEnrollmentAutoJoin(enrollmentId, input.checked);
+        await refreshAvailableSessions();
+        renderApplication();
+      } catch (error) {
+        input.checked = !input.checked;
+        const message = document.querySelector<HTMLElement>('[data-enroll-message]');
+        if (message) message.textContent = formErrorMessage(error);
+      }
+    }),
+  );
+  document.querySelectorAll<HTMLButtonElement>('[data-leave-course]').forEach((button) =>
+    button.addEventListener('click', async () => {
+      const enrollmentId = button.dataset.leaveCourse;
+      if (!enrollmentId) return;
+      try {
+        await leaveCourse(enrollmentId);
+        renderApplication();
+      } catch (error) {
+        const message = document.querySelector<HTMLElement>('[data-enroll-message]');
+        if (message) message.textContent = formErrorMessage(error);
+      }
+    }),
+  );
   const session = getBackendSessionState().activeSession;
   document
     .querySelector<HTMLInputElement>('[data-external-text-consent]')
@@ -450,6 +571,9 @@ const bindZoomDesktop = (): void => {
     setZoomRunning(running);
     if (running) setZoomBannerDismissed(false);
     renderApplication();
+    // A Zoom launch is the strongest hint that a lecture just went live; check right away
+    // rather than waiting for the next poll.
+    if (running) void pollAvailableSessions();
   });
   window.bloomDesktop.onZoomOverlayOpen(() => {
     const role = getBackendSessionState().user?.role;
@@ -458,7 +582,10 @@ const bindZoomDesktop = (): void => {
     } else if (role === 'student') {
       window.location.hash = buildRouteHash('student-dashboard');
       window.setTimeout(() => {
-        document.querySelector<HTMLInputElement>('[data-join-session-form] input[name="join_code"]')?.focus();
+        (
+          document.querySelector<HTMLButtonElement>('[data-join-available-session]') ??
+          document.querySelector<HTMLInputElement>('[data-join-session-form] input[name="join_code"]')
+        )?.focus();
       }, 0);
     }
   });
@@ -617,6 +744,9 @@ const loadRouteData = async (route: AppRoute, params: URLSearchParams): Promise<
     if (lectureId) await loadLectureWorkspace(lectureId);
   }
   if (route === 'account') await loadAccountWorkspace();
+  if (route === 'student-dashboard' && getBackendSessionState().user?.role === 'student') {
+    await loadStudentWorkspace();
+  }
   const activeSession = getBackendSessionState().activeSession;
   if (route === 'educator-summary' && activeSession) {
     await loadProfessorReport(activeSession.session_id);
@@ -672,6 +802,7 @@ const bindRenderedApplication = (route: AppRoute): void => {
   bindEducatorActions(route);
   bindAccountActions();
   bindSessionClock();
+  bindAvailableSessionsPolling();
   void updateBackendStatus();
 };
 

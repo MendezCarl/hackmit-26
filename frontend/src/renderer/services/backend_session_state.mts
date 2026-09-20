@@ -11,6 +11,9 @@ export type BackendSessionState = {
   zoomRunning: boolean;
   zoomBannerDismissed: boolean;
   joinedSessions: LectureSession[];
+  enrollments: CourseEnrollment[];
+  availableSessions: AvailableLectureSession[];
+  dismissedAvailableSessionIds: string[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
   transcriptChunks: TranscriptChunk[];
@@ -44,6 +47,9 @@ const state: BackendSessionState = {
   zoomRunning: false,
   zoomBannerDismissed: false,
   joinedSessions: [],
+  enrollments: [],
+  availableSessions: [],
+  dismissedAvailableSessionIds: [],
   participantCount: null,
   submittedEvents: [],
   transcriptChunks: [],
@@ -140,6 +146,27 @@ export function addJoinedSession(session: LectureSession): void {
     state.joinedSessions.push(session);
   }
   state.activeSession = session;
+}
+
+/** Stores the student's course enrollments, newest first. */
+export function setEnrollments(enrollments: CourseEnrollment[]): void {
+  state.enrollments = enrollments;
+}
+
+/** Stores live sessions the student can join with one click. */
+export function setAvailableSessions(sessions: AvailableLectureSession[]): void {
+  state.availableSessions = sessions;
+  const liveIds = new Set(sessions.map((entry) => entry.session.session_id));
+  state.dismissedAvailableSessionIds = state.dismissedAvailableSessionIds.filter((id) =>
+    liveIds.has(id),
+  );
+}
+
+/** Hides one live-lecture prompt until that session ends. */
+export function dismissAvailableSession(sessionId: string): void {
+  if (!state.dismissedAvailableSessionIds.includes(sessionId)) {
+    state.dismissedAvailableSessionIds.push(sessionId);
+  }
 }
 
 /** Updates the current participant count. */
@@ -246,6 +273,9 @@ export function clearBackendSessionState(): void {
   state.zoomRunning = false;
   state.zoomBannerDismissed = false;
   state.joinedSessions = [];
+  state.enrollments = [];
+  state.availableSessions = [];
+  state.dismissedAvailableSessionIds = [];
   state.participantCount = null;
   state.submittedEvents = [];
   state.transcriptChunks = [];

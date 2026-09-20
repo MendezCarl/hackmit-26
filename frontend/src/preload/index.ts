@@ -31,6 +31,13 @@ const backendApi: BackendApi = {
   readSession: (sessionId) => invokeBackend('readSession', [sessionId]),
   resolveJoinCode: (joinCode) => invokeBackend('resolveJoinCode', [joinCode]),
   joinSession: (sessionId) => invokeBackend('joinSession', [sessionId]),
+  listEnrollments: () => invokeBackend('listEnrollments', []),
+  enrollInCourse: (request) => invokeBackend('enrollInCourse', [request]),
+  updateEnrollment: (enrollmentId, request) =>
+    invokeBackend('updateEnrollment', [enrollmentId, request]),
+  leaveCourse: (enrollmentId) => invokeBackend('leaveCourse', [enrollmentId]),
+  listAvailableSessions: (zoomMeetingId) =>
+    invokeBackend('listAvailableSessions', [zoomMeetingId ?? null]),
   updateAggregationConsent: (sessionId, consent) =>
     invokeBackend('updateAggregationConsent', [sessionId, consent]),
   updateExternalTextConsent: (sessionId, consent) =>

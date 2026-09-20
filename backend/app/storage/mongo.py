@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.contracts.models import (
     ConsentSettings,
     Course,
+    CourseEnrollment,
     Lecture,
     LectureSession,
     RecoveryCard,
@@ -218,6 +219,7 @@ def build_mongo_store(database: Any) -> InMemoryStore:
         users=MongoCollectionMapping(database["users"], _encode_user, _decode_user),
         courses=_model_mapping(database["courses"], Course),
         lectures=_model_mapping(database["lectures"], Lecture),
+        enrollments=_model_mapping(database["enrollments"], CourseEnrollment),
         sessions=_model_mapping(database["sessions"], LectureSession),
         session_join_codes=MongoCollectionMapping(
             database["session_join_codes"],
