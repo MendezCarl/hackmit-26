@@ -57,3 +57,27 @@ def read_session(
     session = service.get_session(actor, session_id)
     response.headers["Cache-Control"] = "no-store"
     return session
+
+
+@router.post(
+    "/{session_id}/end",
+    response_model=LectureSession,
+    description="Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected.",
+)
+def end_session(
+    session_id: str,
+    actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
+    request: Request,
+) -> LectureSession:
+    """Finalize the trusted session lifecycle without accepting a client clock origin."""
+    from app.contracts.models import SessionStatus
+    from app.core.clock import utc_now_iso
+    from app.core.errors import AppError, ErrorCode
+
+    session = request.app.state.session_service.get_session(actor, session_id)
+    if session.owner_id != actor.user_id:
+        raise AppError(ErrorCode.FORBIDDEN, "Only the session owner can end the session.")
+    if session.status != SessionStatus.ENDED:
+        session.status = SessionStatus.ENDED
+        session.ended_at = utc_now_iso()
+    return session

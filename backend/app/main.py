@@ -7,16 +7,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.auth.access import StoreSessionAccess
+from app.auth.routes import router as auth_router
 from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
+from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
+from app.core.logging_redaction import install_logging
 from app.cost.ledger import CostLedger
+from app.courses.routes import router as course_router
+from app.courses.service import CourseService
 from app.demo.routes import router as demo_router
-from app.demo.runner import DemoRunner
+from app.learning.composition import install_learning_features
+from app.lectures.routes import router as lecture_router
+from app.lectures.service import LectureService
 from app.professor.routes import router as professor_router
 from app.professor.service import ProfessorService
 from app.recovery.generator import DeterministicRecoveryGenerator, RecoveryGenerator
 from app.recovery.routes import router as recovery_router
-from app.recovery.service import RecoveryService
+from app.recovery.validated import PrivateRecoveryService, ValidatedGenerator
 from app.sessions.routes import router as session_router
 from app.sessions.service import SessionService
 from app.signals.routes import router as signal_router
@@ -25,6 +32,8 @@ from app.storage.in_memory import InMemoryStore
 from app.transcript.repository import InMemoryTimelineReader
 from app.transcript.routes import router as transcript_router
 from app.transcript.service import TranscriptService
+from app.users.routes import router as user_router
+from app.users.service import UserService
 from app.ws.publisher import WebSocketEventPublisher
 from app.ws.routes import router as websocket_router
 
@@ -72,10 +81,20 @@ def create_app(
 
     if settings is None:
         settings = get_settings()
-    if settings.provider_mode == LIVE_PROVIDER_MODE:
-        raise RuntimeError(
-            "PROVIDER_MODE=live is not implemented yet; use PROVIDER_MODE=mock."
+    if settings.provider_mode == LIVE_PROVIDER_MODE and recovery_generator is None:
+        import os
+
+        from openai import OpenAI
+
+        from app.integrations.openai.recovery import OpenAIRecoveryGenerator
+
+        model = os.environ.get("OPENAI_MODEL", "")
+        if not os.environ.get("OPENAI_API_KEY") or not model:
+            raise RuntimeError("Live mode requires OPENAI_API_KEY and OPENAI_MODEL.")
+        recovery_generator = OpenAIRecoveryGenerator(
+            OpenAI(timeout=20.0, max_retries=1), model
         )
+    install_logging()
 
     app = FastAPI(
         title="Lecture Recovery Assistant API",
@@ -101,13 +120,14 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(DerivedJsonLimit)
     install_error_handlers(app)
 
     store = InMemoryStore()
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()
-    generator = recovery_generator or DeterministicRecoveryGenerator()
+    generator = ValidatedGenerator(recovery_generator or DeterministicRecoveryGenerator())
 
     session_service = SessionService(store, settings, session_access)
     signal_service = SignalService(store, settings, session_access, event_publisher)
@@ -115,7 +135,10 @@ def create_app(
     transcript_service = TranscriptService(
         store, settings, session_access, timeline_reader, event_publisher
     )
-    recovery_service = RecoveryService(
+    user_service = UserService(store, settings)
+    course_service = CourseService(store)
+    lecture_service = LectureService(store)
+    recovery_service = PrivateRecoveryService(
         store,
         settings,
         session_access,
@@ -128,13 +151,6 @@ def create_app(
     professor_service = ProfessorService(
         store, settings, session_access, signal_service, event_publisher
     )
-    demo_runner = DemoRunner(
-        session_service,
-        signal_service,
-        transcript_service,
-        recovery_service,
-        professor_service,
-    )
 
     app.state.settings = settings
     app.state.store = store
@@ -145,9 +161,13 @@ def create_app(
     app.state.session_service = session_service
     app.state.signal_service = signal_service
     app.state.transcript_service = transcript_service
+    app.state.user_service = user_service
+    app.state.course_service = course_service
+    app.state.lecture_service = lecture_service
     app.state.recovery_service = recovery_service
     app.state.professor_service = professor_service
-    app.state.demo_runner = demo_runner
+
+    install_learning_features(app)
 
     app.include_router(session_router)
     app.include_router(signal_router)
@@ -156,6 +176,10 @@ def create_app(
     app.include_router(professor_router)
     app.include_router(demo_router)
     app.include_router(websocket_router)
+    app.include_router(auth_router)
+    app.include_router(user_router)
+    app.include_router(course_router)
+    app.include_router(lecture_router)
 
     @app.get(
         "/health",

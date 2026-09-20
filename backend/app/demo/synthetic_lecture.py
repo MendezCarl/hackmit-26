@@ -34,27 +34,35 @@ def build_synthetic_transcript_chunks(session_id: str) -> list[TranscriptChunk]:
         (
             900_000,
             930_000,
-            "Before we continue, recall that attention lets a model weigh how "
-            "much each input token should influence every output token.",
+            (
+                "Before we continue, recall that attention lets a model weigh how "
+                "much each input token should influence every output token."
+            ),
         ),
         (
             930_000,
             960_000,
-            "We compute attention scores by taking a query vector and "
-            "measuring its similarity against every key vector. "
-            "A softmax then turns those scores into weights that sum to one.",
+            (
+                "We compute attention scores by taking a query vector and "
+                "measuring its similarity against every key vector. "
+                "A softmax then turns those scores into weights that sum to one."
+            ),
         ),
         (
             960_000,
             990_000,
-            "Multi-head attention runs several of these scoring passes in "
-            "parallel so the model can track different relationships at once.",
+            (
+                "Multi-head attention runs several of these scoring passes in "
+                "parallel so the model can track different relationships at once."
+            ),
         ),
         (
             990_000,
             1_020_000,
-            "Finally, the weighted values are concatenated and projected back "
-            "into the original embedding size before the next layer begins.",
+            (
+                "Finally, the weighted values are concatenated and projected back "
+                "into the original embedding size before the next layer begins."
+            ),
         ),
     ]
     return [
@@ -73,9 +81,7 @@ def build_synthetic_transcript_chunks(session_id: str) -> list[TranscriptChunk]:
     ]
 
 
-def build_synthetic_missed_event(
-    session_id: str, event_id: str
-) -> SignalEvent:
+def build_synthetic_missed_event(session_id: str, event_id: str) -> SignalEvent:
     """Build one synthetic possible-missed-window event.
 
     Args:
@@ -97,3 +103,70 @@ def build_synthetic_missed_event(
         user_confirmed=None,
         client_generated_at=None,
     )
+
+
+FULL_LECTURE_END_MS = 1_800_000
+
+
+def build_full_lecture_chunks(session_id: str) -> list[TranscriptChunk]:
+    """Return a synthetic thirty-minute lecture with distinct surrounding topics.
+
+    Args:
+        session_id: Synthetic running session receiving the final chunks.
+
+    Returns:
+        Ordered chunks: introduction, the attention example, and practice.
+    """
+    chunks = build_synthetic_transcript_chunks(session_id)
+    for start in [
+        *range(0, 900_000, 60_000),
+        *range(1_020_000, FULL_LECTURE_END_MS, 60_000),
+    ]:
+        text = BACKGROUND_SEGMENTS[len(chunks) - 4]
+        chunks.append(
+            TranscriptChunk(
+                chunk_id=f"demo-context-{start}",
+                session_id=session_id,
+                start_ms=start,
+                end_ms=start + 60_000,
+                text=text,
+                speaker_label=SPEAKER_LABEL,
+                source=TranscriptSource.LOCAL_TRANSCRIPTION,
+                is_final=True,
+                revision=1,
+            )
+        )
+    return sorted(chunks, key=lambda chunk: chunk.start_ms)
+
+
+# Distinct synthetic excerpts avoid inflating the comparison by repeating filler.
+BACKGROUND_SEGMENTS = (
+    "Today we will connect vector representations, attention, and transformer blocks. Keep a small example sentence nearby as we work through each stage.",
+    "A tokenizer splits text into the units the model processes. A token may be a word, part of a word, or punctuation, depending on the vocabulary.",
+    "Each token receives an embedding vector. The coordinates are learned during training and give later layers a numerical representation to transform.",
+    "A matrix collects several vectors into rows. Before multiplying matrices, check that the inner dimensions match and predict the output shape.",
+    "The dot product multiplies matching coordinates and adds their products. It is a building block for the similarity scores we will use later.",
+    "Vector magnitude affects a dot product as well as direction. Similarity scores therefore depend on how representations are formed and scaled.",
+    "A learned linear projection changes the coordinates of a representation. Different projections can expose different relationships in the same input.",
+    "Batching groups several examples for computation. Keep the batch dimension distinct from the number of tokens and the embedding width.",
+    "Token order matters in a sentence. Position information helps a transformer distinguish sequences that contain the same words in a different order.",
+    "Some batches contain padding so examples have compatible shapes. A padding mask prevents those artificial positions from influencing a prediction.",
+    "A causal mask restricts access to future tokens during next-token prediction. The prediction at a position can use only permitted earlier context.",
+    "Softmax maps a list of real scores to positive weights summing to one. Increasing one score changes its weight relative to the other scores.",
+    "Consider the pronoun in a short sentence. Its useful context may be several words away, so a fixed neighboring window can miss the relationship.",
+    "Queries express what a position is seeking, keys support matching, and values carry information to combine. All three are learned projections.",
+    "Track the dimensions of queries, keys, and values on paper. We are now ready to connect similarity scores with a weighted combination of values.",
+    "A residual connection adds a block's input to a transformed result. Matching dimensions makes that addition possible throughout the network.",
+    "Normalization controls the scale of intermediate representations. Its position within a transformer block depends on the architecture being used.",
+    "A feed-forward sublayer transforms each token representation. It complements the cross-token information exchange performed by attention.",
+    "Stacking transformer blocks lets later layers operate on increasingly contextual representations. Each layer still receives structured vectors.",
+    "The training objective specifies the prediction task. For next-token training, predicted probabilities are compared with the actual next token.",
+    "Cross-entropy penalizes assigning low probability to the reference token. Averaging over examples produces a training signal for parameter updates.",
+    "Backpropagation computes gradients of the loss with respect to parameters. An optimizer uses those gradients to update the learned projections.",
+    "Keep evaluation examples separate from training data. A lower training loss alone does not establish that the model generalizes to new examples.",
+    "Inspect errors as well as an overall evaluation metric. Examples with similar aggregate scores can fail in different and practically significant ways.",
+    "Attention weights are internal computation values. They should not automatically be treated as a complete explanation of why a model answered.",
+    "Longer sequences increase the work performed by standard dense attention. Restricting relevant context can reduce input size in an application.",
+    "For the practice exercise, label the shapes at each step and explain which positions can interact. Use the mask to justify each allowed connection.",
+    "Our recap connects token embeddings, projected queries and keys, normalized weights, and combined values. Bring any uncertain step to the next discussion.",
+)

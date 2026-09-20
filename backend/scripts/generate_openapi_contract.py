@@ -7,7 +7,6 @@ import json
 import sys
 from pathlib import Path
 
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = BACKEND_ROOT.parent
 OPENAPI_OUTPUT_PATH = REPOSITORY_ROOT / "docs" / "api" / "openapi.json"
@@ -15,7 +14,7 @@ OPENAPI_OUTPUT_PATH = REPOSITORY_ROOT / "docs" / "api" / "openapi.json"
 # Allow this script to run from either the repository root or backend directory.
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.main import app  # noqa: E402  # Import after adding backend to sys.path.
+from app.main import app  # Import after adding backend to sys.path.
 
 
 def build_openapi_contract() -> str:

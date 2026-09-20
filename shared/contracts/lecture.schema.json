@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One lecture record belonging to a course.",
+  "properties": {
+    "course_id": {
+      "description": "Owning course identifier.",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC ISO 8601 creation time ending in Z.",
+      "title": "Created At",
+      "type": "string"
+    },
+    "lecture_id": {
+      "description": "Unique lecture-record identifier.",
+      "title": "Lecture Id",
+      "type": "string"
+    },
+    "owner_id": {
+      "description": "Professor user who owns the lecture.",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "title": {
+      "description": "Human-readable lecture title.",
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "lecture_id",
+    "course_id",
+    "owner_id",
+    "title",
+    "created_at"
+  ],
+  "title": "Lecture",
+  "type": "object"
+}

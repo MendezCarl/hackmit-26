@@ -7,19 +7,17 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
-import jwt as pyjwt  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+import jwt as pyjwt
+from fastapi.testclient import TestClient
 
-from app.auth.tokens import AuthenticatedActor, issue_access_token  # noqa: E402
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.auth.tokens import AuthenticatedActor, issue_access_token
+from app.config import Settings
+from app.main import create_app
 
 SETTINGS = Settings(app_env="test")
 
 
-def token_for(
-    user_id: str, role: str = "student", course_id: str | None = None
-) -> str:
+def token_for(user_id: str, role: str = "student", course_id: str | None = None) -> str:
     """Mint a synthetic access token for one actor."""
 
     return issue_access_token(
@@ -69,9 +67,7 @@ def test_invalid_token_is_unauthorized() -> None:
     """A tampered token must receive the standard 401."""
 
     client = build_test_client()
-    response = client.get(
-        "/api/v1/sessions/session_x", headers=auth_headers("not-a-jwt")
-    )
+    response = client.get("/api/v1/sessions/session_x", headers=auth_headers("not-a-jwt"))
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "unauthorized"
 
@@ -87,9 +83,7 @@ def test_expired_token_is_unauthorized() -> None:
     }
     expired = pyjwt.encode(claims, SETTINGS.app_secret, algorithm="HS256")
     client = build_test_client()
-    response = client.get(
-        "/api/v1/sessions/session_x", headers=auth_headers(expired)
-    )
+    response = client.get("/api/v1/sessions/session_x", headers=auth_headers(expired))
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "unauthorized"
 
@@ -100,9 +94,7 @@ def test_token_with_unknown_role_is_unauthorized() -> None:
     claims = {"sub": "user-1", "role": "admin", "exp": int(time.time()) + 600}
     forged = pyjwt.encode(claims, SETTINGS.app_secret, algorithm="HS256")
     client = build_test_client()
-    response = client.get(
-        "/api/v1/sessions/session_x", headers=auth_headers(forged)
-    )
+    response = client.get("/api/v1/sessions/session_x", headers=auth_headers(forged))
     assert response.status_code == 401
 
 

@@ -20,7 +20,12 @@ from app.storage.in_memory import InMemoryStore
 class SessionService:
     """Creation and retrieval of lecture sessions on one shared clock."""
 
-    def __init__(self, store: InMemoryStore, settings: Settings, session_access: SessionAccess) -> None:
+    def __init__(
+        self,
+        store: InMemoryStore,
+        settings: Settings,
+        session_access: SessionAccess,
+    ) -> None:
         """Bind the service to shared storage, settings, and access resolution.
 
         Args:
@@ -63,9 +68,7 @@ class SessionService:
         self._store.sessions[session_id] = session
         return session
 
-    def get_session(
-        self, actor: AuthenticatedActor, session_id: str
-    ) -> LectureSession:
+    def get_session(self, actor: AuthenticatedActor, session_id: str) -> LectureSession:
         """Return a session for an authorized member.
 
         Args:

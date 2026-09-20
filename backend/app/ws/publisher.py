@@ -9,20 +9,25 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Protocol
 from uuid import uuid4
 
-from app.contracts.models import EventEnvelope, SCHEMA_VERSION
+from app.contracts.models import SCHEMA_VERSION, EventEnvelope
 from app.core.clock import utc_now_iso
 
 SESSION_AUDIENCE = "session"
+ACTIVE_ACTOR: ContextVar[str | None] = ContextVar("publisher_actor", default=None)
+PRIVATE_PREFIXES = ("recovery_", "signal.", "signal_")
 MAX_QUEUE_DEPTH = 100
 
 
 class EventPublisher(Protocol):
     """Frozen interface publishing typed events to an authorized audience."""
 
-    def publish(self, envelope: EventEnvelope) -> None:
+    def publish(self, envelope: EventEnvelope, audience_user_id: str | None = None) -> None:
         """Publish one typed envelope to subscribers of its session.
 
         Args:
@@ -67,9 +72,12 @@ class WebSocketEventPublisher:
         self._max_queue_depth = max_queue_depth
         self._subscribers: dict[str, list[asyncio.Queue[EventEnvelope]]] = {}
         self._sequence_numbers: dict[str, int] = {}
+        self._audiences: dict[int, str | None] = {}
         self._state_lock = threading.Lock()
 
-    def subscribe(self, session_id: str) -> "asyncio.Queue[EventEnvelope]":
+    def subscribe(
+        self, session_id: str, actor_id: str | None = None
+    ) -> asyncio.Queue[EventEnvelope]:
         """Register a bounded subscriber queue for one session.
 
         Args:
@@ -79,14 +87,13 @@ class WebSocketEventPublisher:
             A bounded queue the WebSocket route drains.
         """
 
-        queue: "asyncio.Queue[EventEnvelope]" = asyncio.Queue(
-            maxsize=self._max_queue_depth
-        )
+        queue: asyncio.Queue[EventEnvelope] = asyncio.Queue(maxsize=self._max_queue_depth)
         with self._state_lock:
             self._subscribers.setdefault(session_id, []).append(queue)
+            self._audiences[id(queue)] = actor_id
         return queue
 
-    def unsubscribe(self, session_id: str, queue: "asyncio.Queue[EventEnvelope]") -> None:
+    def unsubscribe(self, session_id: str, queue: asyncio.Queue[EventEnvelope]) -> None:
         """Remove a subscriber queue when its connection closes.
 
         Args:
@@ -98,6 +105,7 @@ class WebSocketEventPublisher:
             queues = self._subscribers.get(session_id, [])
             if queue in queues:
                 queues.remove(queue)
+                self._audiences.pop(id(queue), None)
 
     def build_envelope(
         self,
@@ -120,7 +128,7 @@ class WebSocketEventPublisher:
             payload=payload,
         )
 
-    def publish(self, envelope: EventEnvelope) -> None:
+    def publish(self, envelope: EventEnvelope, audience_user_id: str | None = None) -> None:
         """Deliver one envelope to every subscriber of its session.
 
         Args:
@@ -129,7 +137,13 @@ class WebSocketEventPublisher:
 
         with self._state_lock:
             queues = list(self._subscribers.get(envelope.session_id, []))
+        audience = audience_user_id or ACTIVE_ACTOR.get()
+        is_private = envelope.event_type.startswith(PRIVATE_PREFIXES)
         for queue in queues:
+            if is_private and (
+                audience is None or self._audiences.get(id(queue)) != audience
+            ):
+                continue
             try:
                 queue.put_nowait(envelope)
             except asyncio.QueueFull:
@@ -137,5 +151,14 @@ class WebSocketEventPublisher:
                 try:
                     queue.get_nowait()
                     queue.put_nowait(envelope)
-                except (asyncio.QueueEmpty, asyncio.QueueFull):
+                except asyncio.QueueEmpty, asyncio.QueueFull:
                     pass
+
+    @contextmanager
+    def as_actor(self, actor_id: str) -> Iterator[None]:
+        """Bind private notifications to a verified actor for this synchronous call."""
+        token = ACTIVE_ACTOR.set(actor_id)
+        try:
+            yield
+        finally:
+            ACTIVE_ACTOR.reset(token)

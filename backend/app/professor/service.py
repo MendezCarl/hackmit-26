@@ -21,14 +21,13 @@ from app.auth.tokens import ROLE_PROFESSOR, AuthenticatedActor
 from app.config import Settings
 from app.contracts.models import (
     ProfessorSummary,
-    SessionStatus,
     SignalIntervalAggregate,
     TimelineBucket,
 )
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
 from app.signals.service import SignalService
-from app.storage.in_memory import InMemoryStore
+from app.storage.in_memory import EventRecord, InMemoryStore
 from app.ws.publisher import EventPublisher
 
 PROFESSOR_SUMMARY_READY = "professor_summary.ready"
@@ -36,8 +35,10 @@ TOP_INTERVAL_COUNT = 3
 SUGGESTED_ACTIONS = (
     "Consider re-explaining the concepts in the densest signal interval.",
     "Share a short written recap or slides covering the requested moment.",
-    "Invite an anonymous clarification request so students can re-engage "
-    "without being singled out.",
+    (
+        "Invite an anonymous clarification request so students can re-engage "
+        "without being singled out."
+    ),
 )
 
 
@@ -50,7 +51,7 @@ class ProfessorService:
         settings: Settings,
         session_access: SessionAccess,
         signal_service: SignalService,
-        event_publisher: "EventPublisher",
+        event_publisher: EventPublisher,
     ) -> None:
         """Bind the service to shared dependencies.
 
@@ -80,19 +81,12 @@ class ProfessorService:
 
         participants = self._signal_service.get_participants(session_id)
         opted_in = {
-            user_id
-            for user_id, record in participants.items()
-            if record.is_opted_in
+            user_id for user_id, record in participants.items() if record.is_opted_in
         }
-        submitters = {
-            record.submitted_by
-            for record in self._signal_service.list_session_events(session_id)
-        }
+        submitters = {record.submitted_by for record in self._safe_records(session_id)}
         return len(opted_in & submitters)
 
-    def _build_timeline_buckets(
-        self, session_id: str
-    ) -> list[TimelineBucket]:
+    def _build_timeline_buckets(self, session_id: str) -> list[TimelineBucket]:
         """Aggregate events into fixed buckets of the configured width.
 
         Args:
@@ -102,10 +96,7 @@ class ProfessorService:
             Anonymous buckets covering the observed lecture span.
         """
 
-        events = [
-            record.event
-            for record in self._signal_service.list_session_events(session_id)
-        ]
+        events = [record.event for record in self._safe_records(session_id)]
         if not events:
             return []
         window = self._settings.aggregation_window_ms
@@ -116,13 +107,9 @@ class ProfessorService:
             start = index * window
             end = start + window
             count = sum(
-                1
-                for event in events
-                if event.start_ms < end and start < event.end_ms
+                1 for event in events if event.start_ms < end and start < event.end_ms
             )
-            buckets.append(
-                TimelineBucket(start_ms=start, end_ms=end, event_count=count)
-            )
+            buckets.append(TimelineBucket(start_ms=start, end_ms=end, event_count=count))
         return buckets
 
     def _build_highest_signal_intervals(
@@ -137,7 +124,7 @@ class ProfessorService:
             The top anonymous intervals by event count.
         """
 
-        records = self._signal_service.list_session_events(session_id)
+        records = self._safe_records(session_id)
         intervals: Counter[tuple[int, int]] = Counter()
         event_types: dict[tuple[int, int], Counter[str]] = {}
         for record in records:
@@ -145,25 +132,22 @@ class ProfessorService:
             intervals[key] += 1
             event_types.setdefault(key, Counter())[record.event.event_type] += 1
 
-        ranked = sorted(
-            intervals.items(), key=lambda item: (-item[1], item[0])
-        )[:TOP_INTERVAL_COUNT]
+        ranked = sorted(intervals.items(), key=lambda item: (-item[1], item[0]))[
+            :TOP_INTERVAL_COUNT
+        ]
         return [
             SignalIntervalAggregate(
                 start_ms=key[0],
                 end_ms=key[1],
                 event_count=count,
                 dominant_event_types=[
-                    event_type
-                    for event_type, _ in event_types[key].most_common(2)
+                    event_type for event_type, _ in event_types[key].most_common(2)
                 ],
             )
             for key, count in ranked
         ]
 
-    def build_summary(
-        self, actor: AuthenticatedActor, session_id: str
-    ) -> ProfessorSummary:
+    def build_summary(self, actor: AuthenticatedActor, session_id: str) -> ProfessorSummary:
         """Build one threshold-safe anonymous summary for a course professor.
 
         Args:
@@ -179,6 +163,10 @@ class ProfessorService:
                 professors of a different course.
         """
 
+        if not self._settings.is_demo_or_test():
+            raise AppError(
+                ErrorCode.FORBIDDEN, "Use the policy-gated professor-metrics endpoint."
+            )
         membership = self._session_access.resolve_membership(actor, session_id)
         session = self._store.sessions[session_id]
         if actor.role != ROLE_PROFESSOR:
@@ -210,14 +198,10 @@ class ProfessorService:
             aggregation_window_ms=self._settings.aggregation_window_ms,
             is_suppressed=is_suppressed,
             timeline_buckets=(
-                None
-                if is_suppressed
-                else self._build_timeline_buckets(session_id)
+                None if is_suppressed else self._build_timeline_buckets(session_id)
             ),
             highest_signal_intervals=(
-                None
-                if is_suppressed
-                else self._build_highest_signal_intervals(session_id)
+                None if is_suppressed else self._build_highest_signal_intervals(session_id)
             ),
             suggested_actions=None if is_suppressed else list(SUGGESTED_ACTIONS),
             generated_at=utc_now_iso(),
@@ -230,3 +214,16 @@ class ProfessorService:
             )
         )
         return summary
+
+    def _safe_records(self, session_id: str) -> list[EventRecord]:
+        """Exclude dismissed, nonconsenting and phone-derived evidence in legacy demos."""
+        participants = self._signal_service.get_participants(session_id)
+        return [
+            record
+            for record in self._signal_service.list_session_events(session_id)
+            if record.submitted_by in participants
+            and participants[record.submitted_by].is_opted_in
+            and record.event.user_confirmed is not False
+            and record.event.event_type not in {"phone_visible", "student_returned"}
+            and "phone_visible" not in record.event.signals
+        ]

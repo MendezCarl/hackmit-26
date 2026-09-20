@@ -19,6 +19,7 @@ from app.config import Settings
 from app.contracts.models import (
     ConfirmEventRequest,
     IngestEventsRequest,
+    SessionStatus,
     SignalEvent,
 )
 from app.core.clock import utc_now_iso
@@ -83,8 +84,26 @@ class SignalService:
             True when the event's duration meets the configured threshold.
         """
 
+        if event.user_confirmed is False or event.event_type in {
+            "phone_visible",
+            "student_returned",
+        }:
+            return False
+        if "phone_visible" in event.signals:
+            # Phone evidence alone is never a recovery decision. Corroboration
+            # must describe the same overlapping local interval.
+            duration = event.end_ms - event.start_ms
+            return event.confidence >= self._settings.phone_support_confidence and (
+                (
+                    "looking_down" in event.signals
+                    and duration >= self._settings.phone_looking_down_ms
+                )
+                or (
+                    {"window_unfocused", "face_absent"} <= set(event.signals)
+                    and duration >= self._settings.phone_unfocused_absent_ms
+                )
+            )
         return (event.end_ms - event.start_ms) >= self._settings.min_missed_window_ms
-
 
     def ingest_batch(
         self,
@@ -115,6 +134,8 @@ class SignalService:
             )
 
         session = self._store.sessions[session_id]
+        if session.status == SessionStatus.ENDED:
+            raise AppError(ErrorCode.VALIDATION_FAILED, "Signal ingestion has ended.")
         if request.lecture_id != session.lecture_id:
             raise AppError(
                 ErrorCode.VALIDATION_FAILED,
@@ -149,21 +170,25 @@ class SignalService:
                     details={"duplicate_event_id": event.event_id},
                 )
             within_batch.add(event.event_id)
-            records.append(EventRecord(event=event, submitted_by=actor.user_id))
             accepted.append(event.event_id)
+        records.extend(
+            EventRecord(event=event, submitted_by=actor.user_id) for event in request.events
+        )
 
         self._publisher.publish(
             self._publisher.build_envelope(
                 session_id,
                 SIGNAL_EVENT_INGESTED,
                 {"accepted_event_ids": accepted},
-            )
+            ),
+            audience_user_id=actor.user_id,
         )
 
         eligible = [
             record.event.event_id
             for record in records
-            if self.is_recovery_eligible(record.event)
+            if record.submitted_by == actor.user_id
+            and self.is_recovery_eligible(record.event)
         ]
         return EventBatchResponse(
             session_id=session_id,
@@ -209,7 +234,8 @@ class SignalService:
                     session_id,
                     PARTICIPANT_JOINED,
                     {"participant_count": len(participants)},
-                )
+                ),
+                audience_user_id=actor.user_id,
             )
         return ParticipantResponse(
             session_id=session_id,
@@ -249,13 +275,22 @@ class SignalService:
 
         for record in self._store.events.get(session_id, []):
             if record.event.event_id == event_id:
+                if record.submitted_by != actor.user_id:
+                    raise AppError(
+                        ErrorCode.FORBIDDEN,
+                        "Only the submitting student can correct this event.",
+                    )
                 record.event.user_confirmed = request.user_confirmed
                 self._publisher.publish(
                     self._publisher.build_envelope(
                         session_id,
                         SIGNAL_EVENT_CONFIRMED,
-                        {"event_id": event_id, "user_confirmed": request.user_confirmed},
-                    )
+                        {
+                            "event_id": event_id,
+                            "user_confirmed": request.user_confirmed,
+                        },
+                    ),
+                    audience_user_id=actor.user_id,
                 )
                 return record.event
 
@@ -275,10 +310,7 @@ class SignalService:
             All known event ids for the session.
         """
 
-        return [
-            record.event.event_id
-            for record in self._store.events.get(session_id, [])
-        ]
+        return [record.event.event_id for record in self._store.events.get(session_id, [])]
 
     def list_session_events(self, session_id: str) -> list[EventRecord]:
         """Return stored event records; attribution stays server-side.

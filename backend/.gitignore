@@ -1,0 +1,5 @@
+# Packaging metadata produced by editable installation in the private venv.
+*.egg-info/
+
+# Independent local worktrees for the uncommitted feature split.
+.feature-worktrees/

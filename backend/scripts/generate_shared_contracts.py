@@ -16,7 +16,7 @@ CONTRACTS_DIR = REPOSITORY_ROOT / "shared" / "contracts"
 
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.contracts import models as contract_models  # noqa: E402
+from app.contracts import models as contract_models
 
 CONTRACT_MODEL_NAMES: dict[str, str] = {
     "error_response": "ErrorResponse",
@@ -29,6 +29,11 @@ CONTRACT_MODEL_NAMES: dict[str, str] = {
     "cost_metrics": "CostMetrics",
     "professor_summary": "ProfessorSummary",
     "websocket_envelope": "EventEnvelope",
+    "user_profile": "UserProfile",
+    "auth_session": "AuthSession",
+    "consent_settings": "ConsentSettings",
+    "course": "Course",
+    "lecture": "Lecture",
 }
 
 

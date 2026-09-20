@@ -125,9 +125,7 @@ class DeterministicRecoveryGenerator:
         requested_center = (window.requested_start_ms + window.requested_end_ms) / 2
         closest_chunk = min(
             chunks,
-            key=lambda chunk: abs(
-                (chunk.start_ms + chunk.end_ms) / 2 - requested_center
-            ),
+            key=lambda chunk: abs((chunk.start_ms + chunk.end_ms) / 2 - requested_center),
         )
         source_timestamps = [
             SourceTimestamp(
@@ -142,7 +140,7 @@ class DeterministicRecoveryGenerator:
 
         card_text = (
             "It looks like you may have missed part of the lecture around this "
-            f"moment of \"{session.title}\". Here is a focused recap of the "
+            f'moment of "{session.title}". Here is a focused recap of the '
             "content from that interval so you can pick the thread back up."
         )
         metadata = ModelMetadata(
@@ -166,7 +164,7 @@ class DeterministicRecoveryGenerator:
             example_from_lecture=closest_chunk.text.strip(),
             source_timestamps=source_timestamps,
             follow_up_question=(
-                f"Could you explain how \"{topic}\" connects to what came "
+                f'Could you explain how "{topic}" connects to what came '
                 "next in this lecture?"
             ),
             model_metadata=metadata,

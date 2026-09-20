@@ -6,11 +6,11 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from app.auth.tokens import AuthenticatedActor, issue_access_token  # noqa: E402
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.auth.tokens import AuthenticatedActor, issue_access_token
+from app.config import Settings
+from app.main import create_app
 
 SETTINGS = Settings(app_env="test")
 LECTURE_ID = "lecture-1"
@@ -19,9 +19,7 @@ LECTURE_ID = "lecture-1"
 def token_for(user_id: str) -> str:
     """Mint a synthetic student token."""
 
-    return issue_access_token(
-        SETTINGS, AuthenticatedActor(user_id=user_id, role="student")
-    )
+    return issue_access_token(SETTINGS, AuthenticatedActor(user_id=user_id, role="student"))
 
 
 def auth_headers(token: str) -> dict[str, str]:

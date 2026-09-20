@@ -25,6 +25,12 @@ def get_transcript_service(request: Request) -> TranscriptService:
 
 
 @router.post(
+    "/transcript-chunks/batch",
+    response_model=TranscriptBatchResponse,
+    status_code=202,
+    summary="Ingest transcript chunks using the unified contract path",
+)
+@router.post(
     "/transcript/batch",
     response_model=TranscriptBatchResponse,
     status_code=status.HTTP_202_ACCEPTED,

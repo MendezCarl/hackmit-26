@@ -32,9 +32,7 @@ class WindowReadResult(BaseModel):
 class TimelineReader(Protocol):
     """Frozen interface for retrieving final transcript chunks."""
 
-    def read_window(
-        self, session_id: str, start_ms: int, end_ms: int
-    ) -> WindowReadResult:
+    def read_window(self, session_id: str, start_ms: int, end_ms: int) -> WindowReadResult:
         """Retrieve final chunks overlapping the interval.
 
         Args:
@@ -60,9 +58,7 @@ class InMemoryTimelineReader:
 
         self._store = store
 
-    def read_window(
-        self, session_id: str, start_ms: int, end_ms: int
-    ) -> WindowReadResult:
+    def read_window(self, session_id: str, start_ms: int, end_ms: int) -> WindowReadResult:
         """Return final chunks overlapping ``[start_ms, end_ms)``.
 
         Provisional chunks are stored but excluded from timeline reads.
@@ -85,9 +81,7 @@ class InMemoryTimelineReader:
         ]
         chunks.sort(key=lambda chunk: (chunk.start_ms, chunk.end_ms))
         all_chunks = self._store.transcript_chunks.get(session_id, [])
-        transcript_revision = max(
-            (chunk.revision for chunk in all_chunks), default=0
-        )
+        transcript_revision = max((chunk.revision for chunk in all_chunks), default=0)
         return WindowReadResult(
             chunks=chunks,
             transcript_revision=transcript_revision,

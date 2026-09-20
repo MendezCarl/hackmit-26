@@ -22,7 +22,23 @@ backend/app/
 └── demo/              # Gated synthetic demo orchestration
 ```
 
+## Implementation status and feature apps
+
+See [the implementation report](../docs/implementation/backend_status.md) for what
+has been built, tested, pushed, and left for host integration. The three feature
+branches cover signal/transcript ingestion and timeline, professor summaries,
+and Dropbox operations. OpenAI recovery generation is still planned.
+
+The setup below starts the baseline `app.main`, whose routes are listed at the
+end of this file. It does not mount the new feature routes. Use the
+[feature runbook](LECTURE_FEATURES.md) to choose the instructions for your checked-out
+branch. Each feature checkout contains one of `FEATURE_2.md`, `FEATURE_4.md`, or
+`FEATURE_6.md`. The combined demo is only available in the original local combined
+checkout. Feature demo commands require explicit demo mode.
+
 ## Setup
+
+Run these commands from the `backend/` directory:
 
 ```sh
 python -m venv venv
@@ -70,6 +86,23 @@ CI runs both checks and fails when `docs/api/openapi.json` is stale.
 
 System: `GET /health`, `GET /api/status`
 
+Auth (`/api/v1/auth`):
+
+- `POST /register` — create an account (email, password, role) and receive a JWT.
+- `POST /login` — verify credentials and receive a fresh JWT.
+
+Users (`/api/v1/users`):
+
+- `GET /me` — the authenticated account's profile.
+- `GET /me/consent` / `PUT /me/consent` — read and update stored consent
+  (analytics opt-in defaults to false).
+
+Courses (`/api/v1/courses`) and lectures (`/api/v1/lectures`) — professor-owned:
+
+- `POST /courses`, `GET /courses`, `GET /courses/{id}`, `DELETE /courses/{id}`
+- `POST /lectures`, `GET /lectures?course_id=`, `GET /lectures/{id}`,
+  `DELETE /lectures/{id}`
+
 Sessions (`/api/v1/sessions`):
 
 - `POST /api/v1/sessions` — create one running occurrence of a lecture.
@@ -89,9 +122,21 @@ Transcript:
 Recovery:
 
 - `POST /recovery/jobs` — request a grounded recovery card for an interval.
+  Optional `Idempotency-Key` header makes retries return the original job.
+  Source events overlapping the request merge into one context window.
 - `GET /recovery/jobs/{job_id}` — job status or typed failure.
 - `GET /recovery/cards/{card_id}` — personal card retrieval.
-- `GET /cost/metrics` — session-owner usage metrics (synthetic labels).
+- `GET /cost/metrics` — session-owner usage metrics; entries are labeled
+  `measured` only for real provider calls and `synthetic` for mock output.
+
+Providers:
+
+- `PROVIDER_MODE=mock` (default) — deterministic synthetic cards.
+- `PROVIDER_MODE=live` — the OpenAI adapter
+  (`app/integrations/openai/`) requests strict JSON-schema output, rejects
+  ungrounded citations, and records measured token usage. Requires
+  `pip install -e "./backend[live]"` and `OPENAI_API_KEY`; startup fails
+  fast otherwise.
 
 Professor:
 
@@ -126,3 +171,11 @@ deterministic mock whose usage is labeled `synthetic`.
 pytest
 ```
 
+
+## New learning feature implementation
+
+See [NEW_PLAN_FEATURES.md](NEW_PLAN_FEATURES.md) for the integrated synthetic demo,
+optional AI/vision setup, contracts, privacy behavior, branch ownership and tests.
+The integration worktree extends baseline `88d7bbb`; it does not overwrite the
+older isolated signal, professor or Dropbox branches. New implementation changes
+remain local and uncommitted for review.

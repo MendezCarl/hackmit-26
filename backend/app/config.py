@@ -75,6 +75,9 @@ class Settings(BaseModel):
         ),
         ge=0,
     )
+    phone_support_confidence: float = Field(default=0.5, ge=0, le=1)
+    phone_looking_down_ms: int = Field(default=20_000, ge=1)
+    phone_unfocused_absent_ms: int = Field(default=15_000, ge=1)
     max_batch_events: int = Field(
         default=50, description="Maximum signal events accepted per batch.", ge=1
     )
@@ -85,6 +88,14 @@ class Settings(BaseModel):
         default=4_000,
         description="Maximum accepted text length for one transcript chunk.",
         ge=1,
+    )
+    openai_api_key: str | None = Field(
+        default=None,
+        description="API key for the live OpenAI adapter; opt-in only.",
+    )
+    openai_model: str = Field(
+        default="gpt-4o-mini",
+        description="Model used by the live OpenAI adapter.",
     )
 
     def is_demo_or_test(self) -> bool:
@@ -109,6 +120,8 @@ def _settings_from_environment() -> Settings:
         provider_mode=os.environ.get("PROVIDER_MODE", MOCK_PROVIDER_MODE),
         app_secret=os.environ.get("APP_SECRET", DEFAULT_DEMO_SECRET),
         jwt_algorithm=os.environ.get("JWT_ALGORITHM", "HS256"),
+        openai_api_key=os.environ.get("OPENAI_API_KEY"),
+        openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
     )
     if settings.app_env not in KNOWN_ENVIRONMENTS:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")
