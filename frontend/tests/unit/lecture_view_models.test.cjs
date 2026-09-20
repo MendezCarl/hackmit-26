@@ -37,3 +37,13 @@ test('lecture view models format timestamps and preserve recovery language', asy
     60000,
   );
 });
+
+test('escapeHtml encodes HTML characters and preserves plain text', async () => {
+  const { escapeHtml } = await import('../../dist/renderer/components/html_text.mjs');
+
+  assert.equal(
+    escapeHtml(`<tag attr="quoted">Tom & Jerry's</tag>`),
+    '&lt;tag attr=&quot;quoted&quot;&gt;Tom &amp; Jerry&#39;s&lt;/tag&gt;',
+  );
+  assert.equal(escapeHtml('plain text'), 'plain text');
+});

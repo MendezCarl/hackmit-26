@@ -1,14 +1,23 @@
 import { AppShell } from '../../components/app_shell.mjs';
+import { escapeHtml } from '../../components/html_text.mjs';
 import { SettingRow } from '../../components/setting_row.mjs';
 
 export type AccountModel = {
   isDemo: boolean;
   user: UserProfile | null;
+  courses: Course[];
+  joinedSessions: LectureSession[];
   consent: ConsentSettings | null;
   routeError?: string | null;
   isLoading?: boolean;
 };
-const FIXTURE_MODEL: AccountModel = { isDemo: true, user: null, consent: null };
+const FIXTURE_MODEL: AccountModel = {
+  isDemo: true,
+  user: null,
+  courses: [],
+  joinedSessions: [],
+  consent: null,
+};
 
 /**
  * Builds the local processing, privacy, and account preferences page.
@@ -23,13 +32,16 @@ export function AccountPage(model: AccountModel = FIXTURE_MODEL): string {
     eyebrow: 'Account',
     title: 'Privacy and preferences',
     demoMode: model.isDemo,
+    profileName: user?.display_name ?? '?',
+    courses: model.courses,
+    joinedSessions: model.joinedSessions,
     content: `
       ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
-      ${model.routeError ? `<p class="empty-state">Account unavailable: ${model.routeError}</p>` : ''}
+      ${model.routeError ? `<p class="empty-state">Account unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <section class="settings-layout">
         <article class="settings-card">
           <h2>Profile</h2>
-          <div class="profile-summary"><span class="avatar avatar--large">${user?.display_name?.slice(0, 2).toUpperCase() ?? '--'}</span><div><strong>${user?.display_name ?? 'Profile unavailable'}</strong><p>${user?.email ?? 'No profile loaded'}</p></div><button class="secondary-button" type="button" disabled>Edit profile unavailable</button></div>
+          <div class="profile-summary"><span class="avatar avatar--large">${escapeHtml(user?.display_name?.slice(0, 2).toUpperCase() ?? '--')}</span><div><strong>${escapeHtml(user?.display_name ?? 'Profile unavailable')}</strong><p>${escapeHtml(user?.email ?? 'No profile loaded')}</p></div><button class="secondary-button" type="button" disabled>Edit profile unavailable</button></div>
         </article>
         <article class="settings-card">
           <h2>On-device processing</h2>

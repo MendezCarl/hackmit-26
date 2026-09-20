@@ -1,10 +1,12 @@
 import { buildRouteHash } from '../../app/router.mjs';
 import { AppShell } from '../../components/app_shell.mjs';
+import { escapeHtml } from '../../components/html_text.mjs';
 import { MetricCard } from '../../components/metric_card.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
 
 export type EducatorDashboardModel = {
   isDemo: boolean;
+  profileName?: string;
   courses: Course[];
   lecturesByCourse: Record<string, Lecture[]>;
   activeSession: LectureSession | null;
@@ -31,12 +33,13 @@ export function EducatorDashboardPage(model: EducatorDashboardModel = FIXTURE_MO
   return AppShell({
     route: 'educator-dashboard',
     role: 'educator',
+    profileName: model.profileName,
     eyebrow: `${ACTIVE_LECTURE.courseCode} · Post-lecture overview`,
     title: 'Teach forward with clearer evidence.',
     demoMode: model.isDemo,
     content: `
-      <section class="section-block"><form data-course-form><p class="eyebrow">Course setup</p><label>Course code<input name="code" required /></label><label>Course title<input name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form><form data-lecture-form><label>Course<select name="course_id" required>${courses.map((course) => `<option value="${course.course_id}">${course.code} · ${course.title}</option>`).join('')}</select></label><label>Lecture title<input name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form><p class="form-message" data-educator-message></p></section>
-      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${model.activeSession.title}</h2><p>Join code: <strong>${model.activeSession.session_id}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
+      <section class="section-block"><form class="login-card form-card" data-course-form><p class="eyebrow">Course setup</p><label>Course code<input type="text" name="code" required /></label><label>Course title<input type="text" name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form><form class="login-card form-card" data-lecture-form><label>Course<select name="course_id" required>${courses.map((course) => `<option value="${escapeHtml(course.course_id)}">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</option>`).join('')}</select></label><label>Lecture title<input type="text" name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form><p class="form-message" data-educator-message></p></section>
+      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${escapeHtml(model.activeSession.title)}</h2><p>Join code: <strong>${escapeHtml(model.activeSession.session_id)}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
       <section class="metrics-grid" aria-label="Lecture metrics">
         ${MetricCard('Lecture continuity', '78%', '41 of 52 valid intervals had no hotspot', 'teal')}
         ${MetricCard('Evidence coverage', '83%', '68 of 82 opted-in participants', 'sage')}
@@ -68,10 +71,10 @@ export function EducatorDashboardPage(model: EducatorDashboardModel = FIXTURE_MO
         <div class="section-heading-row"><div><p class="eyebrow">Next step</p><h2>Moments to review</h2></div><a class="text-link" href="${buildRouteHash('educator-summary')}">Open full report →</a></div>
         <div class="review-table" role="table" aria-label="Moments to review">
           <div class="review-table__header" role="row"><span>Time</span><span>Topic</span><span>Aggregate evidence</span><span>Suggested action</span></div>
-          ${ACTIVE_LECTURE.moments.map((moment) => `<a class="review-table__row" role="row" href="${buildRouteHash('educator-summary')}"><span>${moment.startLabel}</span><strong>${moment.title}</strong><span>${moment.evidence}</span><span>${moment.action}</span></a>`).join('')}
+          ${ACTIVE_LECTURE.moments.map((moment) => `<a class="review-table__row" role="row" href="${buildRouteHash('educator-summary')}"><span>${escapeHtml(moment.startLabel)}</span><strong>${escapeHtml(moment.title)}</strong><span>${escapeHtml(moment.evidence)}</span><span>${escapeHtml(moment.action)}</span></a>`).join('')}
         </div>
       </section>
-      <section class="section-block"><h2>Lectures</h2><div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row"><span><strong>${lecture.title}</strong><small>${lecture.course_id}</small></span><button class="primary-button" type="button" data-start-session="${lecture.lecture_id}" data-course-id="${lecture.course_id}" data-lecture-title="${lecture.title}">Start session</button></div>`).join('')}</div></section>
+      <section class="section-block"><h2>Lectures</h2><div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row lecture-row--backend"><span><strong>${escapeHtml(lecture.title)}</strong><small>${escapeHtml(lecture.course_id)}</small></span><button class="primary-button" type="button" data-start-session="${escapeHtml(lecture.lecture_id)}" data-course-id="${escapeHtml(lecture.course_id)}" data-lecture-title="${escapeHtml(lecture.title)}">Start session</button></div>`).join('')}</div></section>
     `,
   });
 }
@@ -86,22 +89,23 @@ function buildRealEducatorDashboard(model: EducatorDashboardModel): string {
     eyebrow: 'Educator workspace',
     title: 'Your courses and sessions',
     demoMode: false,
+    courses: model.courses,
     content: `
       ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
-      ${model.routeError ? `<p class="empty-state">Workspace unavailable: ${model.routeError}</p>` : ''}
-      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${model.activeSession.title}</h2><p>Join code: <strong>${model.activeSession.session_id}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
+      ${model.routeError ? `<p class="empty-state">Workspace unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
+      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${escapeHtml(model.activeSession.title)}</h2><p>Join code: <strong>${escapeHtml(model.activeSession.session_id)}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
       <section class="section-block">
-        <form data-course-form><p class="eyebrow">Course setup</p><label>Course code<input name="code" required /></label><label>Course title<input name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form>
-        <form data-lecture-form><label>Course<select name="course_id" required>${model.courses.map((course) => `<option value="${course.course_id}">${course.code} · ${course.title}</option>`).join('')}</select></label><label>Lecture title<input name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form>
+        <form class="login-card form-card" data-course-form><p class="eyebrow">Course setup</p><label>Course code<input type="text" name="code" required /></label><label>Course title<input type="text" name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form>
+        <form class="login-card form-card" data-lecture-form><label>Course<select name="course_id" required>${model.courses.map((course) => `<option value="${escapeHtml(course.course_id)}">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</option>`).join('')}</select></label><label>Lecture title<input type="text" name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form>
         <p class="form-message" data-educator-message></p>
       </section>
       <section class="section-block">
         <h2>Courses</h2>
-        ${model.courses.length ? `<div class="lecture-row-list">${model.courses.map((course) => `<div class="lecture-row"><span><strong>${course.title}</strong><small>${course.code}</small></span><span>${course.course_id}</span></div>`).join('')}</div>` : '<p class="empty-state">No courses yet. Create a course to start a lecture.</p>'}
+        ${model.courses.length ? `<div class="lecture-row-list">${model.courses.map((course) => `<div class="lecture-row lecture-row--backend"><span><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.code)} · ${escapeHtml(course.course_id)}</small></span></div>`).join('')}</div>` : '<p class="empty-state">No courses yet. Create a course to start a lecture.</p>'}
       </section>
       <section class="section-block">
         <h2>Lectures</h2>
-        ${lectures.length ? `<div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row"><span><strong>${lecture.title}</strong><small>${lecture.course_id}</small></span><button class="primary-button" type="button" data-start-session="${lecture.lecture_id}" data-course-id="${lecture.course_id}" data-lecture-title="${lecture.title}">Start session</button></div>`).join('')}</div>` : '<p class="empty-state">No lectures yet. Create a lecture after adding a course.</p>'}
+        ${lectures.length ? `<div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row lecture-row--backend"><span><strong>${escapeHtml(lecture.title)}</strong><small>${escapeHtml(lecture.course_id)}</small></span><button class="primary-button" type="button" data-start-session="${escapeHtml(lecture.lecture_id)}" data-course-id="${escapeHtml(lecture.course_id)}" data-lecture-title="${escapeHtml(lecture.title)}">Start session</button></div>`).join('')}</div>` : '<p class="empty-state">No lectures yet. Create a lecture after adding a course.</p>'}
       </section>
     `,
   });

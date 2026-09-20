@@ -1,4 +1,5 @@
 import { AppShell } from '../../components/app_shell.mjs';
+import { escapeHtml } from '../../components/html_text.mjs';
 import { LectureTimeline } from '../../components/lecture_timeline.mjs';
 import { MomentDetail } from '../../components/moment_detail.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
@@ -11,7 +12,9 @@ import {
 
 export type EducatorSummaryModel = {
   isDemo: boolean;
+  profileName?: string;
   session: LectureSession | null;
+  courses: Course[];
   summary: ProfessorSummary | null;
   metrics: ProfessorMetrics | null;
   summaryError?: string | null;
@@ -22,6 +25,7 @@ export type EducatorSummaryModel = {
 const FIXTURE_MODEL: EducatorSummaryModel = {
   isDemo: true,
   session: null,
+  courses: [],
   summary: null,
   metrics: null,
 };
@@ -40,9 +44,11 @@ export function EducatorSummaryPage(model: EducatorSummaryModel = FIXTURE_MODEL)
   return AppShell({
     route: 'educator-summary',
     role: 'educator',
+    profileName: model.profileName,
     eyebrow: `${ACTIVE_LECTURE.courseCode} · ${ACTIVE_LECTURE.lectureDate}`,
     title: 'Lecture report',
     demoMode: model.isDemo,
+    courses: model.courses,
     content: `
       <div class="report-heading">
         <div><h2>${ACTIVE_LECTURE.lectureTitle}</h2><p>Anonymous aggregate report with privacy-safe evidence.</p></div>
@@ -79,7 +85,8 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
     model.routeError ? `Report unavailable: ${model.routeError}` : '',
   ].filter(Boolean);
   const deliveryFindings = metrics?.delivery_findings ?? [];
-  const actions = summary?.suggested_actions?.map((action) => `<li>${action}</li>`).join('') ?? '';
+  const actions =
+    summary?.suggested_actions?.map((action) => `<li>${escapeHtml(action)}</li>`).join('') ?? '';
   const continuity = metrics?.continuity
     ? `<p class="summary-meta">Continuity: ${Math.round(metrics.continuity.ratio * 100)}%</p>`
     : '';
@@ -87,17 +94,19 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
   return AppShell({
     route: 'educator-summary',
     role: 'educator',
+    profileName: model.profileName,
     eyebrow: session ? `Session ${session.course_id}` : 'Educator report',
     title: session?.title ?? 'Lecture report',
     demoMode: false,
+    courses: model.courses,
     content: `
       ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
-      ${errors.map((error) => `<p class="empty-state">${error}</p>`).join('')}
+      ${errors.map((error) => `<p class="empty-state">${escapeHtml(error)}</p>`).join('')}
       ${suppression}
-      ${metrics ? `<p class="summary-meta">Metrics status: ${metrics.status}</p>${continuity}` : ''}
+      ${metrics ? `<p class="summary-meta">Metrics status: ${escapeHtml(metrics.status)}</p>${continuity}` : ''}
       ${selected ? `${LectureTimeline(moments, selected.momentId, formatLectureTime(duration))}<section class="report-grid"><div>${MomentDetail(selected, 'educator')}</div><aside class="evidence-card"><p class="eyebrow">Anonymous participants</p><strong>${summary?.participant_count ?? 'Withheld'}</strong><p>Identity-safe aggregates only.</p></aside></section>` : '<p class="empty-state">No report intervals are available for this session.</p>'}
       ${actions ? `<section class="section-block"><h2>Suggested actions</h2><ul>${actions}</ul></section>` : ''}
-      ${deliveryFindings.map((finding) => `<section class="section-block delivery-section"><div class="delivery-icon" aria-hidden="true">◖</div><div><p class="eyebrow">Delivery quality · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${finding.signal_type}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${finding.suggested_action}</div></section>`).join('')}
+      ${deliveryFindings.map((finding) => `<section class="section-block delivery-section"><div class="delivery-icon" aria-hidden="true">◖</div><div><p class="eyebrow">Delivery quality · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${escapeHtml(finding.signal_type)}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${escapeHtml(finding.suggested_action)}</div></section>`).join('')}
     `,
   });
 }

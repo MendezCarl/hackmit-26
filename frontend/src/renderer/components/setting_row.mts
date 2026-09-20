@@ -1,3 +1,4 @@
+import { escapeHtml } from './html_text.mjs';
 /**
  * Builds a labeled account-setting row with a toggle.
  *
@@ -14,6 +15,6 @@ export function SettingRow(
   isLocked = false,
 ): string {
   return `
-    <div class="setting-row"><div><strong>${label}</strong><p>${description}</p></div><label class="toggle ${isLocked ? 'is-locked' : ''}"><span class="sr-only">${label}</span><input type="checkbox" ${isEnabled ? 'checked' : ''} ${isLocked ? 'disabled' : ''}/><i></i></label></div>
+    <div class="setting-row"><div><strong>${escapeHtml(label)}</strong><p>${escapeHtml(description)}</p></div><label class="toggle ${isLocked ? 'is-locked' : ''}"><span class="sr-only">${escapeHtml(label)}</span><input type="checkbox" ${isEnabled ? 'checked' : ''} ${isLocked ? 'disabled' : ''}/><i></i></label></div>
   `;
 }

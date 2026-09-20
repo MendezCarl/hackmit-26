@@ -1,4 +1,5 @@
 import { LectureMoment } from '../fixtures/demo_content.mjs';
+import { escapeHtml } from './html_text.mjs';
 
 /**
  * Builds a selected lecture moment for student or educator context.
@@ -11,12 +12,12 @@ export function MomentDetail(moment: LectureMoment, audience: 'student' | 'educa
   if (audience === 'student') {
     return `
       <article class="moment-detail" data-moment-detail>
-        <div class="moment-detail__time">${moment.startLabel}–${moment.endLabel}</div>
+        <div class="moment-detail__time">${escapeHtml(moment.startLabel)}–${escapeHtml(moment.endLabel)}</div>
         <div>
           <p class="eyebrow">Recovery note</p>
-          <h3>${moment.title}</h3>
-          <p>${moment.summary}</p>
-          <div class="key-point"><span>Key idea</span>${moment.action}</div>
+          <h3>${escapeHtml(moment.title)}</h3>
+          <p>${escapeHtml(moment.summary)}</p>
+          <div class="key-point"><span>Key idea</span>${escapeHtml(moment.action)}</div>
         </div>
       </article>
     `;
@@ -24,12 +25,12 @@ export function MomentDetail(moment: LectureMoment, audience: 'student' | 'educa
 
   return `
     <article class="moment-detail" data-moment-detail>
-      <div class="moment-detail__time">${moment.startLabel}–${moment.endLabel}</div>
+      <div class="moment-detail__time">${escapeHtml(moment.startLabel)}–${escapeHtml(moment.endLabel)}</div>
       <div>
         <p class="eyebrow">Anonymous aggregate</p>
-        <h3>${moment.title}</h3>
-        <p>${moment.evidence}</p>
-        <div class="key-point"><span>Suggested action</span>${moment.action}</div>
+        <h3>${escapeHtml(moment.title)}</h3>
+        <p>${escapeHtml(moment.evidence)}</p>
+        <div class="key-point"><span>Suggested action</span>${escapeHtml(moment.action)}</div>
       </div>
     </article>
   `;

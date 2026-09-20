@@ -1,3 +1,4 @@
+import { escapeHtml } from './html_text.mjs';
 /**
  * Builds a compact metric card for an educator dashboard.
  *
@@ -15,9 +16,9 @@ export function MetricCard(
 ): string {
   return `
     <article class="metric-card metric-card--${tone}">
-      <p>${label}</p>
-      <strong>${value}</strong>
-      <small>${detail}</small>
+      <p>${escapeHtml(label)}</p>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(detail)}</small>
     </article>
   `;
 }

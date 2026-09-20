@@ -1,4 +1,5 @@
 import { buildRouteHash } from '../app/router.mjs';
+import { escapeHtml } from './html_text.mjs';
 
 /**
  * Builds a lecture summary card for the searchable lecture library.
@@ -16,9 +17,9 @@ export function LectureCard(
   status: 'review' | 'ready',
 ): string {
   return `
-    <article class="lecture-card" data-lecture-title="${title.toLowerCase()}" data-lecture-status="${status}">
+    <article class="lecture-card" data-lecture-title="${escapeHtml(title.toLowerCase())}" data-lecture-status="${status}">
       <div class="lecture-card__art" aria-hidden="true"><span>${status === 'review' ? '3' : '✓'}</span></div>
-      <div class="lecture-card__body"><span class="status-badge status-badge--${status}">${status === 'review' ? 'Needs review' : 'Summary ready'}</span><h2>${title}</h2><p>${date} · ${duration}</p><a href="${buildRouteHash('student-summary')}">Open summary <span>→</span></a></div>
+      <div class="lecture-card__body"><span class="status-badge status-badge--${status}">${status === 'review' ? 'Needs review' : 'Summary ready'}</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(date)} · ${escapeHtml(duration)}</p><a href="${buildRouteHash('student-summary')}">Open summary <span>→</span></a></div>
     </article>
   `;
 }

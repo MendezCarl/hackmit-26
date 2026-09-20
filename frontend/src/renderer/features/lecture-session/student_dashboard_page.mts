@@ -1,6 +1,7 @@
 import { buildRouteHash } from '../../app/router.mjs';
 import { AppShell } from '../../components/app_shell.mjs';
 import { ConsentDialog } from '../../components/consent_dialog.mjs';
+import { escapeHtml } from '../../components/html_text.mjs';
 import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs';
 
 export type StudentDashboardModel = {
@@ -47,8 +48,8 @@ export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODE
         </article>
         <article class="feature-card">
           <p class="eyebrow">Latest recovery</p>
-          <h2>${ACTIVE_LECTURE.lectureTitle}</h2>
-          <p>Three moments are ready to review from ${ACTIVE_LECTURE.lectureDate}.</p>
+          <h2>${escapeHtml(ACTIVE_LECTURE.lectureTitle)}</h2>
+          <p>Three moments are ready to review from ${escapeHtml(ACTIVE_LECTURE.lectureDate)}.</p>
           <a class="text-link" href="${buildRouteHash('student-summary')}">Open lecture summary <span>→</span></a>
         </article>
       </section>
@@ -62,8 +63,8 @@ export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODE
             .map(
               (lecture, index) => `
                 <a class="lecture-row" href="${buildRouteHash('student-summary')}">
-                  <span class="lecture-row__date"><strong>${lecture.lectureDate.split(' ')[1].replace(',', '')}</strong>SEP</span>
-                  <span><strong>${lecture.lectureTitle}</strong><small>${lecture.courseCode} · ${lecture.durationLabel}</small></span>
+                  <span class="lecture-row__date"><strong>${escapeHtml(lecture.lectureDate.split(' ')[1].replace(',', ''))}</strong>SEP</span>
+                  <span><strong>${escapeHtml(lecture.lectureTitle)}</strong><small>${escapeHtml(lecture.courseCode)} · ${escapeHtml(lecture.durationLabel)}</small></span>
                   <span class="lecture-row__status">${index === 0 ? '3 review moments' : 'Summary ready'}</span>
                   <span aria-hidden="true">→</span>
                 </a>`,
@@ -85,20 +86,22 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
     eyebrow: model.user ? `Good afternoon, ${model.user.display_name}` : 'Student workspace',
     title: session?.title ?? 'Your lecture space',
     demoMode: false,
+    profileName: model.user?.display_name ?? '?',
+    joinedSessions,
     content: `
       ${buildJoinForm()}
       ${
         session
           ? `
         <article class="feature-card feature-card--primary">
-          <span class="status-badge"><i></i>${session.status}</span>
-          <h2>${session.title}</h2>
-          <p>Join code: <strong>${session.session_id}</strong></p>
+          <span class="status-badge"><i></i>${escapeHtml(session.status)}</span>
+          <h2>${escapeHtml(session.title)}</h2>
+          <p>Join code: <strong>${escapeHtml(session.session_id)}</strong></p>
           <p data-session-clock>Elapsed time unavailable until the session clock loads.</p>
           <p>${model.participantCount ?? 0} participant(s) joined.</p>
           <button class="primary-button" type="button" data-missed-that>I missed that</button>
         </article>
-        <form class="section-block" data-transcript-form>
+        <form class="section-block login-card form-card" data-transcript-form>
           <label>Local transcript<textarea name="text" required></textarea></label>
           <button class="secondary-button" type="submit">Add transcript</button>
           <p class="form-message" data-transcript-message></p>
@@ -119,8 +122,8 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
                 .map(
                   (joined) => `
           <a class="lecture-row" href="${buildRouteHash('student-summary')}">
-            <span><strong>${joined.title}</strong><small>${joined.course_id} · ${joined.status}</small></span>
-            <span class="lecture-row__status">${joined.session_id}</span>
+            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.course_id)} · ${escapeHtml(joined.status)}</small></span>
+            <span class="lecture-row__status">${escapeHtml(joined.session_id)}</span>
             <span aria-hidden="true">→</span>
           </a>`,
                 )
@@ -133,5 +136,5 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
 }
 
 function buildJoinForm(): string {
-  return `<form class="feature-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Session ID<input name="session_id" required placeholder="Paste the join code" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
+  return `<form class="feature-card login-card form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Session ID<input type="text" name="session_id" required placeholder="Paste the join code" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
 }
