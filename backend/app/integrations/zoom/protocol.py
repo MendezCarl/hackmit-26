@@ -75,7 +75,27 @@ class RtmsStartedPayload(BaseModel):
     meeting_uuid: str = Field(min_length=1, max_length=256)
     meeting_id: str | int | None = Field(default=None)
     rtms_stream_id: str = Field(min_length=1, max_length=256)
-    server_urls: str = Field(min_length=1, description="Signaling WebSocket URL.")
+    server_urls: str = Field(
+        min_length=1,
+        description="Comma-separated signaling server URLs, one per protocol.",
+    )
+
+    def signaling_url(self) -> str:
+        """Return the WebSocket signaling URL to connect to.
+
+        Zoom may list several comma-separated URLs for different protocols;
+        the first ``wss://``/``ws://`` entry is used, falling back to the
+        first entry when none declares a WebSocket scheme.
+
+        Returns:
+            The signaling URL to open.
+        """
+
+        candidates = [url.strip() for url in self.server_urls.split(",") if url.strip()]
+        for url in candidates:
+            if url.startswith(("wss://", "ws://")):
+                return url
+        return candidates[0] if candidates else self.server_urls
 
 
 class RtmsStoppedPayload(BaseModel):

@@ -26,6 +26,7 @@ from app.config import Settings
 from app.integrations.zoom.protocol import (
     RtmsMediaType,
     RtmsMessageType,
+    RtmsStartedPayload,
     RtmsTranscriptContent,
     ZoomProtocolError,
     build_transcript_chunk_id,
@@ -267,6 +268,23 @@ def test_rtms_signature_matches_documented_hmac() -> None:
         generate_rtms_signature(CLIENT_ID, CLIENT_SECRET, MEETING_UUID, STREAM_ID)
         == expected
     )
+
+
+def test_rtms_started_payload_picks_websocket_url_from_comma_separated_list() -> None:
+    payload = RtmsStartedPayload(
+        meeting_uuid="uuid",
+        rtms_stream_id="stream",
+        server_urls="tcp://rtms.example/tcp, wss://rtms.example/signaling,wss://alt",
+    )
+    assert payload.signaling_url() == "wss://rtms.example/signaling"
+    single = RtmsStartedPayload(
+        meeting_uuid="uuid", rtms_stream_id="stream", server_urls="wss://only"
+    )
+    assert single.signaling_url() == "wss://only"
+    no_scheme = RtmsStartedPayload(
+        meeting_uuid="uuid", rtms_stream_id="stream", server_urls="first,second"
+    )
+    assert no_scheme.signaling_url() == "first"
 
 
 def test_webhook_signature_rejects_forged_stale_and_missing_headers() -> None:

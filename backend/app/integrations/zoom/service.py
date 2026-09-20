@@ -408,7 +408,7 @@ class ZoomRtmsService:
         stream = self._stream_factory(
             meeting_uuid=payload.meeting_uuid,
             rtms_stream_id=payload.rtms_stream_id,
-            signaling_url=payload.server_urls,
+            signaling_url=payload.signaling_url(),
             client_id=client_id,
             client_secret=client_secret,
             on_transcript=ingest,
