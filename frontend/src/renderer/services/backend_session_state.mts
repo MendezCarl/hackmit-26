@@ -12,8 +12,12 @@ export type BackendSessionState = {
   recoveryCards: RecoveryCard[];
   professorSummary: ProfessorSummary | null;
   professorMetrics: ProfessorMetrics | null;
+  professorSummaryError: string | null;
+  professorMetricsError: string | null;
   consent: ConsentSettings | null;
   backendState: 'checking' | 'connected' | 'offline';
+  routeError: string | null;
+  routeLoading: boolean;
 };
 
 const state: BackendSessionState = {
@@ -28,8 +32,12 @@ const state: BackendSessionState = {
   recoveryCards: [],
   professorSummary: null,
   professorMetrics: null,
+  professorSummaryError: null,
+  professorMetricsError: null,
   consent: null,
   backendState: 'checking',
+  routeError: null,
+  routeLoading: false,
 };
 
 /** Returns the live in-memory renderer state. */
@@ -86,9 +94,16 @@ export function addRecoveryCard(card: RecoveryCard): void {
 }
 
 /** Stores the latest professor summary and metrics. */
-export function setProfessorReport(summary: ProfessorSummary | null, metrics: ProfessorMetrics | null): void {
+export function setProfessorReport(
+  summary: ProfessorSummary | null,
+  metrics: ProfessorMetrics | null,
+  summaryError: string | null = null,
+  metricsError: string | null = null,
+): void {
   state.professorSummary = summary;
   state.professorMetrics = metrics;
+  state.professorSummaryError = summaryError;
+  state.professorMetricsError = metricsError;
 }
 
 /** Stores the account's consent settings. */
@@ -99,6 +114,16 @@ export function setConsent(consent: ConsentSettings | null): void {
 /** Marks whether the local service is reachable. */
 export function setBackendState(backendState: BackendSessionState['backendState']): void {
   state.backendState = backendState;
+}
+
+/** Stores a route-scoped backend error for honest rendering. */
+export function setRouteError(routeError: string | null): void {
+  state.routeError = routeError;
+}
+
+/** Marks a route load as active or finished. */
+export function setRouteLoading(routeLoading: boolean): void {
+  state.routeLoading = routeLoading;
 }
 
 /** Clears authenticated, session-scoped state after logout. */
@@ -114,6 +139,10 @@ export function clearBackendSessionState(): void {
   state.recoveryCards = [];
   state.professorSummary = null;
   state.professorMetrics = null;
+  state.professorSummaryError = null;
+  state.professorMetricsError = null;
   state.consent = null;
   state.backendState = 'checking';
+  state.routeError = null;
+  state.routeLoading = false;
 }

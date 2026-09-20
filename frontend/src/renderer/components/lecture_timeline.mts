@@ -7,7 +7,11 @@ import { LectureMoment } from '../fixtures/demo_content.mjs';
  * @param selectedMomentId - Moment currently selected in the detail panel.
  * @returns Timeline markup with one button per lecture moment.
  */
-export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: string, durationLabel = 'Lecture end'): string {
+export function LectureTimeline(
+  moments: LectureMoment[],
+  selectedMomentId?: string,
+  durationLabel = 'Lecture end',
+): string {
   const markers = moments
     .map(
       (moment) => `

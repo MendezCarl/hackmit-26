@@ -1,4 +1,4 @@
-import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
+import { LectureMoment } from '../fixtures/demo_content.mjs';
 
 /**
  * Builds a selected lecture moment for student or educator context.
@@ -7,10 +7,7 @@ import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
  * @param audience - Audience controlling recovery or aggregate language.
  * @returns Moment detail markup.
  */
-export function MomentDetail(
-  moment: LectureMoment,
-  audience: 'student' | 'educator',
-): string {
+export function MomentDetail(moment: LectureMoment, audience: 'student' | 'educator'): string {
   if (audience === 'student') {
     return `
       <article class="moment-detail" data-moment-detail>
@@ -48,10 +45,11 @@ export function MomentDetail(
 export function renderSelectedMoment(
   momentId: string,
   audience: 'student' | 'educator',
-  moments: LectureMoment[] = ACTIVE_LECTURE.moments,
+  moments: LectureMoment[] = [],
 ): string {
-  const moment =
-    moments.find((candidate) => candidate.momentId === momentId) ?? moments[0] ?? ACTIVE_LECTURE.moments[0];
+  const moment = moments.find((candidate) => candidate.momentId === momentId) ?? moments[0];
 
-  return MomentDetail(moment, audience);
+  return moment
+    ? MomentDetail(moment, audience)
+    : '<p class="empty-state">No moments are available for this session.</p>';
 }

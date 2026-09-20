@@ -15,14 +15,64 @@ import { AppRoute } from './router.mjs';
  * @returns Full page markup composed from feature pages and shared components.
  */
 export function renderPage(route: AppRoute, state?: BackendSessionState): string {
-  const isReal = Boolean(state?.user) && state?.backendState === 'connected';
+  const isReal = Boolean(state?.user);
   const pages: Record<AppRoute, () => string> = {
-    'student-dashboard': () => StudentDashboardPage({ isDemo: !isReal, user: state?.user ?? null, activeSession: state?.activeSession ?? null, participantCount: state?.participantCount ?? null }),
-    'student-summary': () => StudentSummaryPage({ isDemo: !isReal, session: state?.activeSession ?? null, submittedEvents: state?.submittedEvents ?? [], recoveryCards: state?.recoveryCards ?? [], transcript: state?.transcriptChunks ?? [] }),
-    'lecture-library': () => LectureLibraryPage({ isDemo: !isReal, role: state?.user?.role === 'professor' ? 'educator' : 'student', courses: state?.courses ?? [], lectures: Object.values(state?.lecturesByCourse ?? {}).flat(), joinedSessions: state?.joinedSessions ?? [] }),
-    'educator-dashboard': () => EducatorDashboardPage({ isDemo: !isReal, courses: state?.courses ?? [], lecturesByCourse: state?.lecturesByCourse ?? {}, activeSession: state?.activeSession ?? null }),
-    'educator-summary': () => EducatorSummaryPage({ isDemo: !isReal, session: state?.activeSession ?? null, summary: state?.professorSummary ?? null, metrics: state?.professorMetrics ?? null }),
-    account: () => AccountPage({ isDemo: !isReal, user: state?.user ?? null, consent: state?.consent ?? null }),
+    'student-dashboard': () =>
+      StudentDashboardPage({
+        isDemo: !isReal,
+        user: state?.user ?? null,
+        activeSession: state?.activeSession ?? null,
+        joinedSessions: state?.joinedSessions ?? [],
+        participantCount: state?.participantCount ?? null,
+      }),
+    'student-summary': () =>
+      StudentSummaryPage({
+        isDemo: !isReal,
+        session: state?.activeSession ?? null,
+        submittedEvents: state?.submittedEvents ?? [],
+        recoveryCards: state?.recoveryCards ?? [],
+        transcript: state?.transcriptChunks ?? [],
+        routeError: state?.routeError,
+        isLoading: state?.routeLoading,
+      }),
+    'lecture-library': () =>
+      LectureLibraryPage({
+        isDemo: !isReal,
+        role: state?.user?.role === 'professor' ? 'educator' : 'student',
+        courses: state?.courses ?? [],
+        lectures: Object.values(state?.lecturesByCourse ?? {}).flat(),
+        joinedSessions: state?.joinedSessions ?? [],
+        routeError: state?.routeError,
+        isLoading: state?.routeLoading,
+      }),
+    'educator-dashboard': () =>
+      EducatorDashboardPage({
+        isDemo: !isReal,
+        courses: state?.courses ?? [],
+        lecturesByCourse: state?.lecturesByCourse ?? {},
+        activeSession: state?.activeSession ?? null,
+        routeError: state?.routeError,
+        isLoading: state?.routeLoading,
+      }),
+    'educator-summary': () =>
+      EducatorSummaryPage({
+        isDemo: !isReal,
+        session: state?.activeSession ?? null,
+        summary: state?.professorSummary ?? null,
+        metrics: state?.professorMetrics ?? null,
+        summaryError: state?.professorSummaryError,
+        metricsError: state?.professorMetricsError,
+        routeError: state?.routeError,
+        isLoading: state?.routeLoading,
+      }),
+    account: () =>
+      AccountPage({
+        isDemo: !isReal,
+        user: state?.user ?? null,
+        consent: state?.consent ?? null,
+        routeError: state?.routeError,
+        isLoading: state?.routeLoading,
+      }),
     login: LoginPage,
   };
 
