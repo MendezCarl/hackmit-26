@@ -1,41 +1,28 @@
 /** Safe, context-isolated bridge between the renderer and local backend. */
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
-type BackendHealth = {
-  status: string;
-};
-
-type BackendStatus = {
-  message: string;
-};
-
-type BackendApi = {
-  health: () => Promise<BackendHealth>;
-  status: () => Promise<BackendStatus>;
-};
-
-const apiBaseUrl = 'http://127.0.0.1:8000';
-
-/**
- * Reads and parses one JSON response from the local Bloom backend.
- *
- * @param path - Absolute backend path beginning with a slash.
- * @returns Parsed JSON using the caller-provided response type.
- * @throws Error When the backend returns a non-success status.
- */
-const getJson = async <T>(path: string): Promise<T> => {
-  const response = await fetch(`${apiBaseUrl}${path}`);
-
-  if (!response.ok) {
-    throw new Error(`Backend request failed with ${response.status}`);
+const invokeBackend = async <T>(operation: string, args: unknown[]): Promise<T> => {
+  const result = (await ipcRenderer.invoke(`backend:${operation}`, ...args)) as
+    | { ok: true; value: T }
+    | { ok: false; error: BackendRequestErrorShape };
+  if (!result.ok) {
+    const error = new Error(result.error.message) as Error & BackendRequestErrorShape;
+    error.name = 'BackendRequestError';
+    error.status = result.error.status;
+    error.code = result.error.code;
+    throw error;
   }
-
-  return response.json() as Promise<T>;
+  return result.value;
 };
 
 const backendApi: BackendApi = {
-  health: () => getJson<BackendHealth>('/health'),
-  status: () => getJson<BackendStatus>('/api/status'),
+  health: () => invokeBackend('health', []), apiStatus: () => invokeBackend('apiStatus', []),
+  register: (request) => invokeBackend('register', [request]), login: (request) => invokeBackend('login', [request]), logout: () => invokeBackend('logout', []),
+  readMe: () => invokeBackend('readMe', []), listCourses: () => invokeBackend('listCourses', []), createCourse: (request) => invokeBackend('createCourse', [request]), listLectures: (courseId) => invokeBackend('listLectures', [courseId]), createLecture: (request) => invokeBackend('createLecture', [request]),
+  createSession: (request) => invokeBackend('createSession', [request]), readSession: (sessionId) => invokeBackend('readSession', [sessionId]), joinSession: (sessionId) => invokeBackend('joinSession', [sessionId]), updateAggregationConsent: (sessionId, consent) => invokeBackend('updateAggregationConsent', [sessionId, consent]),
+  ingestEvents: (sessionId, request) => invokeBackend('ingestEvents', [sessionId, request]), ingestTranscript: (sessionId, request) => invokeBackend('ingestTranscript', [sessionId, request]), readTranscript: (sessionId, startMs, endMs) => invokeBackend('readTranscript', [sessionId, startMs, endMs]),
+  requestRecoveryCard: (sessionId, request, key) => invokeBackend('requestRecoveryCard', [sessionId, request, key]), readRecoveryCard: (sessionId, cardId) => invokeBackend('readRecoveryCard', [sessionId, cardId]), endSession: (sessionId) => invokeBackend('endSession', [sessionId]),
+  readProfessorSummary: (sessionId) => invokeBackend('readProfessorSummary', [sessionId]), readProfessorMetrics: (sessionId) => invokeBackend('readProfessorMetrics', [sessionId]), readConsent: () => invokeBackend('readConsent', []), updateConsent: (request) => invokeBackend('updateConsent', [request]),
 };
 
 contextBridge.exposeInMainWorld('backend', backendApi);
