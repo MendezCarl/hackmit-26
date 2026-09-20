@@ -48,9 +48,8 @@ def update_external_consent(
                 if record.owner_user_id == actor.user_id
                 and record.card.session_id == session_id
             }
-            store.recovery_cache = {
-                key: value
-                for key, value in store.recovery_cache.items()
-                if value not in owned
-            }
+            for key in [
+                key for key, value in store.recovery_cache.items() if value in owned
+            ]:
+                del store.recovery_cache[key]
     return body

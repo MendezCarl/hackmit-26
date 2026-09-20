@@ -43,8 +43,19 @@ and artifact export. Each feature was committed and pushed on its own branch.
 No frontend, Electron, or React code was changed in this work. No feature branch
 was merged into `backend`, `dev`, or `main` during this session.
 
-OpenAI recovery generation was discussed and planned, not implemented. No OpenAI
-calls were made and no OpenAI credits were used by this work.
+OpenAI-compatible live recovery generation is implemented under
+`app/integrations/openai/`, with Meta Muse selectable through the
+`app/integrations/meta_muse/` adapter. Tests use injected synthetic Responses
+clients; no provider calls or credits are used by the default suite.
+
+MongoDB persistence is optional through `MONGODB_URI`; the default remains an
+in-memory store for local development and tests.
+
+### Meta Muse provider
+
+Meta Muse uses model `muse-spark-1.2` through the OpenAI-compatible Responses API
+at `https://api.meta.ai/v1`. `LIVE_PROVIDER=meta_muse` selects the adapter and
+`MUSE_API_KEY` enables it; only bounded, consented transcript context is sent.
 
 ## How the implemented pieces fit together
 

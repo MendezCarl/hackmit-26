@@ -207,6 +207,7 @@ class UserService:
             analytics_opt_in=request.analytics_opt_in,
             updated_at=utc_now_iso(),
         )
+        self._store.users[record.user_id] = record
         return record.consent
 
     def is_registered_professor(self, user_id: str) -> bool:

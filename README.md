@@ -54,11 +54,33 @@ offline. Use `APP_ENV=demo` (or `APP_ENV=test`) for local development so
 educator reports use the synthetic aggregation policy. In the default
 environment, the metrics endpoint requires `LUMINA_METRICS_POLICY_JSON` with
 `is_approved: true`, and the summary endpoint is disabled by design. Live
-OpenAI recovery requires `PROVIDER_MODE=live` and `OPENAI_API_KEY`; normal
-development uses synthetic behavior.
+recovery requires `PROVIDER_MODE=live` plus the selected provider's credentials:
+`LIVE_PROVIDER=openai` with `OPENAI_API_KEY`, or `LIVE_PROVIDER=meta_muse` with
+`MUSE_API_KEY`; normal development uses synthetic behavior.
 
 `BLOOM_BACKEND_URL` controls the Electron main-process backend origin. It
 defaults to `http://127.0.0.1:8000` when unset.
+
+## Deploying the backend (Render)
+
+Create a Render Blueprint with **New → Blueprint** and connect this repository.
+Provider keys reach Render through `.github/workflows/deploy-backend.yml`, which
+runs on pushes to `main`: it copies the `OPENAI_API_KEY`, `MUSE_API_KEY`, and
+`MONGODB_URI` GitHub secrets into the service via the Render API and triggers a
+deploy. It requires two more GitHub secrets, `RENDER_API_KEY` (Render account
+settings → API Keys) and `RENDER_SERVICE_ID` (the `srv-...` id in the service
+URL). For persistence, create a MongoDB Atlas free M0 cluster, create a
+database user, allow `0.0.0.0/0` under Network Access because Render's free tier
+has no static IP, and store its `mongodb+srv://` URI as the `MONGODB_URI`
+GitHub secret. The workflow's provider/database secret list is
+`OPENAI_API_KEY`, `MUSE_API_KEY`, and `MONGODB_URI`, alongside
+`RENDER_API_KEY` and `RENDER_SERVICE_ID`. Without `MONGODB_URI`, the backend
+stays in-memory. You can also
+paste provider and Mongo keys into the Render dashboard directly. For Electron,
+set `BLOOM_BACKEND_URL=https://<service>.onrender.com`. The free tier sleeps
+after 15 minutes of inactivity, and the in-memory store resets whenever the
+service restarts. Render's generated `APP_SECRET` is used for production
+signing.
 
 ## Desktop Releases
 

@@ -8,7 +8,12 @@ from pydantic import BaseModel, Field
 
 from app.auth.access import StoreSessionAccess
 from app.auth.routes import router as auth_router
-from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
+from app.config import (
+    LIVE_PROVIDER_MODE,
+    MUSE_LIVE_PROVIDER,
+    Settings,
+    get_settings,
+)
 from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.core.logging_redaction import install_logging
@@ -82,18 +87,25 @@ def create_app(
     if settings is None:
         settings = get_settings()
     if settings.provider_mode == LIVE_PROVIDER_MODE and recovery_generator is None:
-        import os
+        if settings.live_provider == MUSE_LIVE_PROVIDER:
+            from app.integrations.meta_muse.recovery import create_muse_generator
 
-        from openai import OpenAI
+            recovery_generator = create_muse_generator(settings)
+        else:
+            from openai import OpenAI
 
-        from app.integrations.openai.recovery import OpenAIRecoveryGenerator
+            from app.integrations.openai.recovery import OpenAIRecoveryGenerator
 
-        model = os.environ.get("OPENAI_MODEL", "")
-        if not os.environ.get("OPENAI_API_KEY") or not model:
-            raise RuntimeError("Live mode requires OPENAI_API_KEY and OPENAI_MODEL.")
-        recovery_generator = OpenAIRecoveryGenerator(
-            OpenAI(timeout=20.0, max_retries=1), model
-        )
+            if not settings.openai_api_key or not settings.openai_model:
+                raise RuntimeError("Live mode requires OPENAI_API_KEY and OPENAI_MODEL.")
+            recovery_generator = OpenAIRecoveryGenerator(
+                OpenAI(
+                    api_key=settings.openai_api_key,
+                    timeout=20.0,
+                    max_retries=1,
+                ),
+                settings.openai_model,
+            )
     install_logging()
 
     app = FastAPI(
@@ -123,7 +135,12 @@ def create_app(
     app.add_middleware(DerivedJsonLimit)
     install_error_handlers(app)
 
-    store = InMemoryStore()
+    if settings.mongodb_uri:
+        from app.storage.mongo import create_mongo_store
+
+        store = create_mongo_store(settings.mongodb_uri, settings.mongodb_database)
+    else:
+        store = InMemoryStore()
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()
