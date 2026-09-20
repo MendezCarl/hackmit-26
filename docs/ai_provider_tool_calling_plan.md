@@ -1,5 +1,9 @@
 # AI Provider and Tool-Calling Implementation Plan
 
+**Status:** Proposed implementation plan  
+**Owner:** Backend and ML teams  
+**Last updated:** 2026-09-20
+
 ## Purpose
 
 This document proposes a privacy-first architecture for using OpenAI and Meta Muse to generate learning assistance from locally derived lecture signals. OpenCV, system-audio capture, and other signal processing remain local. Cloud providers receive only the minimum transcript context and derived metrics needed to generate a recovery card or lecture recap.
