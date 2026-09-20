@@ -101,7 +101,7 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
       ${model.routeError ? `<p class="empty-state">Summary unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <div class="summary-meta"><span>${session ? formatLectureTime(sessionDurationMs(session)) : 'No session clock'}</span><span>${moments.length} recovery moments</span><span>Processed locally</span></div>
       ${moments.length && firstMoment ? LectureTimeline(moments, firstMoment.momentId) : '<p class="empty-state">Mark a moment with “I missed that” during a lecture</p>'}
-      ${model.submittedEvents.length ? `<div class="moment-actions">${model.submittedEvents.map((event) => `<button class="secondary-button" type="button" data-request-recovery="${escapeHtml(event.event_id)}">Request recovery card for ${formatLectureTime(event.start_ms)}</button>`).join('')}</div>` : ''}
+      ${model.submittedEvents.length ? `<div class="moment-actions">${model.submittedEvents.map((event) => `<button class="secondary-button" type="button" data-request-recovery="${escapeHtml(event.event_id)}">Request recovery card for ${formatLectureTime(event.start_ms)}</button>`).join('')}<p class="form-message" data-recovery-message aria-live="polite"></p></div>` : ''}
       ${model.recoveryCards.map((card) => renderRecoveryCard(card)).join('')}
       <section class="tab-card" data-summary-tabs>
         <div class="tab-list" role="tablist" aria-label="Lecture content">

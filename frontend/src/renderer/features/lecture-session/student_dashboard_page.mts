@@ -121,9 +121,8 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
             ? `<div class="lecture-row-list">${joinedSessions
                 .map(
                   (joined) => `
-          <a class="lecture-row" href="${buildRouteHash('student-summary')}">
-            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.course_id)} · ${escapeHtml(joined.status)}</small></span>
-            <span class="lecture-row__status">${escapeHtml(joined.session_id)}</span>
+          <a class="lecture-row lecture-row--backend" href="${buildRouteHash('student-summary')}">
+            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.session_id)} · ${escapeHtml(joined.status)}</small></span>
             <span aria-hidden="true">→</span>
           </a>`,
                 )

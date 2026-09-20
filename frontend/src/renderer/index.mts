@@ -1,7 +1,6 @@
 import { buildRouteHash, resolveRoute, type AppRoute } from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
-import { escapeHtml } from './components/html_text.mjs';
 import {
   clearBackendSessionState,
   getBackendSessionState,
@@ -280,11 +279,13 @@ const bindStudentActions = (): void => {
         (candidate) => candidate.event_id === button.dataset.requestRecovery,
       );
       if (!session || !event) return;
+      const message = document.querySelector<HTMLElement>('[data-recovery-message]');
+      button.disabled = true;
       try {
         const job = await window.backend.requestRecoveryCard(
           session.session_id,
           { start_ms: event.start_ms, end_ms: event.end_ms, source_event_ids: [event.event_id] },
-          event.event_id,
+          crypto.randomUUID(),
         );
         if (job.status === 'failed') {
           throw new Error(job.failure?.message ?? 'Recovery card generation failed.');
@@ -293,10 +294,9 @@ const bindStudentActions = (): void => {
         recordRecoveryCard(await window.backend.readRecoveryCard(session.session_id, job.card_id));
         renderApplication();
       } catch (error) {
-        button.insertAdjacentHTML(
-          'afterend',
-          `<p class="form-message">${escapeHtml(formErrorMessage(error))}</p>`,
-        );
+        if (message) message.textContent = formErrorMessage(error);
+      } finally {
+        button.disabled = false;
       }
     }),
   );

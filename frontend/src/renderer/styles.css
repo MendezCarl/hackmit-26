@@ -310,11 +310,20 @@ p {
 
 .course-list__item {
   display: grid;
+  min-width: 0;
   gap: 0.2rem;
   margin: 0;
   padding: 0.2rem 0;
   color: var(--slate-dark);
   font-size: 0.72rem;
+}
+
+.course-list__item strong,
+.course-list__item small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .course-list__item small {
