@@ -30,6 +30,7 @@ type Candidate = {
   beginMs: number;
   count: number;
   totalConfidence: number;
+  emitted: boolean;
 };
 
 function clampConfidence(value: number): number {
@@ -59,11 +60,11 @@ export class StudentSignalTracker {
   }
 
   /**
-   * Adds one derived observation and closes any condition that ended.
+   * Adds one derived observation and emits sustained conditions once they qualify.
    *
    * @param observation - Scores produced by local frame analysis.
    * @param lectureTimeMs - Monotonic lecture-relative timestamp.
-   * @returns Newly closed sustained signal events.
+   * @returns Newly sustained signal events.
    * @throws Error If timestamps are invalid or not strictly increasing.
    */
   public observe(observation: FrameObservation, lectureTimeMs: number): SignalEvent[] {
@@ -101,9 +102,20 @@ export class StudentSignalTracker {
           beginMs: lectureTimeMs,
           count: 0,
           totalConfidence: 0,
+          emitted: false,
         };
         candidate.count += 1;
         candidate.totalConfidence += contribution;
+        if (
+          !candidate.emitted &&
+          lectureTimeMs - candidate.beginMs >= this.policy.minimumDurationMs
+        ) {
+          const event = this.closeCandidate(label, candidate, lectureTimeMs);
+          if (event) {
+            events.push(event);
+            candidate.emitted = true;
+          }
+        }
         this.candidates.set(label, candidate);
       } else {
         const candidate = this.candidates.get(label);
@@ -158,7 +170,11 @@ export class StudentSignalTracker {
     candidate: Candidate,
     endMs: number,
   ): SignalEvent | null {
-    if (endMs - candidate.beginMs < this.policy.minimumDurationMs || candidate.count === 0) {
+    if (
+      candidate.emitted ||
+      endMs - candidate.beginMs < this.policy.minimumDurationMs ||
+      candidate.count === 0
+    ) {
       return null;
     }
     return {
