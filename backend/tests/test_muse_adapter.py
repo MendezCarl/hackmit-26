@@ -63,7 +63,8 @@ def build_window() -> ContextWindow:
 class Responses:
     """SDK-shaped fake captures structured Responses requests offline."""
 
-    def __init__(self) -> None:
+    def __init__(self, evidence_quote: str = "last-in, first-out") -> None:
+        self.evidence_quote = evidence_quote
         self.calls: list[dict[str, object]] = []
 
     def parse(self, **kwargs: object) -> SimpleNamespace:
@@ -79,7 +80,7 @@ class Responses:
                     {
                         "text": "The last item is removed first.",
                         "chunk_id": "source_0",
-                        "evidence_quote": "last-in, first-out",
+                        "evidence_quote": self.evidence_quote,
                     }
                 ],
                 follow_up_question="Would a worked example help?",
@@ -103,6 +104,20 @@ def test_muse_generator_records_provider_and_request_metadata() -> None:
     assert card.model_metadata.data_label == "measured"
     assert responses.calls[0]["store"] is False
     assert responses.calls[0]["model"] == "muse-spark-1.2"
+
+
+def test_muse_generator_accepts_normalized_grounding_quote() -> None:
+    """Provider punctuation and whitespace normalization preserves grounding."""
+    responses = Responses(" a student’s stack uses last-in - first-out ")
+    generator = MuseRecoveryGenerator(
+        SimpleNamespace(responses=responses), "muse-spark-1.2"
+    )
+    window = build_window()
+    window.chunks[0].text = "A student's stack uses last-in – first-out ordering."
+
+    card, _metadata = generator.generate(build_session(), window)
+
+    assert card.key_facts == ["The last item is removed first."]
 
 
 def test_create_muse_generator_requires_api_key() -> None:
