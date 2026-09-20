@@ -71,6 +71,10 @@ interface CreateSessionRequest {
   mode: SessionMode;
   zoom_meeting_id?: string | null;
 }
+interface SessionListFilter {
+  lecture_id?: string;
+  course_id?: string;
+}
 interface ParticipantResponse {
   session_id: string;
   user_id: string;
@@ -258,6 +262,7 @@ type BackendApi = {
   listLectures: (courseId: string) => Promise<Lecture[]>;
   createLecture: (request: CreateLectureRequest) => Promise<Lecture>;
   createSession: (request: CreateSessionRequest) => Promise<LectureSession>;
+  listSessions: (filter?: SessionListFilter) => Promise<LectureSession[]>;
   readSession: (sessionId: string) => Promise<LectureSession>;
   resolveJoinCode: (joinCode: string) => Promise<LectureSession>;
   joinSession: (sessionId: string) => Promise<ParticipantResponse>;

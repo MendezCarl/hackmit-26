@@ -3,6 +3,9 @@ export type AppRoute =
   | 'student-dashboard'
   | 'student-summary'
   | 'lecture-library'
+  | 'home'
+  | 'course'
+  | 'lecture'
   | 'educator-dashboard'
   | 'educator-summary'
   | 'account'
@@ -14,6 +17,9 @@ const VALID_ROUTES = new Set<AppRoute>([
   'student-dashboard',
   'student-summary',
   'lecture-library',
+  'home',
+  'course',
+  'lecture',
   'educator-dashboard',
   'educator-summary',
   'account',
@@ -37,11 +43,24 @@ export function resolveRoute(locationHash: string): AppRoute {
 }
 
 /**
+ * Resolves query parameters from a Bloom hash URL.
+ *
+ * @param locationHash - Browser location hash, with or without a leading hash.
+ * @returns Decoded query parameters after the route path.
+ */
+export function resolveRouteParams(locationHash: string): URLSearchParams {
+  const query = locationHash.split('?')[1] ?? '';
+  return new URLSearchParams(query);
+}
+
+/**
  * Builds the canonical hash URL used by Bloom's in-app navigation.
  *
  * @param route - Supported application route.
+ * @param params - Optional query parameters to encode into the hash URL.
  * @returns A hash URL suitable for anchor elements and location updates.
  */
-export function buildRouteHash(route: AppRoute): string {
-  return `#/${route}`;
+export function buildRouteHash(route: AppRoute, params: Record<string, string> = {}): string {
+  const query = new URLSearchParams(params).toString();
+  return `#/${route}${query ? `?${query}` : ''}`;
 }

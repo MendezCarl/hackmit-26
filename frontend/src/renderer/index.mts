@@ -1,4 +1,9 @@
-import { buildRouteHash, resolveRoute, type AppRoute } from './app/router.mjs';
+import {
+  buildRouteHash,
+  resolveRoute,
+  resolveRouteParams,
+  type AppRoute,
+} from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
 import {
@@ -17,7 +22,9 @@ import {
   checkBackendHealth,
   joinLectureSession,
   loadAccountWorkspace,
+  loadCourseWorkspace,
   loadEducatorWorkspace,
+  loadLectureWorkspace,
   loadProfessorReport,
   loadTranscriptWorkspace,
   recordRecoveryCard,
@@ -58,11 +65,26 @@ const bindTimelineInteractions = (route: AppRoute): void => {
   const buttons = document.querySelectorAll<HTMLButtonElement>('[data-moment-id]');
   const state = getBackendSessionState();
   const duration = state.activeSession ? sessionDurationMs(state.activeSession) : 1;
+  const selectedEducatorSession = route === 'lecture' ? state.activeSession : null;
   const moments =
     route === 'educator-summary' && state.professorMetrics
       ? buildMomentsFromMetrics(state.professorMetrics, duration)
       : route === 'educator-summary' && state.professorSummary
         ? buildMomentsFromSummary(state.professorSummary, duration)
+        : route === 'lecture' &&
+            selectedEducatorSession &&
+            state.professorMetricsBySession[selectedEducatorSession.session_id]
+          ? buildMomentsFromMetrics(
+              state.professorMetricsBySession[selectedEducatorSession.session_id],
+              duration,
+            )
+          : route === 'lecture' &&
+              selectedEducatorSession &&
+              state.professorSummariesBySession[selectedEducatorSession.session_id]
+            ? buildMomentsFromSummary(
+                state.professorSummariesBySession[selectedEducatorSession.session_id],
+                duration,
+              )
         : route === 'student-summary'
           ? buildMomentsFromEvents(state.submittedEvents, duration)
           : [];
@@ -74,7 +96,7 @@ const bindTimelineInteractions = (route: AppRoute): void => {
       button.classList.add('is-selected');
       detail.outerHTML = renderSelectedMoment(
         button.dataset.momentId ?? '',
-        route === 'educator-summary' ? 'educator' : 'student',
+        route === 'educator-summary' || route === 'lecture' ? 'educator' : 'student',
         moments,
       );
     }),
@@ -171,7 +193,7 @@ const bindAuthentication = (): void => {
       setBackendUser(session.user);
       setBackendState('connected');
       window.location.hash = buildRouteHash(
-        session.user.role === 'professor' ? 'educator-dashboard' : 'student-dashboard',
+        session.user.role === 'professor' ? 'home' : 'student-dashboard',
       );
     } catch (error) {
       if (message) message.textContent = formErrorMessage(error);
@@ -319,6 +341,7 @@ const bindEducatorActions = (): void => {
       if (code) request.code = code;
       const course = await window.backend.createCourse(request);
       setBackendCourses([...getBackendSessionState().courses, course]);
+      document.querySelector<HTMLDialogElement>('[data-course-modal]')?.close();
       renderApplication();
     } catch (error) {
       const message = document.querySelector<HTMLElement>('[data-educator-message]');
@@ -345,7 +368,9 @@ const bindEducatorActions = (): void => {
     }
   });
   document.querySelectorAll<HTMLButtonElement>('[data-start-session]').forEach((button) =>
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       const courseId = button.dataset.courseId;
       const lectureId = button.dataset.startSession;
       const lectureTitle = button.dataset.lectureTitle;
@@ -365,6 +390,15 @@ const bindEducatorActions = (): void => {
       }
     }),
   );
+  document.querySelector<HTMLButtonElement>('[data-open-course-modal]')?.addEventListener('click', () => {
+    document.querySelector<HTMLDialogElement>('[data-course-modal]')?.showModal();
+  });
+  document.querySelector<HTMLButtonElement>('[data-close-course-modal]')?.addEventListener('click', () => {
+    document.querySelector<HTMLDialogElement>('[data-course-modal]')?.close();
+  });
+  document.querySelector<HTMLDialogElement>('[data-course-modal]')?.addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) (event.currentTarget as HTMLDialogElement).close();
+  });
   document
     .querySelector<HTMLButtonElement>('[data-end-session]')
     ?.addEventListener('click', async () => {
@@ -409,12 +443,21 @@ const bindAccountActions = (): void => {
  *
  * @param route - Route whose backend workspace should be loaded.
  */
-const loadRouteData = async (route: AppRoute): Promise<void> => {
+const loadRouteData = async (route: AppRoute, params: URLSearchParams): Promise<void> => {
   if (
     route === 'educator-dashboard' ||
+    route === 'home' ||
     (route === 'lecture-library' && getBackendSessionState().user?.role === 'professor')
   ) {
     await loadEducatorWorkspace();
+  }
+  if (route === 'course') {
+    const courseId = params.get('course_id');
+    if (courseId) await loadCourseWorkspace(courseId);
+  }
+  if (route === 'lecture') {
+    const lectureId = params.get('lecture_id');
+    if (lectureId) await loadLectureWorkspace(lectureId);
   }
   if (route === 'account') await loadAccountWorkspace();
   const activeSession = getBackendSessionState().activeSession;
@@ -477,26 +520,31 @@ const bindRenderedApplication = (route: AppRoute): void => {
 const renderApplication = (): void => {
   const state = getBackendSessionState();
   const route = resolveRoute(window.location.hash);
+  const params = resolveRouteParams(window.location.hash);
   if (route !== 'login' && !state.user) {
     window.location.hash = buildRouteHash('login');
     return;
   }
+  if (route === 'educator-dashboard' && state.user?.role === 'professor') {
+    window.location.hash = buildRouteHash('home');
+    return;
+  }
   setRouteError(null);
   setRouteLoading(route !== 'login');
-  appRoot.innerHTML = renderPage(route, getBackendSessionState());
+  appRoot.innerHTML = renderPage(route, getBackendSessionState(), params);
   document.title = `Bloom · ${route
     .split('-')
     .map((word) => word[0].toUpperCase() + word.slice(1))
     .join(' ')}`;
   bindRenderedApplication(route);
   if (route === 'login') return;
-  void loadRouteData(route)
+  void loadRouteData(route, params)
     .catch((error: unknown) => {
       setRouteError(formErrorMessage(error));
     })
     .finally(() => {
       setRouteLoading(false);
-      appRoot.innerHTML = renderPage(route, getBackendSessionState());
+      appRoot.innerHTML = renderPage(route, getBackendSessionState(), params);
       bindRenderedApplication(route);
     });
 };
