@@ -17,6 +17,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from app.local_ml.model_paths import FACE_MODEL_PATH, PERSON_MODEL_PATH
 from app.local_ml.student_signals import OnnxStudentAnalyzer
 from scripts.evaluate_clip_signals import load_analyzer
 
@@ -85,12 +86,8 @@ def main() -> None:
     parser.add_argument("--negative-clips", nargs="+", type=Path, default=[])
     parser.add_argument("--negative-recordings", nargs="+", type=Path, default=[])
     parser.add_argument("--max-false-positive-rate", type=float, default=0.01)
-    parser.add_argument(
-        "--person-model", type=Path, default=Path("models/person_detector.onnx")
-    )
-    parser.add_argument(
-        "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
-    )
+    parser.add_argument("--person-model", type=Path, default=PERSON_MODEL_PATH)
+    parser.add_argument("--face-model", type=Path, default=FACE_MODEL_PATH)
     parser.add_argument(
         "--output", type=Path, default=Path("data/local/eval/phone_calibration.json")
     )

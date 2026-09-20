@@ -204,6 +204,8 @@ and a manifest beside each. Do not commit the files or redistribute them without
 - [Model provenance, data, results and limitations](../docs/evaluation/local_vision_model_and_data.md)
 - [Student signal rule cards](../docs/evaluation/student_signal_rule_cards.md): every rule, its
   numbers (generated from the code), the evidence and how it fails
-- Demo: `python -m scripts.demo_student_to_card --clip <clip>` (from the repository root with
-  `PYTHONPATH=backend`) turns a clip into a signal and a grounded recovery card using the mock
-  generator.
+- Demo: `python -m scripts.demo_student_to_card --clip <clip>` (from `backend/`) turns a clip
+  into a signal and a grounded recovery card using the mock generator. The evaluation scripts
+  and `scripts/diagnose_model_load.py` find the models under the repository's `models/`
+  directory from any working directory; pass `--models-dir` (or `--person-model` /
+  `--face-model`) to use another location.

@@ -16,6 +16,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from app.local_ml.model_paths import FACE_MODEL_PATH, PERSON_MODEL_PATH
 from app.local_ml.student_signals import OnnxStudentAnalyzer
 
 PHONE_SCORE_THRESHOLD = 0.4
@@ -97,12 +98,8 @@ def main() -> None:
     """Evaluate each clip and print one JSON summary per clip."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("clips", nargs="+", type=Path)
-    parser.add_argument(
-        "--person-model", type=Path, default=Path("models/person_detector.onnx")
-    )
-    parser.add_argument(
-        "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
-    )
+    parser.add_argument("--person-model", type=Path, default=PERSON_MODEL_PATH)
+    parser.add_argument("--face-model", type=Path, default=FACE_MODEL_PATH)
     parser.add_argument(
         "--timeline", action="store_true", help="Include per-sample timelines."
     )

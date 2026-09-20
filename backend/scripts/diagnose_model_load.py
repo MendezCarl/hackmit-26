@@ -12,8 +12,11 @@ import time
 from pathlib import Path
 
 STEP_TIMEOUT_SECONDS = 40
-PERSON_MODEL = Path("models/person_detector.onnx")
-FACE_MODEL = Path("models/face_detection_yunet_2023mar.onnx")
+# Kept standard-library only so it still runs when importing ``app`` is the problem;
+# mirrors ``app.local_ml.model_paths``.
+MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
+PERSON_MODEL = MODELS_DIR / "person_detector.onnx"
+FACE_MODEL = MODELS_DIR / "face_detection_yunet_2023mar.onnx"
 
 STEPS: list[tuple[str, str]] = [
     (
@@ -68,10 +71,13 @@ def main() -> int:
     ).stdout.strip()
     print(f"python   : {sys.version.split()[0]} at {sys.executable}")
     print(f"machine  : {platform.machine()} | running under Rosetta: {translated == '1'}")
-    print(f"folder   : {Path.cwd()}")
-    missing = [str(p) for p in (PERSON_MODEL, FACE_MODEL) if not p.exists()]
+    print(f"models   : {MODELS_DIR}")
+    missing = [p.name for p in (PERSON_MODEL, FACE_MODEL) if not p.exists()]
     if missing:
-        print(f"\nMISSING model files (run this from the repo root): {missing}")
+        print(
+            f"\nMISSING model files in {MODELS_DIR}: {missing} "
+            "(build them with `make export-model APPROVE=1` in backend/)"
+        )
         return 1
     print()
     started = time.perf_counter()
