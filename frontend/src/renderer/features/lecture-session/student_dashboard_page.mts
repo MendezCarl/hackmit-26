@@ -132,7 +132,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
           </label>
           <p class="form-message" data-external-text-consent-message aria-live="polite">${model.externalTextConsentNote ? escapeHtml(model.externalTextConsentNote) : ''}</p>
         </section>
-        <form class="section-block login-card form-card" data-transcript-form>
+        <form class="section-block login-card form-card student-form-card" data-transcript-form>
           <label>Local transcript<textarea name="text" required></textarea></label>
           <button class="secondary-button" type="submit">Add transcript</button>
           <p class="form-message" data-transcript-message></p>
@@ -154,7 +154,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
                 .map(
                   (joined) => `
           <a class="lecture-row lecture-row--backend" href="${buildRouteHash('student-summary')}">
-            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.join_code)} · ${escapeHtml(joined.status)}</small></span>
+            <span class="lecture-row__content"><strong>${escapeHtml(joined.title)}</strong><small class="lecture-row__meta">Join code <code>${escapeHtml(joined.join_code)}</code><span class="status-badge status-badge--ready">${escapeHtml(joined.status)}</span></small></span>
             <span aria-hidden="true">→</span>
           </a>`,
                 )
@@ -167,5 +167,5 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
 }
 
 function buildJoinForm(): string {
-  return `<form class="feature-card login-card form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Join code<input type="text" name="join_code" maxlength="6" autocapitalize="characters" required placeholder="e.g. K7PQ2M" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
+  return `<form class="feature-card login-card form-card student-form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Join code<input type="text" name="join_code" maxlength="6" autocapitalize="characters" required placeholder="e.g. K7PQ2M" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
 }

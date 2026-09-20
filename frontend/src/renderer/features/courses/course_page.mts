@@ -102,7 +102,6 @@ export function CoursePage(model: CoursePageModel = FIXTURE_MODEL): string {
                         <span>${escapeHtml(formatDate(lecture.created_at))}</span>
                         <span>${(model.sessionsByLecture[lecture.lecture_id] ?? []).length} sessions</span>
                       </a>
-                      <button class="secondary-button" type="button" data-start-session="${escapeHtml(lecture.lecture_id)}" data-course-id="${escapeHtml(course.course_id)}" data-lecture-title="${escapeHtml(lecture.title)}">Start session</button>
                     </div>`,
                 )
                 .join('')}</div>`

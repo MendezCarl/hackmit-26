@@ -261,6 +261,7 @@ test('educator table rows keep navigation links separate from action buttons', a
   assert.match(page, /class="table-row lecture-log-row"/);
   assert.match(page, /class="table-row__link"/);
   assert.doesNotMatch(page, /<a class="table-row(?:[" >])/);
+  assert.doesNotMatch(page, /data-start-session/);
   assert.ok(page.indexOf('Cell membranes') < page.indexOf('Cellular respiration'));
 });
 
@@ -290,7 +291,45 @@ test('educator sidebar starts with Home and caps lecture links at five', async (
     { 'course-1': lectures },
   );
   assert.match(sidebar, /Home/);
+  assert.match(sidebar, /course-group__code">BIO 101<\/span>/);
+  assert.match(sidebar, /course-group__title">Biology<\/span>/);
+  assert.doesNotMatch(sidebar, /BIO 101 · Biology/);
   assert.equal((sidebar.match(/href="#\/lecture\?/g) ?? []).length, 5);
+});
+
+test('student sessions show join codes and status badges', async () => {
+  const { StudentDashboardPage } = await import(
+    '../../dist/renderer/features/lecture-session/student_dashboard_page.mjs'
+  );
+  const page = StudentDashboardPage({
+    isDemo: false,
+    user: { user_id: 'user-1', display_name: 'Alex', email: 'alex@example.test', role: 'student' },
+    courses: [],
+    activeSession: null,
+    joinedSessions: [
+      {
+        session_id: 'session-1',
+        lecture_id: 'lecture-1',
+        owner_id: 'owner-1',
+        course_id: 'course-1',
+        title: 'Cellular respiration',
+        join_code: 'K7PQ2M',
+        mode: 'in_person',
+        status: 'ended',
+        started_at: '2026-01-01T00:00:00.000Z',
+        session_clock_origin: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    participantCount: null,
+    submittedEvents: [],
+    zoomRunning: false,
+    zoomBannerDismissed: false,
+    externalTextConsentGranted: false,
+    externalTextConsentNote: null,
+  });
+  assert.match(page, /<strong>Cellular respiration<\/strong>/);
+  assert.match(page, /Join code <code>K7PQ2M<\/code>/);
+  assert.match(page, /class="status-badge status-badge--ready">ended<\/span>/);
 });
 
 test('the Electron renderer loads browser-native modules', async () => {
