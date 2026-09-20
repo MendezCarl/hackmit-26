@@ -67,6 +67,25 @@ const readFormValues = (form: HTMLFormElement): Record<string, string> =>
 
 let sessionClockTimer: number | undefined;
 let zoomDesktopBound = false;
+let cameraMonitorSessionId: string | null = null;
+
+const resetCameraSignalState = (): void => {
+  setCameraSignalsEnabled(false);
+  setCameraSignalsStatus('off');
+  setPendingDriftPrompt(null);
+};
+
+const stopCameraForSessionChange = (session: LectureSession | null): void => {
+  const sessionId = session?.session_id ?? null;
+  if (
+    cameraMonitorSessionId &&
+    (cameraMonitorSessionId !== sessionId || session?.status !== 'active')
+  ) {
+    cameraMonitorSessionId = null;
+    resetCameraSignalState();
+    void stopStudentCameraMonitor();
+  }
+};
 
 /**
  * Binds timeline marker selection to the current route's live moments.
@@ -246,7 +265,12 @@ const bindStudentActions = (): void => {
     const joinCode = String(new FormData(joinForm).get('join_code') ?? '').trim();
     const message = joinForm.querySelector<HTMLElement>('[data-join-message]');
     try {
+      const previousSessionId = getBackendSessionState().activeSession?.session_id;
       await joinLectureSession(joinCode);
+      const joinedSession = getBackendSessionState().activeSession;
+      if (previousSessionId !== joinedSession?.session_id) {
+        stopCameraForSessionChange(joinedSession);
+      }
       renderApplication();
     } catch (error) {
       if (message) message.textContent = formErrorMessage(error);
@@ -288,6 +312,7 @@ const bindStudentActions = (): void => {
       const checkbox = event.currentTarget as HTMLInputElement;
       if (!session) return;
       if (!checkbox.checked) {
+        cameraMonitorSessionId = null;
         setCameraSignalsEnabled(false);
         setCameraSignalsStatus('off');
         void stopStudentCameraMonitor().finally(renderApplication);
@@ -295,6 +320,7 @@ const bindStudentActions = (): void => {
       }
       setCameraSignalsEnabled(true);
       setCameraSignalsStatus('watching');
+      cameraMonitorSessionId = session.session_id;
       renderApplication();
       void startStudentCameraMonitor({
         session,
@@ -306,11 +332,13 @@ const bindStudentActions = (): void => {
           window.bloomDesktop.showDriftPrompt();
         },
         onError: (message) => {
+          cameraMonitorSessionId = null;
           setCameraSignalsEnabled(false);
           setCameraSignalsStatus('error', message);
           renderApplication();
         },
       }).catch(() => {
+        cameraMonitorSessionId = null;
         setCameraSignalsEnabled(false);
       });
     });
@@ -524,7 +552,11 @@ const bindEducatorActions = (route: AppRoute): void => {
       if (!sessionId) return;
       try {
         await window.backend.endSession(sessionId);
-        if (state.activeSession?.session_id === sessionId) setActiveSession(null);
+        if (state.activeSession?.session_id === sessionId) {
+          cameraMonitorSessionId = null;
+          await stopStudentCameraMonitor();
+          setActiveSession(null);
+        }
         if (route === 'lecture') {
           renderApplication();
           return;
@@ -650,12 +682,7 @@ const renderApplication = (): void => {
   const state = getBackendSessionState();
   const route = resolveRoute(window.location.hash);
   const params = resolveRouteParams(window.location.hash);
-  if (route !== 'student-dashboard') {
-    setCameraSignalsEnabled(false);
-    setCameraSignalsStatus('off');
-    setPendingDriftPrompt(null);
-    void stopStudentCameraMonitor();
-  }
+  stopCameraForSessionChange(state.activeSession);
   if (route !== 'login' && !state.user) {
     window.location.hash = buildRouteHash('login');
     return;
@@ -687,5 +714,6 @@ const renderApplication = (): void => {
 };
 
 window.addEventListener('hashchange', renderApplication);
+window.addEventListener('beforeunload', () => void stopStudentCameraMonitor());
 if (!window.location.hash) window.location.hash = buildRouteHash('login');
 else renderApplication();

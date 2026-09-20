@@ -97,6 +97,13 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
   assert.match(page, /Camera off/);
   assert.match(page, /<input type="checkbox" data-camera-signals\s*\/>/);
   assert.doesNotMatch(page, /attention score/i);
+  const watchingPage = StudentDashboardPage({
+    ...dashboardModel,
+    cameraSignalsEnabled: true,
+    cameraSignalsStatus: 'watching',
+  });
+  assert.match(watchingPage, /<input type="checkbox" data-camera-signals checked \/>/);
+  assert.match(watchingPage, /Watching locally…/);
   const driftPage = StudentDashboardPage({
     ...dashboardModel,
     pendingDriftPrompt: {
