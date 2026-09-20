@@ -1,7 +1,7 @@
 # Local Object Detection Architecture
 
-**Status:** Proposed implementation plan\
-**Owner:** ML and Backend teams\
+**Status:** Proposed implementation plan  
+**Owner:** ML and Backend teams  
 **Last updated:** 2026-09-20
 
 ## Purpose
@@ -462,3 +462,4 @@ These are evaluation targets, not guarantees:
 - [AWS App Runner container-image services](https://docs.aws.amazon.com/apprunner/latest/dg/service-source-image.html)
 - [Google Cloud Run container deployment](https://docs.cloud.google.com/run/docs/deploying)
 - [Azure Container Apps containers](https://learn.microsoft.com/en-us/azure/container-apps/containers)
+

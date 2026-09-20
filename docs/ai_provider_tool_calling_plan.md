@@ -1,7 +1,7 @@
 # AI Provider and Tool-Calling Implementation Plan
 
-**Status:** Proposed implementation plan\
-**Owner:** Backend and ML teams\
+**Status:** Proposed implementation plan  
+**Owner:** Backend and ML teams  
 **Last updated:** 2026-09-20
 
 ## Purpose

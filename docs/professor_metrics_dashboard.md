@@ -1,7 +1,7 @@
 # Professor Metrics and Dashboard Plan
 
-**Status:** Proposed feature plan\
-**Owner:** Product and Education teams\
+**Status:** Proposed feature plan  
+**Owner:** Product and Education teams  
 **Last updated:** 2026-09-20
 
 ## Purpose
@@ -118,8 +118,8 @@ Each finding should contain:
 
 Example:
 
-> **Possible audio clarity issue — 27:40–29:12**\
-> Speech-recognition confidence decreased while microphone volume became inconsistent.\
+> **Possible audio clarity issue — 27:40–29:12**  
+> Speech-recognition confidence decreased while microphone volume became inconsistent.  
 > **Suggestion:** Review this interval and consider repeating the explanation next lecture.
 
 Do not make unsupported causal statements such as "students stopped paying attention because the microphone was muffled."
@@ -281,3 +281,4 @@ The canonical payload must be added to [Unified API Contracts](api/unified_api_c
 - Raw media never enters the professor-summary API or cloud-provider tool results.
 - The API contract, Swagger documentation, shared schemas, frontend types, and tests agree.
 - Educator team members validate that each primary metric leads to a practical teaching action.
+
