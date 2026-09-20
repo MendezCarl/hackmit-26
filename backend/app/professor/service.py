@@ -148,7 +148,7 @@ class ProfessorService:
         ]
 
     def build_summary(self, actor: AuthenticatedActor, session_id: str) -> ProfessorSummary:
-        """Build one threshold-safe anonymous summary for a course professor.
+        """Build one threshold-safe anonymous summary for an authorized professor.
 
         Args:
             actor: Authenticated professor for the session's course.
@@ -159,8 +159,8 @@ class ProfessorService:
             only the threshold, bucket width, and participant count.
 
         Raises:
-            AppError: ``forbidden`` for students, other professors, or
-                professors of a different course.
+            AppError: ``forbidden`` for students or actors without session
+                ownership or course-professor membership.
         """
 
         if not self._settings.is_demo_or_test():
@@ -168,7 +168,6 @@ class ProfessorService:
                 ErrorCode.FORBIDDEN, "Use the policy-gated professor-metrics endpoint."
             )
         membership = self._session_access.resolve_membership(actor, session_id)
-        session = self._store.sessions[session_id]
         if actor.role != ROLE_PROFESSOR:
             raise AppError(
                 ErrorCode.FORBIDDEN,
@@ -182,12 +181,6 @@ class ProfessorService:
                 ErrorCode.FORBIDDEN,
                 "Only the professor for this course can read the summary.",
             )
-        if actor.course_id != session.course_id:
-            raise AppError(
-                ErrorCode.FORBIDDEN,
-                "This professor is not authorized for the session's course.",
-            )
-
         participant_count = self._count_participating_users(session_id)
         is_suppressed = participant_count < self._settings.minimum_group_size
         summary = ProfessorSummary(

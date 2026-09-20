@@ -33,6 +33,22 @@ def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def register_professor(client: TestClient, email: str) -> str:
+    """Register a professor and return the access token without course claims."""
+
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "password-123",
+            "display_name": "Registered Professor",
+            "role": "professor",
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["access_token"]
+
+
 def build_test_client() -> TestClient:
     """Create an isolated client with explicit test settings."""
 
@@ -187,3 +203,52 @@ def test_summary_never_contains_student_identifiers() -> None:
     assert "owner-1" not in raw
     assert "user_id" not in raw
     assert "confidence" not in raw
+
+
+def test_registered_professor_can_read_own_suppressed_summary() -> None:
+    """An owner registered without a course claim can read their summary."""
+
+    client = build_test_client()
+    owner_token = register_professor(client, "owner@example.edu")
+    headers = auth_headers(owner_token)
+    course = client.post(
+        "/api/v1/courses",
+        headers=headers,
+        json={"code": "BIO-101", "title": "Biology"},
+    )
+    assert course.status_code == 201, course.text
+    course_id = course.json()["course_id"]
+    lecture = client.post(
+        "/api/v1/lectures",
+        headers=headers,
+        json={"course_id": course_id, "title": "Cell structure"},
+    )
+    assert lecture.status_code == 201, lecture.text
+    session = client.post(
+        "/api/v1/sessions",
+        headers=headers,
+        json={
+            "course_id": course_id,
+            "lecture_id": lecture.json()["lecture_id"],
+            "title": "Cell structure",
+            "mode": "in_person",
+        },
+    )
+    assert session.status_code == 201, session.text
+    session_id = session.json()["session_id"]
+    ended = client.post(f"/api/v1/sessions/{session_id}/end", headers=headers)
+    assert ended.status_code == 200, ended.text
+
+    summary = client.get(
+        f"/api/v1/sessions/{session_id}/professor/summary",
+        headers=headers,
+    )
+    assert summary.status_code == 200, summary.text
+    assert summary.json()["is_suppressed"] is True
+
+    other_token = register_professor(client, "other@example.edu")
+    denied = client.get(
+        f"/api/v1/sessions/{session_id}/professor/summary",
+        headers=auth_headers(other_token),
+    )
+    assert denied.status_code == 403

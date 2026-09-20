@@ -3,7 +3,11 @@
 from collections.abc import Iterable
 from typing import Literal
 
-from app.auth.access import SessionAccess
+from app.auth.access import (
+    SESSION_ROLE_COURSE_PROFESSOR,
+    SESSION_ROLE_OWNER,
+    SessionAccess,
+)
 from app.auth.tokens import AuthenticatedActor
 from app.config import Settings
 from app.contracts.learning import (
@@ -115,9 +119,12 @@ class ProfessorMetricsService:
             AppError: For unauthorized readers, active sessions, missing policy,
                 or a policy not explicitly approved outside test/demo.
         """
-        self.access.resolve_membership(actor, session_id)
+        membership = self.access.resolve_membership(actor, session_id)
         session = self.store.sessions[session_id]
-        if actor.role != "professor" or actor.course_id != session.course_id:
+        if actor.role != "professor" or membership.session_role not in (
+            SESSION_ROLE_OWNER,
+            SESSION_ROLE_COURSE_PROFESSOR,
+        ):
             raise AppError(ErrorCode.FORBIDDEN, "Course professor access is required.")
         if session.status != SessionStatus.ENDED:
             raise AppError(
