@@ -53,7 +53,7 @@ export function CourseSidebar(
             .slice(0, 5);
           const isCurrent = currentCourseId === course.course_id || recentLectures.some((lecture) => lecture.lecture_id === currentLectureId);
           return `<details class="course-group" ${isCurrent ? 'open' : ''}>
-            <summary><a href="${buildRouteHash('course', { course_id: course.course_id })}">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</a></summary>
+            <summary><a href="${buildRouteHash('course', { course_id: course.course_id })}"><span class="course-group__code">${escapeHtml(course.code)}</span><span class="course-group__title">${escapeHtml(course.title)}</span></a></summary>
             ${recentLectures.length ? recentLectures.map((lecture) => `<a href="${buildRouteHash('lecture', { lecture_id: lecture.lecture_id })}">${escapeHtml(lecture.title)}</a>`).join('') : '<span class="course-group__empty">No lectures yet</span>'}
           </details>`;
         })
@@ -68,13 +68,13 @@ export function CourseSidebar(
         isDemo
           ? `<p class="sidebar-label sidebar-label--courses">Courses</p>
       <details class="course-group" open>
-        <summary><span class="course-dot course-dot--teal"></span><span>BIO 101<small>Foundations of Biology</small></span></summary>
+        <summary><span class="course-dot course-dot--teal"></span><span><span class="course-group__code">BIO 101</span><span class="course-group__title">Foundations of Biology</span></span></summary>
         <a href="${buildRouteHash(role === 'student' ? 'student-summary' : 'educator-summary')}">Sep 19 · Cellular respiration</a>
         <a href="${buildRouteHash(role === 'student' ? 'student-summary' : 'educator-summary')}">Sep 17 · Cell membranes</a>
         <a href="${buildRouteHash(role === 'student' ? 'student-summary' : 'educator-summary')}">Sep 15 · Enzymes</a>
       </details>
       <details class="course-group">
-        <summary><span class="course-dot course-dot--gold"></span><span>CHEM 105<small>General Chemistry</small></span></summary>
+        <summary><span class="course-dot course-dot--gold"></span><span><span class="course-group__code">CHEM 105</span><span class="course-group__title">General Chemistry</span></span></summary>
         <a href="${buildRouteHash(role === 'student' ? 'student-summary' : 'educator-summary')}">Sep 18 · Molecular geometry</a>
       </details>`
           : role === 'educator'
@@ -83,7 +83,7 @@ export function CourseSidebar(
               ? `<p class="sidebar-label sidebar-label--courses">Joined sessions</p><div class="course-list">${joinedSessions
                   .map(
                     (session) =>
-                      `<p class="course-list__item"><strong>${escapeHtml(session.title)}</strong>${courseById.get(session.course_id) ? `<small>${escapeHtml(courseById.get(session.course_id)?.code ?? '')}</small>` : ''}</p>`,
+                      `<p class="course-list__item"><span class="course-group__code">${escapeHtml(courseById.get(session.course_id)?.code ?? 'Joined lecture')}</span><span class="course-group__title">${escapeHtml(session.title)}</span></p>`,
                   )
                   .join('')}</div>`
               : '<p class="empty-state">No joined sessions are available yet.</p>'

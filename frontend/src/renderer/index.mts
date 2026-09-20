@@ -592,7 +592,10 @@ const bindRenderedApplication = (route: AppRoute): void => {
   void updateBackendStatus();
 };
 
+let renderGeneration = 0;
+
 const renderApplication = (): void => {
+  const generation = ++renderGeneration;
   const state = getBackendSessionState();
   const route = resolveRoute(window.location.hash);
   const params = resolveRouteParams(window.location.hash);
@@ -618,6 +621,8 @@ const renderApplication = (): void => {
       setRouteError(formErrorMessage(error));
     })
     .finally(() => {
+      // A newer navigation owns the DOM; a late load must not repaint the old route.
+      if (generation !== renderGeneration) return;
       setRouteLoading(false);
       appRoot.innerHTML = renderPage(route, getBackendSessionState(), params);
       bindRenderedApplication(route);

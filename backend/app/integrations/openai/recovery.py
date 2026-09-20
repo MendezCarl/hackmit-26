@@ -5,6 +5,7 @@ lecture, title, signal, phone observation or authentication token is sent.
 """
 
 import json
+import logging
 import time
 from typing import Any
 
@@ -20,6 +21,18 @@ from app.contracts.models import (
 )
 from app.core.errors import AppError, ErrorCode
 from app.recovery.evidence_matching import is_quote_grounded
+
+logger = logging.getLogger(__name__)
+
+
+def _log_grounding_rejection(**counts: str | int) -> None:
+    """Emit a text-free grounding diagnostic readable by plain log formatters.
+
+    Args:
+        counts: Reason code and integer counts only; never quote or transcript text.
+    """
+    summary = " ".join(f"{key}={value}" for key, value in counts.items())
+    logger.warning("recovery_grounding_rejected %s", summary, extra=counts)
 
 
 class OpenAIUsage(ModelMetadata):
@@ -45,7 +58,20 @@ class OpenAIRecoveryGenerator:
     def generate(
         self, session: LectureSession, window: ContextWindow
     ) -> tuple[RecoveryCard, ModelMetadata]:
-        """Produce a schema-valid card with exact evidence quotes or a sanitized failure."""
+        """Produce a card containing only facts grounded in retrieved excerpts.
+
+        Args:
+            session: Lecture session receiving the generated recovery card.
+            window: Bounded transcript context supplied to the provider.
+
+        Returns:
+            A recovery card and measured provider metadata.
+
+        Raises:
+            AppError: If the context is unavailable, the provider response is
+                incomplete, no generated facts are grounded, or usage metadata
+                is missing.
+        """
         # Request-local opaque aliases avoid exporting stored identifiers.
         chunks = {f"source_{i}": chunk for i, chunk in enumerate(window.chunks)}
         content = json.dumps(
@@ -97,16 +123,43 @@ class OpenAIRecoveryGenerator:
             )
         try:
             draft = RecoveryDraft.model_validate(response.output_parsed)
-            for fact in draft.facts:
-                chunk = chunks.get(fact.chunk_id)
-                if chunk is None or not is_quote_grounded(fact.evidence_quote, chunk.text):
-                    raise ValueError("Unverifiable evidence")
-            if (
-                response.usage is None
-                or min(response.usage.input_tokens, response.usage.output_tokens) < 0
-            ):
-                raise ValueError("Missing usage")
-        except ValueError, ValidationError:
+        except ValidationError as exc:
+            _log_grounding_rejection(reason="draft_schema", error_count=len(exc.errors()))
+            raise AppError(
+                ErrorCode.PROVIDER_MALFORMED_OUTPUT,
+                "The recap could not be validated against its sources.",
+            ) from None
+
+        kept_facts = []
+        unknown_chunk_count = 0
+        ungrounded_quote_count = 0
+        for fact in draft.facts:
+            chunk = chunks.get(fact.chunk_id)
+            if chunk is None:
+                unknown_chunk_count += 1
+            elif not is_quote_grounded(fact.evidence_quote, chunk.text):
+                ungrounded_quote_count += 1
+            else:
+                kept_facts.append(fact)
+        grounding_diagnostics = {
+            "total_facts": len(draft.facts),
+            "kept_facts": len(kept_facts),
+            "unknown_chunk_count": unknown_chunk_count,
+            "ungrounded_quote_count": ungrounded_quote_count,
+        }
+        if len(kept_facts) != len(draft.facts):
+            _log_grounding_rejection(reason="fact_grounding", **grounding_diagnostics)
+        if not kept_facts:
+            raise AppError(
+                ErrorCode.PROVIDER_MALFORMED_OUTPUT,
+                "The recap could not be validated against its sources.",
+            ) from None
+        draft = draft.model_copy(update={"facts": kept_facts})
+        if (
+            response.usage is None
+            or min(response.usage.input_tokens, response.usage.output_tokens) < 0
+        ):
+            _log_grounding_rejection(reason="missing_usage", **grounding_diagnostics)
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
                 "The recap could not be validated against its sources.",
