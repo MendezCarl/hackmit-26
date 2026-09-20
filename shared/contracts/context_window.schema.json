@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "DerivedVisualContext": {
+      "additionalProperties": false,
+      "description": "Bounded, user-selected derived text such as slide OCR.\n\nNo screenshots or webcam frames are ever accepted; only derived text with\ntimestamps and source references.",
+      "properties": {
+        "end_ms": {
+          "description": "Half-open interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "slide_number": {
+          "description": "Slide number within the lecture deck.",
+          "minimum": 1,
+          "title": "Slide Number",
+          "type": "integer"
+        },
+        "source_reference": {
+          "description": "Source reference such as ``slide_ocr:lecture_1#slide_4``.",
+          "minLength": 1,
+          "title": "Source Reference",
+          "type": "string"
+        },
+        "start_ms": {
+          "description": "Half-open interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "text_excerpt": {
+          "description": "Bounded OCR text excerpt.",
+          "minLength": 1,
+          "title": "Text Excerpt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slide_number",
+        "text_excerpt",
+        "start_ms",
+        "end_ms",
+        "source_reference"
+      ],
+      "title": "DerivedVisualContext",
+      "type": "object"
+    },
+    "TranscriptChunk": {
+      "additionalProperties": false,
+      "description": "One timestamped transcript chunk on the shared lecture clock.",
+      "properties": {
+        "chunk_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "end_ms": {
+          "description": "Half-open interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_final": {
+          "default": true,
+          "description": "False for provisional chunks awaiting correction.",
+          "title": "Is Final",
+          "type": "boolean"
+        },
+        "revision": {
+          "default": 1,
+          "description": "Version used to invalidate cached cards on correction.",
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "session_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Session Id",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/TranscriptSource",
+          "description": "Transcript origin."
+        },
+        "speaker_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Speaker label when permitted.",
+          "title": "Speaker Label"
+        },
+        "start_ms": {
+          "description": "Half-open interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "text": {
+          "description": "Transcript text for this chunk.",
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "chunk_id",
+        "session_id",
+        "start_ms",
+        "end_ms",
+        "text",
+        "source"
+      ],
+      "title": "TranscriptChunk",
+      "type": "object"
+    },
+    "TranscriptSource": {
+      "description": "Where a transcript chunk originated.",
+      "enum": [
+        "zoom_rtms",
+        "local_transcription",
+        "external_transcription"
+      ],
+      "title": "TranscriptSource",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The retrieved context used to ground one recovery card.",
+  "properties": {
+    "chunk_ids": {
+      "description": "Selected transcript chunk identifiers.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Chunk Ids",
+      "type": "array"
+    },
+    "chunks": {
+      "description": "Selected final transcript chunks.",
+      "items": {
+        "$ref": "#/$defs/TranscriptChunk"
+      },
+      "title": "Chunks",
+      "type": "array"
+    },
+    "derived_visual_context": {
+      "description": "Permitted derived slide text, if any.",
+      "items": {
+        "$ref": "#/$defs/DerivedVisualContext"
+      },
+      "title": "Derived Visual Context",
+      "type": "array"
+    },
+    "effective_end_ms": {
+      "description": "Clamped interval end in ms.",
+      "exclusiveMinimum": 0,
+      "title": "Effective End Ms",
+      "type": "integer"
+    },
+    "effective_start_ms": {
+      "description": "Clamped interval start in ms.",
+      "minimum": 0,
+      "title": "Effective Start Ms",
+      "type": "integer"
+    },
+    "requested_end_ms": {
+      "description": "Requested interval end in ms.",
+      "exclusiveMinimum": 0,
+      "title": "Requested End Ms",
+      "type": "integer"
+    },
+    "requested_start_ms": {
+      "description": "Requested interval start in ms.",
+      "minimum": 0,
+      "title": "Requested Start Ms",
+      "type": "integer"
+    },
+    "session_id": {
+      "description": "Authorized session scope for this window.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "transcript_revision": {
+      "description": "Transcript revision used; invalidates cached cards on change.",
+      "minimum": 0,
+      "title": "Transcript Revision",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "session_id",
+    "requested_start_ms",
+    "requested_end_ms",
+    "effective_start_ms",
+    "effective_end_ms",
+    "transcript_revision",
+    "chunk_ids",
+    "chunks"
+  ],
+  "title": "ContextWindow",
+  "type": "object"
+}

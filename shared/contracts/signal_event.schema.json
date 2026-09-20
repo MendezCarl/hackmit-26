@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A coarse, privacy-preserving missed-content signal.\n\nRaw webcam frames, continuous raw audio, and screenshots never reach the\nserver; only timestamped derived signals do.",
+  "properties": {
+    "client_generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UTC ISO 8601 time the client generated the event.",
+      "title": "Client Generated At"
+    },
+    "confidence": {
+      "description": "Finite client confidence between 0 and 1, never an attention score.",
+      "title": "Confidence",
+      "type": "number"
+    },
+    "end_ms": {
+      "description": "Half-open interval end in ms.",
+      "exclusiveMinimum": 0,
+      "title": "End Ms",
+      "type": "integer"
+    },
+    "event_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "description": "possible_missed_window | face_absent | head_away | window_unfocused | ...",
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Event Type",
+      "type": "string"
+    },
+    "session_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Session Id",
+      "type": "string"
+    },
+    "signals": {
+      "description": "Coarse signal names from the local client.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Signals",
+      "type": "array"
+    },
+    "start_ms": {
+      "description": "Half-open interval start in ms.",
+      "minimum": 0,
+      "title": "Start Ms",
+      "type": "integer"
+    },
+    "user_confirmed": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Student correction: confirmed or denied missed content.",
+      "title": "User Confirmed"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "event_type",
+    "start_ms",
+    "end_ms",
+    "confidence"
+  ],
+  "title": "SignalEvent",
+  "type": "object"
+}

@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "ModelMetadata": {
+      "additionalProperties": false,
+      "description": "Provider metadata recorded with every generated card.",
+      "properties": {
+        "data_label": {
+          "default": "synthetic",
+          "description": "Synthetic for mock usage; measured only for real provider calls.",
+          "enum": [
+            "synthetic",
+            "measured"
+          ],
+          "title": "Data Label",
+          "type": "string"
+        },
+        "input_character_count": {
+          "description": "Bounded input size.",
+          "minimum": 0,
+          "title": "Input Character Count",
+          "type": "integer"
+        },
+        "latency_ms": {
+          "description": "Generation latency in milliseconds.",
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "description": "Model identifier used for generation.",
+          "title": "Model",
+          "type": "string"
+        },
+        "output_character_count": {
+          "description": "Generated output size.",
+          "minimum": 0,
+          "title": "Output Character Count",
+          "type": "integer"
+        },
+        "output_schema_version": {
+          "description": "Version of the output schema.",
+          "title": "Output Schema Version",
+          "type": "string"
+        },
+        "prompt_version": {
+          "description": "Version of the recovery prompt.",
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "provider": {
+          "description": "Provider name, e.g. ``mock`` or ``openai``.",
+          "title": "Provider",
+          "type": "string"
+        },
+        "provider_mode": {
+          "description": "Execution mode; mock responses are labeled synthetic.",
+          "enum": [
+            "mock",
+            "live"
+          ],
+          "title": "Provider Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "provider_mode",
+        "prompt_version",
+        "output_schema_version",
+        "input_character_count",
+        "output_character_count",
+        "latency_ms"
+      ],
+      "title": "ModelMetadata",
+      "type": "object"
+    },
+    "SourceTimestamp": {
+      "additionalProperties": false,
+      "description": "A grounded source reference with lecture-relative timestamps.",
+      "properties": {
+        "chunk_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source transcript chunk.",
+          "title": "Chunk Id"
+        },
+        "end_ms": {
+          "description": "Half-open interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source system name.",
+          "title": "Source"
+        },
+        "start_ms": {
+          "description": "Half-open interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms"
+      ],
+      "title": "SourceTimestamp",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A grounded, compassionate explanation of missed lecture content.",
+  "properties": {
+    "card_id": {
+      "description": "Unique recovery-card identifier.",
+      "title": "Card Id",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC ISO 8601 creation time ending in Z.",
+      "title": "Created At",
+      "type": "string"
+    },
+    "example_from_lecture": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Closest lecture excerpt to the missed interval.",
+      "title": "Example From Lecture"
+    },
+    "follow_up_question": {
+      "description": "Suggested follow-up for the student.",
+      "title": "Follow Up Question",
+      "type": "string"
+    },
+    "key_facts": {
+      "description": "Grounded facts from the lecture context.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Key Facts",
+      "type": "array"
+    },
+    "model_metadata": {
+      "$ref": "#/$defs/ModelMetadata",
+      "description": "Provider and usage metadata."
+    },
+    "session_id": {
+      "description": "Session the card was generated for.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "source_event_ids": {
+      "description": "Signal events that motivated this card.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Event Ids",
+      "type": "array"
+    },
+    "source_timestamps": {
+      "description": "Source references and timestamps grounding the card.",
+      "items": {
+        "$ref": "#/$defs/SourceTimestamp"
+      },
+      "title": "Source Timestamps",
+      "type": "array"
+    },
+    "topic": {
+      "description": "Short topic label for what was missed.",
+      "title": "Topic",
+      "type": "string"
+    },
+    "what_you_missed": {
+      "description": "Compassionate explanation of the missed content.",
+      "title": "What You Missed",
+      "type": "string"
+    }
+  },
+  "required": [
+    "card_id",
+    "session_id",
+    "source_event_ids",
+    "topic",
+    "what_you_missed",
+    "key_facts",
+    "source_timestamps",
+    "follow_up_question",
+    "model_metadata",
+    "created_at"
+  ],
+  "title": "RecoveryCard",
+  "type": "object"
+}

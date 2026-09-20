@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "ErrorBody": {
+      "additionalProperties": false,
+      "description": "Machine-readable error code and message.",
+      "properties": {
+        "code": {
+          "description": "Stable machine-readable error code.",
+          "title": "Code",
+          "type": "string"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional structured details; never secrets.",
+          "title": "Details"
+        },
+        "message": {
+          "description": "Human-readable error explanation.",
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ErrorBody",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Repository-standard error envelope used by every endpoint.",
+  "properties": {
+    "error": {
+      "$ref": "#/$defs/ErrorBody",
+      "description": "The typed error body."
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "title": "ErrorResponse",
+  "type": "object"
+}
