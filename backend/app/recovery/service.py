@@ -8,7 +8,6 @@ generation call; it is never counted as provider savings.
 
 from __future__ import annotations
 
-from typing import Literal
 from uuid import uuid4
 
 from app.auth.access import (
@@ -31,7 +30,9 @@ from app.contracts.models import (
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
 from app.cost.ledger import CostLedger
+from app.recovery.cache import InMemoryRecoveryCache, build_cache_key
 from app.recovery.generator import RecoveryGenerator
+from app.recovery.intervals import build_context_interval
 from app.signals.service import SignalService
 from app.storage.in_memory import CardRecord, InMemoryStore
 from app.transcript.repository import TimelineReader
@@ -40,8 +41,8 @@ from app.ws.publisher import EventPublisher
 RECOVERY_JOB_STARTED = "recovery_job.started"
 RECOVERY_CARD_COMPLETED = "recovery_card.completed"
 RECOVERY_CARD_FAILED = "recovery_card.failed"
-CACHE_MISS: Literal["miss"] = "miss"
-CACHE_HIT: Literal["hit"] = "hit"
+CACHE_MISS = "miss"
+CACHE_HIT = "hit"
 FULL_CONTEXT_BASELINE = "full_context_generation_avoided_estimate"
 
 GENERATOR_ERROR_REASONS: dict[str, JobFailureReason] = {
@@ -86,6 +87,28 @@ class RecoveryService:
         self._signal_service = signal_service
         self._cost_ledger = cost_ledger
         self._publisher = event_publisher
+        self._cache = InMemoryRecoveryCache(store.recovery_cache)
+
+    def _source_event_intervals(
+        self, session_id: str, source_event_ids: list[str]
+    ) -> list[tuple[int, int]]:
+        """Collect the intervals of the source events grounding one job.
+
+        Args:
+            session_id: Session whose events are inspected.
+            source_event_ids: Signal events referenced by the job.
+
+        Returns:
+            Half-open intervals of the referenced events, within this
+            session only; windows never merge across sessions.
+        """
+
+        wanted = set(source_event_ids)
+        return [
+            (record.event.start_ms, record.event.end_ms)
+            for record in self._signal_service.list_session_events(session_id)
+            if record.event.event_id in wanted
+        ]
 
     def _build_context_window(
         self, session_id: str, start_ms: int, end_ms: int
@@ -109,14 +132,10 @@ class RecoveryService:
                 signal handled by the caller for job failure recording.
         """
 
-        padding = min(
-            self._settings.context_padding_ms, self._settings.max_context_padding_ms
-        )
+        padding = min(self._settings.context_padding_ms, self._settings.max_context_padding_ms)
         effective_start_ms = max(0, start_ms - padding)
         effective_end_ms = end_ms + padding
-        read = self._timeline_reader.read_window(
-            session_id, effective_start_ms, effective_end_ms
-        )
+        read = self._timeline_reader.read_window(session_id, effective_start_ms, effective_end_ms)
         return ContextWindow(
             session_id=session_id,
             requested_start_ms=start_ms,
@@ -133,26 +152,17 @@ class RecoveryService:
         actor: AuthenticatedActor,
         window: ContextWindow,
     ) -> str:
-        """Build the authorization-scoped cache key for one window.
+        """Build the authorization-scoped cache key for one window."""
 
-        Args:
-            actor: Requesting user; the scope that must never be shared across.
-            window: Retrieved context window.
-
-        Returns:
-            A deterministic cache key string.
-        """
-
-        return "|".join(
-            (
-                "scope:" + actor.user_id,
-                "session:" + window.session_id,
-                f"window:{window.effective_start_ms}-{window.effective_end_ms}",
-                f"revision:{window.transcript_revision}",
-                f"model:{self._generator.model}",
-                f"prompt:{self._generator.prompt_version}",
-                f"schema:{self._generator.output_schema_version}",
-            )
+        return build_cache_key(
+            actor.user_id,
+            window.session_id,
+            window.effective_start_ms,
+            window.effective_end_ms,
+            window.transcript_revision,
+            self._generator.model,
+            self._generator.prompt_version,
+            self._generator.output_schema_version,
         )
 
     def create_job(
@@ -160,13 +170,19 @@ class RecoveryService:
         actor: AuthenticatedActor,
         session_id: str,
         request: CreateRecoveryJobRequest,
+        idempotency_key: str | None = None,
     ) -> RecoveryJob:
         """Create and execute one recovery job for an authorized student.
+
+        When an ``Idempotency-Key`` is supplied, a retry of the same request
+        returns the original job instead of creating a duplicate.
 
         Args:
             actor: Requesting owner or participant.
             session_id: Session whose content should be recovered.
             request: Validated recovery request with the missed interval.
+            idempotency_key: Optional caller-supplied idempotency key,
+                scoped to the requesting user and session.
 
         Returns:
             The completed or failed job.
@@ -175,6 +191,17 @@ class RecoveryService:
             AppError: ``forbidden`` for professors and cross-user requests,
                 ``validation_failed`` for unknown source events.
         """
+
+        scoped_idempotency_key: str | None = None
+        if idempotency_key:
+            scoped_idempotency_key = f"{actor.user_id}|{session_id}|{idempotency_key}"
+            existing_job_id = self._store.recovery_idempotency.get(
+                scoped_idempotency_key
+            )
+            if existing_job_id is not None:
+                existing_job = self._store.recovery_jobs.get(existing_job_id)
+                if existing_job is not None:
+                    return existing_job
 
         membership = self._session_access.resolve_membership(actor, session_id)
         if membership.session_role == SESSION_ROLE_COURSE_PROFESSOR:
@@ -201,6 +228,8 @@ class RecoveryService:
             created_at=utc_now_iso(),
         )
         self._store.recovery_jobs[job.job_id] = job
+        if scoped_idempotency_key is not None:
+            self._store.recovery_idempotency[scoped_idempotency_key] = job.job_id
         self._publisher.publish(
             self._publisher.build_envelope(
                 session_id,
@@ -228,9 +257,13 @@ class RecoveryService:
         """
 
         job.status = JobStatus.RUNNING
+        context_start_ms, context_end_ms = build_context_interval(
+            (job.requested_start_ms, job.requested_end_ms),
+            self._source_event_intervals(job.session_id, source_event_ids),
+        )
         try:
             window = self._build_context_window(
-                job.session_id, job.requested_start_ms, job.requested_end_ms
+                job.session_id, context_start_ms, context_end_ms
             )
         except AppError:
             return self._fail_job(
@@ -251,13 +284,18 @@ class RecoveryService:
             )
 
         cache_key = self._build_cache_key(actor, window)
-        cached_card_id = self._store.recovery_cache.get(cache_key)
+        cached_card_id = self._cache.get(cache_key)
         if cached_card_id is not None and cached_card_id in self._store.recovery_cards:
             job.status = JobStatus.COMPLETED
             job.card_id = cached_card_id
             job.cache_status = CACHE_HIT
             job.completed_at = utc_now_iso()
-            self._record_cost(job, cache_hit=True)
+            cached_record = self._store.recovery_cards[cached_card_id]
+            self._record_cost(
+                job,
+                cache_hit=True,
+                data_label=cached_record.card.model_metadata.data_label,
+            )
             self._publisher.publish(
                 self._publisher.build_envelope(
                     job.session_id,
@@ -272,9 +310,7 @@ class RecoveryService:
                 self._store.sessions[job.session_id], window
             )
         except AppError as exc:
-            reason = GENERATOR_ERROR_REASONS.get(
-                exc.code.value, JobFailureReason.PROVIDER_REFUSED
-            )
+            reason = GENERATOR_ERROR_REASONS.get(exc.code.value, JobFailureReason.PROVIDER_REFUSED)
             return self._fail_job(job, reason, exc.message)
         except ValueError:
             return self._fail_job(
@@ -294,7 +330,7 @@ class RecoveryService:
         self._store.recovery_cards[card_id] = CardRecord(
             card=card, owner_user_id=actor.user_id
         )
-        self._store.recovery_cache[cache_key] = card_id
+        self._cache.set(cache_key, card_id)
         job.status = JobStatus.COMPLETED
         job.card_id = card_id
         job.cache_status = CACHE_MISS
@@ -340,37 +376,69 @@ class RecoveryService:
         job: RecoveryJob,
         cache_hit: bool,
         metadata: object = None,
+        data_label: str | None = None,
     ) -> None:
-        """Record one usage entry, labeled synthetic in mock mode.
+        """Record one usage entry with a truthful provenance label.
+
+        Labels distinguish measured provider usage (real token counts from a
+        live response) from synthetic mock usage; cache hits inherit the
+        provenance of the card they reuse and record zero usage because no
+        generation call occurred.
 
         Args:
             job: The job the usage belongs to.
             cache_hit: Whether generation was skipped via cache reuse.
             metadata: Provider metadata from the generation call.
+            data_label: Optional provenance override for cache-hit entries.
         """
 
-        input_usage = (
-            {"characters": getattr(metadata, "input_character_count", 0)}
+        resolved_data_label = data_label
+        if resolved_data_label is None:
+            resolved_data_label = (
+                getattr(metadata, "data_label", None) if metadata is not None else None
+            )
+        if resolved_data_label is None:
+            resolved_data_label = "synthetic"
+
+        input_token_count = (
+            getattr(metadata, "input_token_count", None)
+            or getattr(metadata, "input_tokens", None)
             if metadata is not None
-            else {"characters": 0}
+            else None
         )
-        output_usage = (
-            {"characters": getattr(metadata, "output_character_count", 0)}
+        output_token_count = (
+            getattr(metadata, "output_token_count", None)
+            or getattr(metadata, "output_tokens", None)
             if metadata is not None
-            else {"characters": 0}
+            else None
         )
-        if metadata is not None and hasattr(metadata, "input_tokens"):
-            input_usage["tokens"] = metadata.input_tokens
-            output_usage["tokens"] = getattr(metadata, "output_tokens", 0)
+        if input_token_count is not None and output_token_count is not None:
+            if getattr(metadata, "input_token_count", None) is not None:
+                input_usage = {"input_tokens": input_token_count}
+                output_usage = {"output_tokens": output_token_count}
+            else:
+                input_usage = {"tokens": input_token_count}
+                output_usage = {"tokens": output_token_count}
+        else:
+            input_usage = {
+                "characters": (
+                    getattr(metadata, "input_character_count", 0)
+                    if metadata is not None
+                    else 0
+                )
+            }
+            output_usage = {
+                "characters": (
+                    getattr(metadata, "output_character_count", 0)
+                    if metadata is not None
+                    else 0
+                )
+            }
         self._cost_ledger.record(
             CostMetrics(
                 job_id=job.job_id,
                 session_id=job.session_id,
-                provider_mode=getattr(
-                    metadata,
-                    "provider_mode",
-                    "mock" if self._generator.provider == "mock" else "live",
-                ),
+                provider_mode=self._settings.provider_mode,
                 model=self._generator.model,
                 input_usage=input_usage,
                 output_usage=output_usage,
@@ -378,14 +446,8 @@ class RecoveryService:
                 latency_ms=(
                     getattr(metadata, "latency_ms", 0) if metadata is not None else 0
                 ),
-                baseline_method="cache_hit_no_generation"
-                if cache_hit
-                else "no_comparative_baseline_measured",
-                data_label=getattr(
-                    metadata,
-                    "data_label",
-                    "synthetic" if self._generator.provider == "mock" else "measured",
-                ),
+                baseline_method=FULL_CONTEXT_BASELINE,
+                data_label=resolved_data_label,
             )
         )
 
@@ -442,7 +504,9 @@ class RecoveryService:
                 details={"card_id": card_id},
             )
         is_card_owner = record.owner_user_id == actor.user_id
-        is_session_owner = membership.session_role == SESSION_ROLE_OWNER
+        is_session_owner = (
+            membership.session_role == SESSION_ROLE_OWNER
+        )
         if not (is_card_owner or is_session_owner):
             raise AppError(
                 ErrorCode.FORBIDDEN,

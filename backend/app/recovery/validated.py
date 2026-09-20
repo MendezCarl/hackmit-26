@@ -74,6 +74,7 @@ class PrivateRecoveryService(RecoveryService):
         actor: AuthenticatedActor,
         session_id: str,
         request: CreateRecoveryJobRequest,
+        idempotency_key: str | None = None,
     ) -> RecoveryJob:
         """Generate only within current membership, own events and external consent."""
         self._session_access.resolve_membership(actor, session_id)
@@ -112,7 +113,7 @@ class PrivateRecoveryService(RecoveryService):
                 )
             token = ACTIVE_ACTOR.set(actor.user_id)
             try:
-                job = super().create_job(actor, session_id, request)
+                job = super().create_job(actor, session_id, request, idempotency_key)
                 self.job_owners[job.job_id] = actor.user_id
                 return job
             finally:

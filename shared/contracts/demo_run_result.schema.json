@@ -499,6 +499,19 @@
           "title": "Input Character Count",
           "type": "integer"
         },
+        "input_token_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Measured input tokens; ``None`` for mock generation.",
+          "title": "Input Token Count"
+        },
         "latency_ms": {
           "description": "Generation latency in milliseconds.",
           "minimum": 0,
@@ -520,6 +533,19 @@
           "description": "Version of the output schema.",
           "title": "Output Schema Version",
           "type": "string"
+        },
+        "output_token_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Measured output tokens; ``None`` for mock generation.",
+          "title": "Output Token Count"
         },
         "prompt_version": {
           "description": "Version of the recovery prompt.",

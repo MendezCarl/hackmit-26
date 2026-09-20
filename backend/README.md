@@ -106,9 +106,21 @@ Transcript:
 Recovery:
 
 - `POST /recovery/jobs` — request a grounded recovery card for an interval.
+  Optional `Idempotency-Key` header makes retries return the original job.
+  Source events overlapping the request merge into one context window.
 - `GET /recovery/jobs/{job_id}` — job status or typed failure.
 - `GET /recovery/cards/{card_id}` — personal card retrieval.
-- `GET /cost/metrics` — session-owner usage metrics (synthetic labels).
+- `GET /cost/metrics` — session-owner usage metrics; entries are labeled
+  `measured` only for real provider calls and `synthetic` for mock output.
+
+Providers:
+
+- `PROVIDER_MODE=mock` (default) — deterministic synthetic cards.
+- `PROVIDER_MODE=live` — the OpenAI adapter
+  (`app/integrations/openai/`) requests strict JSON-schema output, rejects
+  ungrounded citations, and records measured token usage. Requires
+  `pip install -e "./backend[live]"` and `OPENAI_API_KEY`; startup fails
+  fast otherwise.
 
 Professor:
 

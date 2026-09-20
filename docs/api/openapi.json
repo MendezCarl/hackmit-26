@@ -1495,6 +1495,18 @@
             "title": "Input Character Count",
             "type": "integer"
           },
+          "input_token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measured input tokens; ``None`` for mock generation.",
+            "title": "Input Token Count"
+          },
           "latency_ms": {
             "description": "Generation latency in milliseconds.",
             "minimum": 0.0,
@@ -1516,6 +1528,18 @@
             "description": "Version of the output schema.",
             "title": "Output Schema Version",
             "type": "string"
+          },
+          "output_token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measured output tokens; ``None`` for mock generation.",
+            "title": "Output Token Count"
           },
           "prompt_version": {
             "description": "Version of the recovery prompt.",
@@ -4681,7 +4705,7 @@
     },
     "/api/v1/sessions/{session_id}/recovery-cards": {
       "post": {
-        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.",
+        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.\n\nSupplying an ``Idempotency-Key`` header makes the request safe to retry:\nthe same key returns the original job instead of creating a duplicate.",
         "operationId": "create_recovery_job_api_v1_sessions__session_id__recovery_cards_post",
         "parameters": [
           {
@@ -4691,6 +4715,24 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "Retries with the same key return the original job.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Retries with the same key return the original job.",
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -4838,7 +4880,7 @@
     },
     "/api/v1/sessions/{session_id}/recovery/jobs": {
       "post": {
-        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.",
+        "description": "Recover missed content for ``[start_ms, end_ms)`` in one session.\n\nSupplying an ``Idempotency-Key`` header makes the request safe to retry:\nthe same key returns the original job instead of creating a duplicate.",
         "operationId": "create_recovery_job_api_v1_sessions__session_id__recovery_jobs_post",
         "parameters": [
           {
@@ -4848,6 +4890,24 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "Retries with the same key return the original job.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Retries with the same key return the original job.",
+              "title": "Idempotency-Key"
             }
           }
         ],

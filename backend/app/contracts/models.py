@@ -282,6 +282,14 @@ class ModelMetadata(_StrictModel):
     output_schema_version: str = Field(description="Version of the output schema.")
     input_character_count: int = Field(ge=0, description="Bounded input size.")
     output_character_count: int = Field(ge=0, description="Generated output size.")
+    input_token_count: int | None = Field(
+        default=None,
+        description="Measured input tokens; ``None`` for mock generation.",
+    )
+    output_token_count: int | None = Field(
+        default=None,
+        description="Measured output tokens; ``None`` for mock generation.",
+    )
     latency_ms: int = Field(ge=0, description="Generation latency in milliseconds.")
 
 

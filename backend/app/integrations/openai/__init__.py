@@ -1,1 +1,1 @@
-"""Opt-in OpenAI text generation; no media uploads."""
+"""OpenAI integration: live recovery-card generation, opt-in only."""

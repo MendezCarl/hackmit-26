@@ -1,1 +1,1 @@
-"""External provider implementations live behind typed boundaries."""
+"""Isolated provider integrations; each provider lives in its own package."""
