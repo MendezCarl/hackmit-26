@@ -40,7 +40,7 @@ jobs:
       - name: Install backend development dependencies
         run: |
           python -m venv backend/venv
-          backend/venv/bin/python -m pip install -e "./backend[dev,ai,vision]"
+          backend/venv/bin/python -m pip install -e "./backend[dev,ai,vision,mongodb]"
           backend/venv/bin/python -m pip check
 
       - name: Verify generated OpenAPI contract
