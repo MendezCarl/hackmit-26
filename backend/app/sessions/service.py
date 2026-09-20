@@ -14,6 +14,8 @@ from app.auth.tokens import AuthenticatedActor
 from app.config import Settings
 from app.contracts.models import CreateSessionRequest, LectureSession, SessionStatus
 from app.core.clock import utc_now_iso
+from app.core.errors import AppError, ErrorCode
+from app.sessions.join_codes import generate_join_code, normalize_join_code
 from app.storage.in_memory import InMemoryStore
 
 
@@ -52,6 +54,7 @@ class SessionService:
         """
 
         session_id = f"session_{uuid4().hex}"
+        join_code = generate_join_code(lambda code: code in self._store.session_join_codes)
         clock_origin = utc_now_iso()
         session = LectureSession(
             session_id=session_id,
@@ -59,6 +62,7 @@ class SessionService:
             owner_id=actor.user_id,
             course_id=request.course_id,
             title=request.title,
+            join_code=join_code,
             mode=request.mode,
             status=SessionStatus.ACTIVE,
             started_at=clock_origin,
@@ -66,6 +70,34 @@ class SessionService:
             zoom_meeting_id=request.zoom_meeting_id,
         )
         self._store.sessions[session_id] = session
+        self._store.session_join_codes[join_code] = session_id
+        return session
+
+    def resolve_join_code(self, actor: AuthenticatedActor, raw_code: str) -> LectureSession:
+        """Resolve a normalized join code to an active lecture session.
+
+        Args:
+            actor: Any authenticated account requesting the lookup.
+            raw_code: User-entered join code, including possible whitespace or
+                lowercase characters.
+
+        Returns:
+            The active lecture session associated with the code.
+
+        Raises:
+            AppError: If the code is unknown or no longer points to an active
+                session.
+        """
+        del actor
+        code = normalize_join_code(raw_code)
+        session_id = self._store.session_join_codes.get(code)
+        session = self._store.sessions.get(session_id) if session_id else None
+        if session is None or session.status != SessionStatus.ACTIVE:
+            raise AppError(
+                ErrorCode.NOT_FOUND,
+                "No active lecture session matches that join code.",
+                details={"join_code": code},
+            )
         return session
 
     def get_session(self, actor: AuthenticatedActor, session_id: str) -> LectureSession:
@@ -103,4 +135,5 @@ class SessionService:
             session.status = SessionStatus.ENDED
             session.ended_at = utc_now_iso()
             self._store.sessions[session_id] = session
+            self._store.session_join_codes.pop(session.join_code, None)
         return session

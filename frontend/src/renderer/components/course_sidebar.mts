@@ -30,6 +30,7 @@ export function CourseSidebar(
   joinedSessions: LectureSession[] = [],
 ): string {
   const links = role === 'student' ? STUDENT_LINKS : EDUCATOR_LINKS;
+  const courseById = new Map(courses.map((course) => [course.course_id, course]));
   const renderedLinks = links
     .map(
       (link) => `
@@ -69,7 +70,7 @@ export function CourseSidebar(
               ? `<p class="sidebar-label sidebar-label--courses">Joined sessions</p><div class="course-list">${joinedSessions
                   .map(
                     (session) =>
-                      `<p class="course-list__item"><strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(session.course_id)}</small></p>`,
+                      `<p class="course-list__item"><strong>${escapeHtml(session.title)}</strong>${courseById.get(session.course_id) ? `<small>${escapeHtml(courseById.get(session.course_id)?.code ?? '')}</small>` : ''}</p>`,
                   )
                   .join('')}</div>`
               : '<p class="empty-state">No joined sessions are available yet.</p>'

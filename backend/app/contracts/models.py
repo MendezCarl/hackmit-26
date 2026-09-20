@@ -99,6 +99,10 @@ class LectureSession(BaseModel):
     owner_id: str = Field(description="Authenticated user who started the session.")
     course_id: str = Field(description="Owning course identifier.")
     title: str = Field(description="Human-readable lecture-session title.")
+    join_code: str = Field(
+        default="",
+        description="Short human-typeable code students enter to join.",
+    )
     mode: SessionMode = Field(description="How the session is held.")
     status: SessionStatus = Field(description="Current lifecycle state.")
     started_at: str = Field(description="UTC ISO 8601 start time ending in Z.")
@@ -563,7 +567,12 @@ class CreateCourseRequest(_StrictModel):
     """Request creating a course."""
 
     title: str = Field(min_length=1, max_length=256)
-    code: str = Field(min_length=1, max_length=64)
+    code: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=16,
+        description="Optional course catalog code; generated when omitted.",
+    )
 
 
 class Lecture(BaseModel):

@@ -322,6 +322,12 @@
           "description": "UTC ISO 8601 end time.",
           "title": "Ended At"
         },
+        "join_code": {
+          "default": "",
+          "description": "Short human-typeable code students enter to join.",
+          "title": "Join Code",
+          "type": "string"
+        },
         "lecture_id": {
           "description": "Identifier of the underlying lecture record.",
           "title": "Lecture Id",

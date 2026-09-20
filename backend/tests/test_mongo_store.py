@@ -244,6 +244,14 @@ def test_app_roundtrips_mutated_records_with_mongo_mappings(
     )
     assert session_response.status_code == 201, session_response.text
     session_id = session_response.json()["session_id"]
+    join_code = session_response.json()["join_code"]
+    assert client.app.state.store.session_join_codes[join_code] == session_id
+    resolved = client.get(
+        f"/api/v1/sessions/by-join-code/{join_code.lower()}",
+        headers=auth,
+    )
+    assert resolved.status_code == 200, resolved.text
+    assert resolved.json()["session_id"] == session_id
     base = f"/api/v1/sessions/{session_id}"
 
     transcript = client.post(
@@ -321,6 +329,11 @@ def test_app_roundtrips_mutated_records_with_mongo_mappings(
     ended = client.post(base + "/end", headers=auth)
     assert ended.status_code == 200, ended.text
     assert client.get(base, headers=auth).json()["status"] == "ended"
+    assert join_code not in client.app.state.store.session_join_codes
+    assert (
+        client.get(f"/api/v1/sessions/by-join-code/{join_code}", headers=auth).status_code
+        == 404
+    )
 
 
 def test_invalid_mongodb_uri_is_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -60,10 +60,13 @@ export async function loadTranscriptWorkspace(sessionId: string, endMs: number):
   setTranscriptChunks(response.chunks);
 }
 
-/** Joins and reads one student lecture session. */
-export async function joinLectureSession(sessionId: string): Promise<void> {
-  const participant = await window.backend.joinSession(sessionId);
-  const session = await window.backend.readSession(sessionId);
+/** Resolves a human-entered code and joins its student lecture session.
+ *
+ * @param joinCode - Raw code entered by the student.
+ */
+export async function joinLectureSession(joinCode: string): Promise<void> {
+  const session = await window.backend.resolveJoinCode(joinCode);
+  const participant = await window.backend.joinSession(session.session_id);
   addJoinedSession(session);
   setActiveSession(session);
   setParticipantCount(participant.participant_count);

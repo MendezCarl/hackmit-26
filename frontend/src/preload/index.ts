@@ -27,6 +27,7 @@ const backendApi: BackendApi = {
   createLecture: (request) => invokeBackend('createLecture', [request]),
   createSession: (request) => invokeBackend('createSession', [request]),
   readSession: (sessionId) => invokeBackend('readSession', [sessionId]),
+  resolveJoinCode: (joinCode) => invokeBackend('resolveJoinCode', [joinCode]),
   joinSession: (sessionId) => invokeBackend('joinSession', [sessionId]),
   updateAggregationConsent: (sessionId, consent) =>
     invokeBackend('updateAggregationConsent', [sessionId, consent]),

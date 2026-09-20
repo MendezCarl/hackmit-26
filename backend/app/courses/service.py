@@ -8,6 +8,7 @@ from app.auth.tokens import ROLE_PROFESSOR, AuthenticatedActor
 from app.contracts.models import Course, CreateCourseRequest
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
+from app.sessions.join_codes import generate_join_code
 from app.storage.in_memory import InMemoryStore
 
 
@@ -74,11 +75,17 @@ class CourseService:
                 ErrorCode.FORBIDDEN,
                 "Only professors can create courses.",
             )
+        course_code = request.code or generate_join_code(
+            lambda code: any(
+                course.owner_id == actor.user_id and course.code == code
+                for course in self._store.courses.values()
+            )
+        )
         course = Course(
             course_id=f"course_{uuid4().hex}",
             owner_id=actor.user_id,
             title=request.title,
-            code=request.code,
+            code=course_code,
             created_at=utc_now_iso(),
         )
         self._store.courses[course.course_id] = course
