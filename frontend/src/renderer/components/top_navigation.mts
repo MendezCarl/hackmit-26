@@ -27,12 +27,12 @@ export function TopNavigation(
   profileName = '?',
 ): string {
   const safeProfileName = escapeHtml(profileName);
-  const roleRoute = role === 'student' ? 'educator-dashboard' : 'student-dashboard';
+  const roleRoute = role === 'student' ? 'home' : 'student-dashboard';
   const roleLabel = role === 'student' ? 'Educator view' : 'Student view';
 
   return `
     <header class="top-nav">
-      <a class="brand" href="${buildRouteHash(role === 'student' ? 'student-dashboard' : 'educator-dashboard')}" aria-label="Bloom home">
+      <a class="brand" href="${buildRouteHash(role === 'student' ? 'student-dashboard' : 'home')}" aria-label="Bloom home">
         <img src="./assets/bloom-icon.svg" alt="" />
         <span>Bloom</span>
       </a>

@@ -6,6 +6,9 @@ const routes = [
   'student-dashboard',
   'student-summary',
   'lecture-library',
+  'home',
+  'course',
+  'lecture',
   'educator-dashboard',
   'educator-summary',
   'account',
@@ -80,6 +83,149 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
   assert.match(page, /Possible missed moment/);
   assert.match(page, /Marked for review, not scored/);
   assert.doesNotMatch(page, /attention score/i);
+});
+
+test('educator home renders metrics and course links', async () => {
+  const { HomePage } = await import('../../dist/renderer/features/home/home_page.mjs');
+  const page = HomePage({
+    isDemo: false,
+    courses: [
+      {
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Biology',
+        code: 'BIO 101',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    lecturesByCourse: { 'course-1': [] },
+    sessions: [],
+    professorMetricsBySession: {},
+    professorSummariesBySession: {},
+    activeSession: null,
+  });
+  assert.match(page, /No lecture data yet/);
+  assert.match(page, /course\?course_id=course-1/);
+  assert.match(page, /data-open-course-modal/);
+  const metricsPage = HomePage({
+    isDemo: false,
+    courses: [],
+    lecturesByCourse: {},
+    sessions: [],
+    professorMetricsBySession: {
+      'session-1': {
+        session_id: 'session-1',
+        policy_version: 'test',
+        status: 'available',
+        minimum_group_size: 5,
+        bucket_ms: 30000,
+        buckets: [
+          {
+            start_ms: 0,
+            end_ms: 30000,
+            status: 'available',
+            is_hotspot: true,
+            transcript_chunk_ids: [],
+          },
+        ],
+        continuity: { numerator: 3, denominator: 4, ratio: 0.75 },
+        delivery_findings: [
+          {
+            start_ms: 0,
+            end_ms: 1000,
+            signal_type: 'audio',
+            confidence: 0.8,
+            suggested_action: 'Review',
+          },
+        ],
+        recovery_outcomes_status: 'not_collected',
+      },
+    },
+    professorSummariesBySession: {
+      'session-1': {
+        summary_id: 'summary-1',
+        session_id: 'session-1',
+        participant_count: 12,
+        minimum_group_size: 5,
+        aggregation_window_ms: 30000,
+        is_suppressed: false,
+        generated_at: '2026-01-01T00:00:00.000Z',
+      },
+    },
+    activeSession: null,
+  });
+  assert.match(metricsPage, /Lecture continuity/);
+  assert.match(metricsPage, />75%<|>75%/);
+  assert.match(metricsPage, />12</);
+});
+
+test('course and lecture pages render requested empty states', async () => {
+  const { CoursePage } = await import('../../dist/renderer/features/courses/course_page.mjs');
+  const { LectureSummaryPage } = await import(
+    '../../dist/renderer/features/lecture-summary/lecture_summary_page.mjs'
+  );
+  assert.match(
+    CoursePage({
+      isDemo: false,
+      course: null,
+      lectures: [],
+      sessionsByLecture: {},
+      activeSession: null,
+    }),
+    /Course not found/,
+  );
+  assert.match(
+    LectureSummaryPage({
+      isDemo: false,
+      lecture: {
+        lecture_id: 'lecture-1',
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Cellular respiration',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      course: {
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Biology',
+        code: 'BIO 101',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      session: null,
+      summary: null,
+      metrics: null,
+    }),
+    /No sessions yet for this lecture/,
+  );
+});
+
+test('educator sidebar starts with Home and caps lecture links at five', async () => {
+  const { CourseSidebar } = await import('../../dist/renderer/components/course_sidebar.mjs');
+  const lectures = Array.from({ length: 6 }, (_, index) => ({
+    lecture_id: `lecture-${index}`,
+    course_id: 'course-1',
+    owner_id: 'owner-1',
+    title: `Lecture ${index}`,
+    created_at: `2026-01-0${Math.min(index + 1, 9)}T00:00:00.000Z`,
+  }));
+  const sidebar = CourseSidebar(
+    'home',
+    'educator',
+    false,
+    [
+      {
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Biology',
+        code: 'BIO 101',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    [],
+    { 'course-1': lectures },
+  );
+  assert.match(sidebar, /Home/);
+  assert.equal((sidebar.match(/href="#\/lecture\?/g) ?? []).length, 5);
 });
 
 test('the Electron renderer loads browser-native modules', async () => {
