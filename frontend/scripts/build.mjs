@@ -9,7 +9,10 @@ const dist = join(root, 'dist');
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 await rm(dist, { recursive: true, force: true });
-await execFileAsync(npx, ['tsc'], { cwd: root });
+await execFileAsync(npx, ['tsc'], {
+  cwd: root,
+  shell: process.platform === 'win32',
+});
 await mkdir(dist, { recursive: true });
 await cp(join(root, 'index.html'), join(dist, 'index.html'));
 await cp(join(root, 'src', 'renderer', 'overlay.html'), join(dist, 'overlay.html'));
