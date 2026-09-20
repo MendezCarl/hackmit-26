@@ -16,7 +16,10 @@ PERSON_MODEL = Path("models/person_detector.onnx")
 FACE_MODEL = Path("models/face_detection_yunet_2023mar.onnx")
 
 STEPS: list[tuple[str, str]] = [
-    ("import onnxruntime", "import onnxruntime as ort; print(ort.__version__, ort.get_available_providers())"),
+    (
+        "import onnxruntime",
+        "import onnxruntime as ort; print(ort.__version__, ort.get_available_providers())",
+    ),
     ("import cv2", "import cv2; print(cv2.__version__)"),
     (
         "load person model (default threads)",
@@ -45,7 +48,11 @@ def run_step(name: str, code: str) -> tuple[str, float, str]:
             timeout=STEP_TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired:
-        return "HUNG", time.perf_counter() - started, f"no result after {STEP_TIMEOUT_SECONDS} s"
+        return (
+            "HUNG",
+            time.perf_counter() - started,
+            f"no result after {STEP_TIMEOUT_SECONDS} s",
+        )
     # Prefer the step's own output; OpenCV prints harmless "[ WARN ...]" lines on stderr.
     lines = completed.stdout.strip().splitlines() or [
         line for line in completed.stderr.strip().splitlines() if "WARN" not in line
@@ -68,8 +75,12 @@ def main() -> int:
         return 1
     print()
     started = time.perf_counter()
-    digests = [hashlib.sha256(p.read_bytes()).hexdigest()[:12] for p in (PERSON_MODEL, FACE_MODEL)]
-    print(f"{'read + hash both model files':48} ok      {time.perf_counter() - started:5.1f} s  {digests}")
+    digests = [
+        hashlib.sha256(p.read_bytes()).hexdigest()[:12] for p in (PERSON_MODEL, FACE_MODEL)
+    ]
+    print(
+        f"{'read + hash both model files':48} ok      {time.perf_counter() - started:5.1f} s  {digests}"
+    )
     hung = False
     for name, code in STEPS:
         status, seconds, detail = run_step(name, code)

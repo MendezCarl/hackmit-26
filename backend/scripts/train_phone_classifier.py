@@ -86,7 +86,9 @@ def unique_recordings(paths: list[Path]) -> list[Path]:
     return kept
 
 
-def extract_all(analyzer, positives, negative_clips, recordings, cache: Path) -> dict[str, object]:
+def extract_all(
+    analyzer, positives, negative_clips, recordings, cache: Path
+) -> dict[str, object]:
     """Extract (or load cached) features with a source name per row."""
     if cache.exists():
         stored = np.load(cache, allow_pickle=False)
@@ -109,7 +111,9 @@ def extract_all(analyzer, positives, negative_clips, recordings, cache: Path) ->
     return data
 
 
-def fit_logistic(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
+def fit_logistic(
+    x: np.ndarray, y: np.ndarray
+) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
     """Fit a class-balanced, L2-regularized logistic regression by gradient descent.
 
     Args:
@@ -133,7 +137,9 @@ def fit_logistic(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.nd
     return weights, float(bias), mean, std
 
 
-def predict(x: np.ndarray, model: tuple[np.ndarray, float, np.ndarray, np.ndarray]) -> np.ndarray:
+def predict(
+    x: np.ndarray, model: tuple[np.ndarray, float, np.ndarray, np.ndarray]
+) -> np.ndarray:
     """Probability of phone use for each row."""
     weights, bias, mean, std = model
     return 1 / (1 + np.exp(-np.clip(((x - mean) / std) @ weights + bias, -30, 30)))
@@ -147,9 +153,13 @@ def threshold_for(negative_probabilities: np.ndarray) -> float:
     return 0.99
 
 
-def cross_validate(x, y, groups, positive_clips, negative_sources, columns) -> dict[str, object]:
+def cross_validate(
+    x, y, groups, positive_clips, negative_sources, columns
+) -> dict[str, object]:
     """Leave-one-positive-clip-out evaluation for one feature set and the rule baseline."""
-    fold_of_source = {name: index % FOLD_COUNT for index, name in enumerate(negative_sources)}
+    fold_of_source = {
+        name: index % FOLD_COUNT for index, name in enumerate(negative_sources)
+    }
     per_fold = []
     for fold, held_clip in enumerate(positive_clips):
         is_held_pos = np.array([g == held_clip for g in groups])
@@ -168,17 +178,26 @@ def cross_validate(x, y, groups, positive_clips, negative_sources, columns) -> d
                 "held_out_clip": held_clip,
                 "threshold": round(threshold, 2),
                 "model_recall": round(float(np.mean(held_positive >= threshold)), 2),
-                "model_false_positive_rate": round(float(np.mean(held_negative >= threshold)), 3),
-                "rule_recall": round(float(np.mean(rule[is_held_pos] >= BASELINE_PHONE_THRESHOLD)), 2),
+                "model_false_positive_rate": round(
+                    float(np.mean(held_negative >= threshold)), 3
+                ),
+                "rule_recall": round(
+                    float(np.mean(rule[is_held_pos] >= BASELINE_PHONE_THRESHOLD)), 2
+                ),
                 "rule_false_positive_rate": round(
-                    float(np.mean(rule[is_held_neg & (y == 0)] >= BASELINE_PHONE_THRESHOLD)), 3
+                    float(
+                        np.mean(rule[is_held_neg & (y == 0)] >= BASELINE_PHONE_THRESHOLD)
+                    ),
+                    3,
                 ),
                 "held_out_negative_rows": int((is_held_neg & (y == 0)).sum()),
             }
         )
     return {
         "folds": per_fold,
-        "mean_model_recall": round(float(np.mean([f["model_recall"] for f in per_fold])), 2),
+        "mean_model_recall": round(
+            float(np.mean([f["model_recall"] for f in per_fold])), 2
+        ),
         "mean_rule_recall": round(float(np.mean([f["rule_recall"] for f in per_fold])), 2),
     }
 
@@ -189,19 +208,33 @@ def main() -> None:
     parser.add_argument("--positive-clips", nargs="+", type=Path, required=True)
     parser.add_argument("--negative-clips", nargs="+", type=Path, default=[])
     parser.add_argument("--recordings", nargs="+", type=Path, default=[])
-    parser.add_argument("--person-model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument(
+        "--person-model", type=Path, default=Path("models/person_detector.onnx")
+    )
     parser.add_argument(
         "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
     )
-    parser.add_argument("--cache", type=Path, default=Path("data/local/eval/phone_features.npz"))
-    parser.add_argument("--output-model", type=Path, default=Path("models/phone_classifier.json"))
-    parser.add_argument("--report", type=Path, default=Path("data/local/eval/phone_training_report.json"))
+    parser.add_argument(
+        "--cache", type=Path, default=Path("data/local/eval/phone_features.npz")
+    )
+    parser.add_argument(
+        "--output-model", type=Path, default=Path("models/phone_classifier.json")
+    )
+    parser.add_argument(
+        "--report", type=Path, default=Path("data/local/eval/phone_training_report.json")
+    )
     arguments = parser.parse_args()
 
     analyzer = load_analyzer(arguments.person_model, arguments.face_model)
     recordings = unique_recordings(arguments.recordings)
     print(f"extracting features ({len(recordings)} unique recordings)", flush=True)
-    data = extract_all(analyzer, arguments.positive_clips, arguments.negative_clips, recordings, arguments.cache)
+    data = extract_all(
+        analyzer,
+        arguments.positive_clips,
+        arguments.negative_clips,
+        recordings,
+        arguments.cache,
+    )
     x, kind, source = data["x"], data["kind"], data["source"]
 
     face_height = x[:, FEATURE_NAMES.index("face_height")]
@@ -214,8 +247,10 @@ def main() -> None:
     x, kind, source = x[keep], kind[keep], source[keep]
     y = (kind == "positive").astype(float)
     print(f"minimum face height for negatives: {minimum_face:.3f}")
-    print(f"rows: {int(y.sum())} positive, {int((1 - y).sum())} matched negative "
-          f"from {len(set(source[y == 0]))} sources")
+    print(
+        f"rows: {int(y.sum())} positive, {int((1 - y).sum())} matched negative "
+        f"from {len(set(source[y == 0]))} sources"
+    )
 
     positive_clips = sorted(set(source[y == 1]))
     negative_sources = sorted(set(source[y == 0]))
@@ -225,28 +260,48 @@ def main() -> None:
     }
     report: dict[str, object] = {"matched_negative_rows": int((1 - y).sum())}
     for name, columns in feature_sets.items():
-        result = cross_validate(x, y, list(source), positive_clips, negative_sources, columns)
+        result = cross_validate(
+            x, y, list(source), positive_clips, negative_sources, columns
+        )
         report[name] = result
-        print(f"\n{name}: mean held-out recall {result['mean_model_recall']} "
-              f"(rule {result['mean_rule_recall']})")
+        print(
+            f"\n{name}: mean held-out recall {result['mean_model_recall']} "
+            f"(rule {result['mean_rule_recall']})"
+        )
         for fold in result["folds"]:
-            print(f"  hold out {fold['held_out_clip']:14} model recall {fold['model_recall']:.2f} "
-                  f"FPR {fold['model_false_positive_rate']:.3f} | rule recall {fold['rule_recall']:.2f} "
-                  f"FPR {fold['rule_false_positive_rate']:.3f} | thr {fold['threshold']} "
-                  f"({fold['held_out_negative_rows']} held-out negatives)")
+            print(
+                f"  hold out {fold['held_out_clip']:14} model recall {fold['model_recall']:.2f} "
+                f"FPR {fold['model_false_positive_rate']:.3f} | rule recall {fold['rule_recall']:.2f} "
+                f"FPR {fold['rule_false_positive_rate']:.3f} | thr {fold['threshold']} "
+                f"({fold['held_out_negative_rows']} held-out negatives)"
+            )
 
     columns = feature_sets["behaviour_only"]
     model = fit_logistic(x[:, columns], y)
     threshold = threshold_for(predict(x[y == 0][:, columns], model))
     weights, bias, mean, std = model
     arguments.output_model.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output_model.write_text(json.dumps({
-        "feature_names": [FEATURE_NAMES[i] for i in columns],
-        "weights": weights.tolist(), "bias": bias, "mean": mean.tolist(), "std": std.tolist(),
-        "threshold": threshold, "trained_on": {"positive_rows": int(y.sum()), "negative_rows": int((1 - y).sum())},
-    }, indent=2))
+    arguments.output_model.write_text(
+        json.dumps(
+            {
+                "feature_names": [FEATURE_NAMES[i] for i in columns],
+                "weights": weights.tolist(),
+                "bias": bias,
+                "mean": mean.tolist(),
+                "std": std.tolist(),
+                "threshold": threshold,
+                "trained_on": {
+                    "positive_rows": int(y.sum()),
+                    "negative_rows": int((1 - y).sum()),
+                },
+            },
+            indent=2,
+        )
+    )
     arguments.report.write_text(json.dumps(report, indent=2))
-    print(f"\nfinal behaviour-only model saved to {arguments.output_model} (threshold {threshold:.2f})")
+    print(
+        f"\nfinal behaviour-only model saved to {arguments.output_model} (threshold {threshold:.2f})"
+    )
 
 
 if __name__ == "__main__":

@@ -18,7 +18,8 @@ LIVE_PROVIDER_MODE = "live"
 KNOWN_PROVIDER_MODES = (MOCK_PROVIDER_MODE, LIVE_PROVIDER_MODE)
 
 DEFAULT_DEMO_SECRET = "dev-only-secret-change-me-before-production"
-DEMO_HEAD_AWAY_WINDOW_MS = 5_000  # Demo clips are a few seconds long; production keeps 30 s.
+# Demo clips are a few seconds long; production keeps the 30 s default.
+DEMO_HEAD_AWAY_WINDOW_MS = 5_000
 
 
 class Settings(BaseModel):

@@ -68,7 +68,10 @@ def post_signals(
     Raises:
         httpx.HTTPStatusError: If the backend rejects a batch.
     """
-    totals: dict[str, list[str]] = {"accepted_event_ids": [], "recovery_eligible_event_ids": []}
+    totals: dict[str, list[str]] = {
+        "accepted_event_ids": [],
+        "recovery_eligible_event_ids": [],
+    }
     for start in range(0, len(signals), MAX_EVENTS_PER_BATCH):
         request = IngestEventsRequest(
             lecture_id=lecture_id,
@@ -109,7 +112,10 @@ def main() -> None:
     token = os.environ.get("STUDENT_TOKEN")
     if not token:
         parser.error("Set STUDENT_TOKEN in the environment; tokens are never arguments.")
-    if urlparse(arguments.base_url).hostname not in LOOPBACK_HOSTS and not arguments.allow_remote:
+    if (
+        urlparse(arguments.base_url).hostname not in LOOPBACK_HOSTS
+        and not arguments.allow_remote
+    ):
         parser.error("Use a loopback URL, or pass --allow-remote deliberately.")
     signals = load_signals(arguments.signals_file)
     with httpx.Client(base_url=arguments.base_url, timeout=10, trust_env=False) as client:

@@ -197,7 +197,10 @@ def main() -> int:
     rendered = render_rule_cards()
     if arguments.check:
         if not OUTPUT_PATH.exists() or OUTPUT_PATH.read_text() != rendered:
-            print("Rule cards are stale; run: python -m scripts.generate_rule_cards", file=sys.stderr)
+            print(
+                "Rule cards are stale; run: python -m scripts.generate_rule_cards",
+                file=sys.stderr,
+            )
             return 1
         return 0
     OUTPUT_PATH.write_text(rendered)

@@ -147,7 +147,9 @@ def main() -> int:
             worker,
             arguments.clock_offset_ms,
             emit,
-            max_duration_ms=None if arguments.max_seconds is None else int(arguments.max_seconds * 1000),
+            max_duration_ms=None
+            if arguments.max_seconds is None
+            else int(arguments.max_seconds * 1000),
         )
         if arguments.max_seconds is not None:
             print(json.dumps(summarize_run(emitted, elapsed_ms)), file=sys.stderr)

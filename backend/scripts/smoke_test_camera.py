@@ -34,7 +34,9 @@ from app.local_ml.student_worker import run_capture
 COUNTDOWN_SECONDS = 5
 BOUNDARY_SLACK_S = 3.0  # Reaction time and merge gap near a phase boundary are not errors.
 DETECTED_COVERAGE = 0.5
-MINIMUM_RUN_FRACTION = 0.9  # A run shorter than this means the camera stopped or never opened.
+MINIMUM_RUN_FRACTION = (
+    0.9  # A run shorter than this means the camera stopped or never opened.
+)
 FALSE_ALARM_LABELS = ("phone_visible", "head_away")
 MAXIMUM_FALSE_ALARMS_PER_MINUTE = 0.2  # About one event in five minutes.
 
@@ -51,19 +53,33 @@ class Phase:
 
 GUIDED_SCRIPT = (
     Phase(0, 30, "Sit normally and look at the screen.", ()),
-    Phase(30, 60, "Hold your phone up near your chin, screen toward you, so the camera can see it.", ("phone_visible",)),
+    Phase(
+        30,
+        60,
+        "Hold your phone up near your chin, screen toward you, so the camera can see it.",
+        ("phone_visible",),
+    ),
     Phase(60, 80, "Look to the side.", ("head_away",)),
-    Phase(80, 100, "Leave the camera view, then come back.", ("student_left_frame", "face_absent")),
+    Phase(
+        80,
+        100,
+        "Leave the camera view, then come back.",
+        ("student_left_frame", "face_absent"),
+    ),
     Phase(100, 120, "Sit normally again.", ()),
 )
 
 
-def overlap_seconds(start_s: float, end_s: float, window_start: float, window_end: float) -> float:
+def overlap_seconds(
+    start_s: float, end_s: float, window_start: float, window_end: float
+) -> float:
     """Length in seconds of the overlap between two intervals, never negative."""
     return max(0.0, min(end_s, window_end) - max(start_s, window_start))
 
 
-def score_guided_run(signals: list[StudentSignal], script: tuple[Phase, ...]) -> dict[str, object]:
+def score_guided_run(
+    signals: list[StudentSignal], script: tuple[Phase, ...]
+) -> dict[str, object]:
     """Score a run against the scripted phases.
 
     Args:
@@ -82,10 +98,16 @@ def score_guided_run(signals: list[StudentSignal], script: tuple[Phase, ...]) ->
             (max(s.start_ms / 1000, phase.start_s), min(s.end_ms / 1000, phase.end_s))
             for s in signals
             if s.event_type in phase.expected
-            and overlap_seconds(s.start_ms / 1000, s.end_ms / 1000, phase.start_s, phase.end_s) > 0
+            and overlap_seconds(
+                s.start_ms / 1000, s.end_ms / 1000, phase.start_s, phase.end_s
+            )
+            > 0
         )
         covered, cursor = 0.0, float(phase.start_s)
-        for start, end in spans:  # Union of spans, so overlapping signals are not double counted.
+        for (
+            start,
+            end,
+        ) in spans:  # Union of spans, so overlapping signals are not double counted.
             start = max(start, cursor)
             if end > start:
                 covered += end - start
@@ -102,7 +124,9 @@ def score_guided_run(signals: list[StudentSignal], script: tuple[Phase, ...]) ->
                 "instruction": phase.instruction,
                 "expected": list(phase.expected),
                 "coverage": round(covered / length, 2),
-                "detected": (covered / length >= DETECTED_COVERAGE) if phase.expected else None,
+                "detected": (covered / length >= DETECTED_COVERAGE)
+                if phase.expected
+                else None,
                 "unexpected_signals": unexpected,
             }
         )
@@ -168,12 +192,16 @@ class RecordingAnalyzer:
                 "person": round(observation.person_score, 3),
                 "phone": round(observation.phone_score, 3),
                 "face": round(observation.face_score, 3),
-                "yaw": None if observation.face_yaw is None else round(observation.face_yaw, 3),
+                "yaw": None
+                if observation.face_yaw is None
+                else round(observation.face_yaw, 3),
             }
         )
         if self.live and elapsed - self._last_printed >= 1.0:
             self._last_printed = elapsed
-            yaw = "  -  " if observation.face_yaw is None else f"{observation.face_yaw:5.2f}"
+            yaw = (
+                "  -  " if observation.face_yaw is None else f"{observation.face_yaw:5.2f}"
+            )
             print(
                 f"    t={elapsed:5.1f}s  person {observation.person_score:.2f}  "
                 f"phone {observation.phone_score:.2f}  face {observation.face_score:.2f}  yaw {yaw}",
@@ -206,8 +234,16 @@ def summarize_phase_scores(
                 "samples": len(inside),
                 "phone_median": round(statistics.median(phone), 2) if phone else None,
                 "phone_max": round(max(phone), 2) if phone else None,
-                "person_share": round(sum(float(r["person"] or 0) >= 0.5 for r in inside) / len(inside), 2) if inside else None,
-                "face_share": round(sum(r["yaw"] is not None for r in inside) / len(inside), 2) if inside else None,
+                "person_share": round(
+                    sum(float(r["person"] or 0) >= 0.5 for r in inside) / len(inside), 2
+                )
+                if inside
+                else None,
+                "face_share": round(
+                    sum(r["yaw"] is not None for r in inside) / len(inside), 2
+                )
+                if inside
+                else None,
                 "yaw_magnitude_max": round(max(yaws), 2) if yaws else None,
             }
         )
@@ -254,23 +290,35 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--consent-local-camera", action="store_true", required=True)
     parser.add_argument("--mode", choices=("false-alarms", "guided"), required=True)
-    parser.add_argument("--seconds", type=int, default=300, help="Length for false-alarms mode.")
+    parser.add_argument(
+        "--seconds", type=int, default=300, help="Length for false-alarms mode."
+    )
     parser.add_argument("--camera-index", type=int, default=0)
-    parser.add_argument("--width", type=int, default=640, help="Capture width; a phone is tiny at low resolution.")
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=640,
+        help="Capture width; a phone is tiny at low resolution.",
+    )
     parser.add_argument("--height", type=int, default=480)
     parser.add_argument(
         "--live",
         action="store_true",
         help="Print derived scores once a second (numbers only) to help position the phone.",
     )
-    parser.add_argument("--person-model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument(
+        "--person-model", type=Path, default=Path("models/person_detector.onnx")
+    )
     parser.add_argument(
         "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
     )
     parser.add_argument("--output-dir", type=Path, default=Path("data/local/eval"))
     arguments = parser.parse_args()
 
-    print("Step 1/3: loading the models (usually 1-2 s; the first run can take up to a minute)...", flush=True)
+    print(
+        "Step 1/3: loading the models (usually 1-2 s; the first run can take up to a minute)...",
+        flush=True,
+    )
     started = time.perf_counter()
     analyzer = OnnxStudentAnalyzer.from_files(arguments.person_model, arguments.face_model)
     recorder = RecordingAnalyzer(analyzer, live=arguments.live)
@@ -282,10 +330,15 @@ def main() -> int:
         flush=True,
     )
     capture = open_camera(arguments.camera_index, arguments.width, arguments.height)
-    actual = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    actual = (
+        int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+        int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+    )
     print(f"          camera open, delivering {actual[0]}x{actual[1]}", flush=True)
     print("Step 3/3: the test.", flush=True)
-    seconds = arguments.seconds if arguments.mode == "false-alarms" else GUIDED_SCRIPT[-1].end_s
+    seconds = (
+        arguments.seconds if arguments.mode == "false-alarms" else GUIDED_SCRIPT[-1].end_s
+    )
     print(f"\nMode: {arguments.mode}, {seconds} s. Your video stays on this computer.\n")
     if arguments.mode == "false-alarms":
         print("  Sit normally, look at the screen, and do not use a phone.")
@@ -306,7 +359,9 @@ def main() -> int:
     elapsed = elapsed_ms / 1000
     print(f"\nRan {elapsed:.0f} of {seconds} s.")
     if elapsed < seconds * MINIMUM_RUN_FRACTION:
-        print("CAMERA PROBLEM: the run ended early, so this is not a valid result. Rerun it.")
+        print(
+            "CAMERA PROBLEM: the run ended early, so this is not a valid result. Rerun it."
+        )
     result = (
         score_false_alarms(signals, elapsed)
         if arguments.mode == "false-alarms"
@@ -320,7 +375,12 @@ def main() -> int:
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
     path = arguments.output_dir / f"smoke_test_{arguments.mode}_{int(time.time())}.json"
     path.write_text(json.dumps(result, indent=2))
-    print(json.dumps({k: v for k, v in result.items() if k not in ("signals", "observations")}, indent=2))
+    print(
+        json.dumps(
+            {k: v for k, v in result.items() if k not in ("signals", "observations")},
+            indent=2,
+        )
+    )
     print(f"\nSaved {path} (derived signals only, no video).")
     return 0
 

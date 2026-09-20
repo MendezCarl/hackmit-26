@@ -25,7 +25,9 @@ from app.contracts.learning import StrictPayload
 from app.local_ml.vision import ModelManifest
 
 Frame = NDArray[np.uint8]
-StudentSignalLabel = Literal["student_left_frame", "face_absent", "head_away", "phone_visible"]
+StudentSignalLabel = Literal[
+    "student_left_frame", "face_absent", "head_away", "phone_visible"
+]
 
 DETECTOR_INPUT_SIZE = 320
 COCO_PERSON_CLASS_ID = 1  # torchvision 91-index COCO scheme.
@@ -165,14 +167,20 @@ class OnnxStudentAnalyzer:
         inputs = self.session.get_inputs()
         if (
             len(inputs) != 1
-            or inputs[0].shape != [1, 3, person_manifest.input_size, person_manifest.input_size]
+            or inputs[0].shape
+            != [1, 3, person_manifest.input_size, person_manifest.input_size]
             or inputs[0].type != "tensor(float)"
         ):
             raise ValueError("Unsupported model input tensor")
         self.input_name = inputs[0].name
         self.input_size = person_manifest.input_size
         self.face_detector = cv2.FaceDetectorYN.create(
-            str(face_model), "", (DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE), FACE_SCORE_THRESHOLD, 0.3, 50
+            str(face_model),
+            "",
+            (DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE),
+            FACE_SCORE_THRESHOLD,
+            0.3,
+            50,
         )
 
     @classmethod
@@ -192,23 +200,34 @@ class OnnxStudentAnalyzer:
         """
         return cls(
             person_model,
-            ModelManifest.model_validate_json(person_model.with_suffix(".manifest.json").read_text()),
+            ModelManifest.model_validate_json(
+                person_model.with_suffix(".manifest.json").read_text()
+            ),
             face_model,
-            ModelManifest.model_validate_json(face_model.with_suffix(".manifest.json").read_text()),
+            ModelManifest.model_validate_json(
+                face_model.with_suffix(".manifest.json").read_text()
+            ),
         )
 
     def _detect(self, image: NDArray[np.uint8]) -> NDArray[np.float32]:
         """Return validated Nx6 normalized xyxy/score/class rows; erase temporaries."""
         resized = cv2.resize(image, (self.input_size, self.input_size))
         tensor = (
-            np.ascontiguousarray(resized[:, :, ::-1].transpose(2, 0, 1)[None], dtype=np.float32)
+            np.ascontiguousarray(
+                resized[:, :, ::-1].transpose(2, 0, 1)[None], dtype=np.float32
+            )
             / 255.0
         )
         outputs: list[NDArray[np.float32]] = []
         try:
             outputs = self.session.run(None, {self.input_name: tensor})
             rows = np.array(outputs[0], dtype=np.float32)
-            if rows.ndim != 2 or rows.shape[1] != 6 or rows.shape[0] > 1000 or not np.isfinite(rows).all():
+            if (
+                rows.ndim != 2
+                or rows.shape[1] != 6
+                or rows.shape[0] > 1000
+                or not np.isfinite(rows).all()
+            ):
                 raise ValueError("Unsupported model output tensor")
             return rows
         finally:
@@ -250,8 +269,15 @@ class OnnxStudentAnalyzer:
             lower = min(height, int(y1 + bottom * box_height))
             if right - left > MINIMUM_CROP_PIXELS and lower - upper > MINIMUM_CROP_PIXELS:
                 crop_rows = self._detect(frame[upper:lower, left:right])
-                phone_body = max(phone_body, self._best_score(crop_rows, COCO_CELL_PHONE_CLASS_ID))
-        return person_score, phone_full, phone_body, (float(best[3] - best[1]), float(best[1]))
+                phone_body = max(
+                    phone_body, self._best_score(crop_rows, COCO_CELL_PHONE_CLASS_ID)
+                )
+        return (
+            person_score,
+            phone_full,
+            phone_body,
+            (float(best[3] - best[1]), float(best[1])),
+        )
 
     def person_and_phone(self, frame: Frame) -> tuple[float, float]:
         """Return the person score and the higher of the whole-frame and body-crop phone scores."""
@@ -407,7 +433,10 @@ class StudentSignalWorker:
         lost_after_turn = is_person and not has_face and bool(self.last_face_was_turned)
         return {
             "student_left_frame": (not is_person, PLACEHOLDER_CONFIDENCE),
-            "face_absent": (is_person and not has_face and not lost_after_turn, PLACEHOLDER_CONFIDENCE),
+            "face_absent": (
+                is_person and not has_face and not lost_after_turn,
+                PLACEHOLDER_CONFIDENCE,
+            ),
             "head_away": (
                 is_turned or lost_after_turn,
                 observation.face_score if is_turned else PLACEHOLDER_CONFIDENCE,
@@ -422,7 +451,10 @@ class StudentSignalWorker:
         self, label: StudentSignalLabel, candidate: _Candidate, end_ms: int
     ) -> StudentSignal | None:
         """Build a signal for a finished candidate, or None when it was too short."""
-        if end_ms - candidate.begin_ms < self.policy.minimum_duration_ms or candidate.count == 0:
+        if (
+            end_ms - candidate.begin_ms < self.policy.minimum_duration_ms
+            or candidate.count == 0
+        ):
             return None
         return StudentSignal(
             event_id=f"student_{uuid4().hex}",
@@ -511,7 +543,9 @@ class StudentSignalWorker:
                 self.last_face_was_turned = flags["head_away"][0]
             elif observation.person_score < self.policy.person_threshold:
                 self.last_face_was_turned = None
-            self._update_baseline(observation.face_yaw, flags["head_away"][0], lecture_time_ms)
+            self._update_baseline(
+                observation.face_yaw, flags["head_away"][0], lecture_time_ms
+            )
             for label, (is_positive, contribution) in flags.items():
                 signal = self._advance(label, is_positive, contribution, lecture_time_ms)
                 if signal is not None:
@@ -529,7 +563,11 @@ class StudentSignalWorker:
         """Close conditions still open when observation stops, e.g. at end of lecture."""
         events = []
         for label, candidate in self.active.items():
-            end_ms = candidate.gap_start_ms if candidate.gap_start_ms is not None else lecture_time_ms
+            end_ms = (
+                candidate.gap_start_ms
+                if candidate.gap_start_ms is not None
+                else lecture_time_ms
+            )
             signal = self._close(label, candidate, end_ms)
             if signal is not None:
                 events.append(signal)

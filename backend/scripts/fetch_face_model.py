@@ -41,7 +41,9 @@ def fetch_face_model(output_dir: Path, is_approved: bool) -> Path:
         context = ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         context = ssl.create_default_context()
-    with urllib.request.urlopen(YUNET_URL, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=context) as response:
+    with urllib.request.urlopen(
+        YUNET_URL, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=context
+    ) as response:
         content = response.read(MAXIMUM_DOWNLOAD_BYTES + 1)
     if len(content) > MAXIMUM_DOWNLOAD_BYTES:
         raise ValueError("Face model download is larger than expected")

@@ -43,17 +43,23 @@ def test_a_missed_behavior_is_reported():
     signals = [s for s in perfect_run() if s.event_type != "phone_visible"]
     result = score_guided_run(signals, GUIDED_SCRIPT)
     assert result["verdict"] == "REVIEW"
-    assert result["missed_phases"] == ["Hold your phone up near your chin, screen toward you, so the camera can see it."]
+    assert result["missed_phases"] == [
+        "Hold your phone up near your chin, screen toward you, so the camera can see it."
+    ]
 
 
 def test_a_signal_during_a_normal_phase_is_a_false_alarm():
-    result = score_guided_run(perfect_run() + [signal("phone_visible", 5, 15)], GUIDED_SCRIPT)
+    result = score_guided_run(
+        perfect_run() + [signal("phone_visible", 5, 15)], GUIDED_SCRIPT
+    )
     assert result["verdict"] == "REVIEW" and result["unexpected_signal_count"] == 1
 
 
 def test_signals_at_a_phase_boundary_are_not_counted_as_errors():
     # The phone event runs two seconds into the next phase: within reaction slack.
-    result = score_guided_run(perfect_run() + [signal("phone_visible", 58, 62)], GUIDED_SCRIPT)
+    result = score_guided_run(
+        perfect_run() + [signal("phone_visible", 58, 62)], GUIDED_SCRIPT
+    )
     assert result["unexpected_signal_count"] == 0
 
 

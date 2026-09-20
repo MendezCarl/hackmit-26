@@ -73,7 +73,10 @@ def crop_tile(frame: Frame, tile: tuple[float, float, float, float]) -> Frame:
     height, width = frame.shape[:2]
     x1, y1, x2, y2 = tile
     return cast(
-        Frame, frame[int(y1 * height) : int(y2 * height), int(x1 * width) : int(x2 * width)].copy()
+        Frame,
+        frame[
+            int(y1 * height) : int(y2 * height), int(x1 * width) : int(x2 * width)
+        ].copy(),
     )
 
 
@@ -130,7 +133,9 @@ def analyze_video(
                             events.append(event.model_dump(mode="json"))
             index += 1
         # An interval still open at the last sample would otherwise be lost.
-        events.extend(event.model_dump(mode="json") for event in worker.flush(last_sample_ms))
+        events.extend(
+            event.model_dump(mode="json") for event in worker.flush(last_sample_ms)
+        )
     finally:
         capture.release()
     return {
@@ -156,14 +161,18 @@ def main() -> None:
     )
     parser.add_argument("--tile", nargs=4, type=float, default=DEFAULT_TILE)
     parser.add_argument("--max-minutes", type=float)
-    parser.add_argument("--profile", default="balanced", choices=("low_power", "balanced", "performance"))
+    parser.add_argument(
+        "--profile", default="balanced", choices=("low_power", "balanced", "performance")
+    )
     arguments = parser.parse_args()
     detector = OnnxPersonDetector(
         arguments.model, ModelManifest.model_validate_json(arguments.manifest.read_text())
     )
     policy = VisionPolicy(profile=arguments.profile)
     for video in arguments.videos:
-        summary = analyze_video(video, detector, tuple(arguments.tile), arguments.max_minutes, policy)
+        summary = analyze_video(
+            video, detector, tuple(arguments.tile), arguments.max_minutes, policy
+        )
         print(json.dumps(summary), flush=True)
 
 

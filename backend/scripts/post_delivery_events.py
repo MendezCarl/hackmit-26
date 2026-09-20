@@ -85,7 +85,10 @@ def main() -> None:
     token = os.environ.get("PROFESSOR_TOKEN")
     if not token:
         parser.error("Set PROFESSOR_TOKEN in the environment; tokens are never arguments.")
-    if urlparse(arguments.base_url).hostname not in LOOPBACK_HOSTS and not arguments.allow_remote:
+    if (
+        urlparse(arguments.base_url).hostname not in LOOPBACK_HOSTS
+        and not arguments.allow_remote
+    ):
         parser.error("Use a loopback URL, or pass --allow-remote deliberately.")
     events = load_events(arguments.events_file)
     with httpx.Client(base_url=arguments.base_url, timeout=10, trust_env=False) as client:

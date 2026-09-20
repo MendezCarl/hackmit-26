@@ -120,10 +120,14 @@ def test_worker_signals_are_accepted_and_phone_alone_is_never_eligible():
     client = TestClient(create_app(SETTINGS))
     session_id = make_session(client)
     phone = signals_from(FrameObservation(0.99, 0.9, 0.9, 0.0), seconds=40)
-    head = signals_from(FrameObservation(0.99, 0.0, 0.9, 1.3), seconds=40, forward_seconds=6)
+    head = signals_from(
+        FrameObservation(0.99, 0.0, 0.9, 1.3), seconds=40, forward_seconds=6
+    )
     assert [s.event_type for s in phone] == ["phone_visible"]
     assert [s.event_type for s in head] == ["head_away"]
-    receipt = post_signals(client, session_id, LECTURE_ID, phone + head, token_for("owner-1"))
+    receipt = post_signals(
+        client, session_id, LECTURE_ID, phone + head, token_for("owner-1")
+    )
     assert sorted(receipt["accepted_event_ids"]) == sorted(s.event_id for s in phone + head)
     # A 40 s phone-only signal must not qualify; a 40 s head turn meets the 30 s rule.
     assert receipt["recovery_eligible_event_ids"] == [head[0].event_id]
@@ -134,11 +138,17 @@ def test_offset_aligns_clip_time_with_lecture_clock():
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.update(json.loads(request.content))
-        return httpx.Response(202, json={"accepted_event_ids": [], "recovery_eligible_event_ids": []})
+        return httpx.Response(
+            202, json={"accepted_event_ids": [], "recovery_eligible_event_ids": []}
+        )
 
     signals = signals_from(FrameObservation(0.99, 0.9, 0.9, 0.0), seconds=5)
-    with httpx.Client(base_url="http://127.0.0.1:8000", transport=httpx.MockTransport(handler)) as client:
-        post_signals(client, "session_1", LECTURE_ID, signals, "synthetic-token", offset_ms=60_000)
+    with httpx.Client(
+        base_url="http://127.0.0.1:8000", transport=httpx.MockTransport(handler)
+    ) as client:
+        post_signals(
+            client, "session_1", LECTURE_ID, signals, "synthetic-token", offset_ms=60_000
+        )
     assert seen["events"][0]["start_ms"] == signals[0].start_ms + 60_000
     assert "synthetic-token" not in json.dumps(seen)
 
@@ -159,7 +169,9 @@ def test_load_signals_reads_worker_lines_and_clip_summaries(tmp_path):
     path.write_text(
         signals[0].model_dump_json()
         + "\n"
-        + json.dumps({"clip": "synthetic.mp4", "signals": [signals[0].model_dump(mode="json")]})
+        + json.dumps(
+            {"clip": "synthetic.mp4", "signals": [signals[0].model_dump(mode="json")]}
+        )
         + "\n"
     )
     assert len(load_signals(path)) == 2
@@ -174,7 +186,9 @@ def test_camera_loss_reports_unavailable_and_emits_no_false_events():
         ScriptedAnalyzer(FrameObservation(0.0, 0.0, 0.0, None)), StudentSignalPolicy()
     )
     collected = []
-    run_capture(FakeCamera(4, lose_camera=True), worker, 0, collected.append, ticking_clock())
+    run_capture(
+        FakeCamera(4, lose_camera=True), worker, 0, collected.append, ticking_clock()
+    )
     assert collected == [] and worker.is_available is False and worker.active == {}
 
 
@@ -183,7 +197,9 @@ def test_normal_end_flushes_open_interval():
         ScriptedAnalyzer(FrameObservation(0.99, 0.9, 0.9, 0.0)), StudentSignalPolicy()
     )
     collected = []
-    run_capture(FakeCamera(8, lose_camera=False), worker, 5_000, collected.append, ticking_clock())
+    run_capture(
+        FakeCamera(8, lose_camera=False), worker, 5_000, collected.append, ticking_clock()
+    )
     assert [s.event_type for s in collected] == ["phone_visible"]
     assert collected[0].start_ms >= 5_000
 

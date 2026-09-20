@@ -46,7 +46,9 @@ def test_head_away_can_use_a_shorter_minimum_without_changing_other_signals():
 def test_phone_never_qualifies_alone_even_with_a_short_head_away_minimum():
     rules = service(min_head_away_window_ms=1_000)
     assert not rules.is_recovery_eligible(event("phone_visible", 60))
-    assert not rules.is_recovery_eligible(event("possible_missed_window", 5, ["phone_visible"]))
+    assert not rules.is_recovery_eligible(
+        event("possible_missed_window", 5, ["phone_visible"])
+    )
 
 
 def test_demo_environment_defaults_a_short_head_away_minimum(monkeypatch):

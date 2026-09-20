@@ -157,7 +157,11 @@ def test_model_verification_requires_approval_and_matching_digest(tmp_path):
     path = tmp_path / "synthetic.onnx"
     path.write_bytes(b"not a model")
     manifest = ModelManifest(
-        sha256="0" * 64, source="synthetic", license="synthetic-test", version="v1", input_size=320
+        sha256="0" * 64,
+        source="synthetic",
+        license="synthetic-test",
+        version="v1",
+        input_size=320,
     )
     with pytest.raises(ValueError):
         verify_model_file(path, manifest)
@@ -181,7 +185,10 @@ def sequence_worker(observations):
 
 
 def test_brief_dropout_within_the_merge_gap_keeps_one_interval():
-    phone, none = FrameObservation(0.99, 0.8, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 0.0)
+    phone, none = (
+        FrameObservation(0.99, 0.8, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+    )
     worker = sequence_worker([phone] * 3 + [none] + [phone] * 3)
     signals = run(worker, 7) + worker.flush(6 * STEP_MS)
     assert [s.event_type for s in signals] == ["phone_visible"]
@@ -189,7 +196,10 @@ def test_brief_dropout_within_the_merge_gap_keeps_one_interval():
 
 
 def test_pause_longer_than_the_merge_gap_splits_into_two_intervals():
-    phone, none = FrameObservation(0.99, 0.8, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 0.0)
+    phone, none = (
+        FrameObservation(0.99, 0.8, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+    )
     worker = sequence_worker([phone] * 3 + [none] * 3 + [phone] * 3)
     signals = run(worker, 9) + worker.flush(8 * STEP_MS)
     assert [s.event_type for s in signals] == ["phone_visible", "phone_visible"]
@@ -197,7 +207,10 @@ def test_pause_longer_than_the_merge_gap_splits_into_two_intervals():
 
 
 def test_person_who_sits_at_an_angle_is_not_flagged_but_a_real_turn_is():
-    angled, turned = FrameObservation(0.99, 0.0, 0.9, 0.9), FrameObservation(0.99, 0.0, 0.9, 2.0)
+    angled, turned = (
+        FrameObservation(0.99, 0.0, 0.9, 0.9),
+        FrameObservation(0.99, 0.0, 0.9, 2.0),
+    )
     worker = sequence_worker([angled] * 8 + [turned] * 4)
     signals = run(worker, 12) + worker.flush(11 * STEP_MS)
     assert [s.event_type for s in signals] == ["head_away"]
@@ -205,7 +218,10 @@ def test_person_who_sits_at_an_angle_is_not_flagged_but_a_real_turn_is():
 
 
 def test_long_turn_is_reported_for_its_whole_length_not_absorbed_into_the_baseline():
-    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
+    forward, turned = (
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 1.3),
+    )
     worker = sequence_worker([forward] * 6 + [turned] * 60)
     signals = run(worker, 66) + worker.flush(65 * STEP_MS)
     assert [s.event_type for s in signals] == ["head_away"]
@@ -213,11 +229,16 @@ def test_long_turn_is_reported_for_its_whole_length_not_absorbed_into_the_baseli
 
 
 def test_turn_longer_than_the_reset_is_treated_as_a_new_seating_position():
-    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
+    forward, turned = (
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 1.3),
+    )
     worker = sequence_worker([forward] * 6 + [turned] * 400)
     signals = run(worker, 406) + worker.flush(405 * STEP_MS)
     assert [s.event_type for s in signals] == ["head_away"]
-    assert signals[0].end_ms - signals[0].start_ms < 70_000  # Re-baselined after about a minute.
+    assert (
+        signals[0].end_ms - signals[0].start_ms < 70_000
+    )  # Re-baselined after about a minute.
 
 
 def test_phone_score_without_a_person_is_ignored():
@@ -235,8 +256,13 @@ def test_baseline_is_discarded_when_the_camera_is_lost():
 
 
 def test_face_lost_after_a_turn_continues_head_away_instead_of_face_absent():
-    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
-    profile = FrameObservation(0.99, 0.0, 0.0, None)  # Person still there, face no longer found.
+    forward, turned = (
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 1.3),
+    )
+    profile = FrameObservation(
+        0.99, 0.0, 0.0, None
+    )  # Person still there, face no longer found.
     worker = sequence_worker([forward] * 4 + [turned] * 4 + [profile] * 8)
     signals = run(worker, 16) + worker.flush(15 * STEP_MS)
     assert [s.event_type for s in signals] == ["head_away"]
@@ -244,15 +270,24 @@ def test_face_lost_after_a_turn_continues_head_away_instead_of_face_absent():
 
 
 def test_face_lost_while_facing_forward_is_face_absent():
-    forward, covered = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.0, None)
+    forward, covered = (
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.0, None),
+    )
     worker = sequence_worker([forward] * 4 + [covered] * 6)
     signals = run(worker, 10) + worker.flush(9 * STEP_MS)
     assert [s.event_type for s in signals] == ["face_absent"]
 
 
 def test_leaving_after_a_turn_reports_left_frame_and_forgets_the_turn():
-    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
-    gone, back_no_face = FrameObservation(0.0, 0.0, 0.0, None), FrameObservation(0.99, 0.0, 0.0, None)
+    forward, turned = (
+        FrameObservation(0.99, 0.0, 0.9, 0.0),
+        FrameObservation(0.99, 0.0, 0.9, 1.3),
+    )
+    gone, back_no_face = (
+        FrameObservation(0.0, 0.0, 0.0, None),
+        FrameObservation(0.99, 0.0, 0.0, None),
+    )
     worker = sequence_worker([forward] * 4 + [turned] * 3 + [gone] * 4 + [back_no_face] * 6)
     signals = run(worker, 17) + worker.flush(16 * STEP_MS)
     labels = [s.event_type for s in signals]
