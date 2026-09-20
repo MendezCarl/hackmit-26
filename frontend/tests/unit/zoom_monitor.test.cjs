@@ -1,5 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const { readFile } = require('node:fs/promises');
+const { join } = require('node:path');
 
 test('parseZoomRunning detects Zoom.exe in Windows CSV output', async () => {
   const { parseZoomRunning } = await import('../../dist/main/zoom_monitor.js');

@@ -17,6 +17,19 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 SCHEMA_VERSION = "1.0.0"
 
 
+class ApiStatusResponse(BaseModel):
+    """Response describing API readiness and the configured recovery provider."""
+
+    message: str = Field(
+        description="Human-readable API status message.",
+        examples=["FastAPI backend is ready."],
+    )
+    recovery_provider: str = Field(
+        description="Provider identity used for recovery-card generation.",
+        examples=["mock"],
+    )
+
+
 class SessionMode(str, Enum):
     """How a lecture session is held."""
 

@@ -33,7 +33,10 @@ def test_api_status_returns_ready_message() -> None:
     client = build_test_client()
     response = client.get("/api/status")
     assert response.status_code == 200
-    assert response.json() == {"message": "FastAPI backend is ready."}
+    assert response.json() == {
+        "message": "FastAPI backend is ready.",
+        "recovery_provider": "mock",
+    }
 
 
 def test_demo_run_is_unavailable_outside_demo_mode() -> None:

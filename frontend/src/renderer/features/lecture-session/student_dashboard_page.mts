@@ -15,6 +15,8 @@ export type StudentDashboardModel = {
   submittedEvents: SignalEvent[];
   zoomRunning: boolean;
   zoomBannerDismissed: boolean;
+  externalTextConsentGranted: boolean;
+  externalTextConsentNote: string | null;
 };
 
 const FIXTURE_MODEL: StudentDashboardModel = {
@@ -27,6 +29,8 @@ const FIXTURE_MODEL: StudentDashboardModel = {
   submittedEvents: [],
   zoomRunning: false,
   zoomBannerDismissed: false,
+  externalTextConsentGranted: false,
+  externalTextConsentNote: null,
 };
 
 /**
@@ -121,6 +125,13 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
           <p>${model.participantCount ?? 0} participant(s) joined.</p>
           <button class="primary-button" type="button" data-missed-that>I missed that</button>
         </article>
+        <section class="panel recovery-consent">
+          <label>
+            <input type="checkbox" data-external-text-consent ${model.externalTextConsentGranted ? 'checked' : ''} />
+            Allow bounded transcript text to be sent to the AI provider for recovery cards
+          </label>
+          <p class="form-message" data-external-text-consent-message aria-live="polite">${model.externalTextConsentNote ? escapeHtml(model.externalTextConsentNote) : ''}</p>
+        </section>
         <form class="section-block login-card form-card" data-transcript-form>
           <label>Local transcript<textarea name="text" required></textarea></label>
           <button class="secondary-button" type="submit">Add transcript</button>

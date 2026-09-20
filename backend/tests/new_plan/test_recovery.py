@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.contracts.learning import RecoveryDraft
+from app.integrations.meta_muse.recovery import MuseRecoveryGenerator
 from app.integrations.openai.recovery import OpenAIRecoveryGenerator
 
 from .fixtures import headers, setup
@@ -104,6 +105,21 @@ def test_openai_consent_minimal_payload_measured_usage_and_revocation():
         json={**consent, "is_allowed": False},
     )
     assert request(client, base).status_code == 403
+
+
+def test_meta_muse_consent_allows_bounded_recovery_text():
+    """Muse users can grant consent to the provider selected by the backend."""
+    responses = Responses()
+    generator = MuseRecoveryGenerator(
+        SimpleNamespace(responses=responses), "explicit-muse-test-model"
+    )
+    client, _session, base = setup(generator)
+    assert request(client, base).status_code == 403
+    consent = {"provider": "meta_muse", "is_allowed": True}
+    response = client.put(base + "/external-text-consent", headers=headers(), json=consent)
+    assert response.status_code == 200, response.text
+    job = request(client, base).json()
+    assert job["status"] == "completed", job
 
 
 @pytest.mark.parametrize(

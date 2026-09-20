@@ -14,6 +14,7 @@ from app.config import (
     Settings,
     get_settings,
 )
+from app.contracts.models import ApiStatusResponse
 from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.core.logging_redaction import install_logging
@@ -57,15 +58,6 @@ class HealthResponse(BaseModel):
     """Response returned by the liveness endpoint."""
 
     status: str = Field(description="Current process health state.", examples=["ok"])
-
-
-class ApiStatusResponse(BaseModel):
-    """Response describing whether the API is ready."""
-
-    message: str = Field(
-        description="Human-readable API status message.",
-        examples=["FastAPI backend is ready."],
-    )
 
 
 def create_app(
@@ -226,7 +218,10 @@ def create_app(
             A typed status response confirming that the API is ready.
         """
 
-        return ApiStatusResponse(message="FastAPI backend is ready.")
+        return ApiStatusResponse(
+            message="FastAPI backend is ready.",
+            recovery_provider=app.state.recovery_service.provider,
+        )
 
     return app
 

@@ -17,6 +17,7 @@ const invokeBackend = async <T>(operation: string, args: unknown[]): Promise<T> 
 const backendApi: BackendApi = {
   health: () => invokeBackend('health', []),
   apiStatus: () => invokeBackend('apiStatus', []),
+  readApiStatus: () => invokeBackend('readApiStatus', []),
   register: (request) => invokeBackend('register', [request]),
   login: (request) => invokeBackend('login', [request]),
   logout: () => invokeBackend('logout', []),
@@ -32,6 +33,8 @@ const backendApi: BackendApi = {
   joinSession: (sessionId) => invokeBackend('joinSession', [sessionId]),
   updateAggregationConsent: (sessionId, consent) =>
     invokeBackend('updateAggregationConsent', [sessionId, consent]),
+  updateExternalTextConsent: (sessionId, consent) =>
+    invokeBackend('updateExternalTextConsent', [sessionId, consent]),
   ingestEvents: (sessionId, request) => invokeBackend('ingestEvents', [sessionId, request]),
   ingestTranscript: (sessionId, request) => invokeBackend('ingestTranscript', [sessionId, request]),
   readTranscript: (sessionId, startMs, endMs) =>
