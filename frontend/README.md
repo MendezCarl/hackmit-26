@@ -20,6 +20,10 @@ npm run dev
 Set `BLOOM_BACKEND_URL` when the backend does not run at
 `http://127.0.0.1:8000`.
 
+Bloom's optional Zoom cue detects desktop process names locally; it does not
+use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is
+only a reminder to open Bloom and remains independent of Zoom's meeting data.
+
 Build a local installer with:
 
 ```sh

@@ -12,5 +12,6 @@ await rm(dist, { recursive: true, force: true });
 await execFileAsync(npx, ['tsc'], { cwd: root });
 await mkdir(dist, { recursive: true });
 await cp(join(root, 'index.html'), join(dist, 'index.html'));
+await cp(join(root, 'src', 'renderer', 'overlay.html'), join(dist, 'overlay.html'));
 await cp(join(root, 'src', 'renderer', 'styles.css'), join(dist, 'styles.css'));
 await cp(join(root, 'src', 'assets'), join(dist, 'assets'), { recursive: true });

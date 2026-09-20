@@ -17,6 +17,8 @@ import {
   setConsent,
   setRouteError,
   setRouteLoading,
+  setZoomBannerDismissed,
+  setZoomRunning,
 } from './services/backend_session_state.mjs';
 import {
   checkBackendHealth,
@@ -55,6 +57,7 @@ const readFormValues = (form: HTMLFormElement): Record<string, string> =>
   );
 
 let sessionClockTimer: number | undefined;
+let zoomDesktopBound = false;
 
 /**
  * Binds timeline marker selection to the current route's live moments.
@@ -196,6 +199,7 @@ const bindAuthentication = (): void => {
           });
       setBackendUser(session.user);
       setBackendState('connected');
+      window.bloomDesktop.setRole(session.user.role === 'professor' ? 'professor' : 'student');
       window.location.hash = buildRouteHash(
         session.user.role === 'professor' ? 'home' : 'student-dashboard',
       );
@@ -329,6 +333,28 @@ const bindStudentActions = (): void => {
   );
 };
 
+/** Binds local Zoom detection and overlay actions to renderer state. */
+const bindZoomDesktop = (): void => {
+  if (zoomDesktopBound) return;
+  zoomDesktopBound = true;
+  window.bloomDesktop.onZoomDetected(({ running }) => {
+    setZoomRunning(running);
+    if (running) setZoomBannerDismissed(false);
+    renderApplication();
+  });
+  window.bloomDesktop.onZoomOverlayOpen(() => {
+    const role = getBackendSessionState().user?.role;
+    if (role === 'professor') {
+      window.location.hash = buildRouteHash('home');
+    } else if (role === 'student') {
+      window.location.hash = buildRouteHash('student-dashboard');
+      window.setTimeout(() => {
+        document.querySelector<HTMLInputElement>('[data-join-session-form] input[name="join_code"]')?.focus();
+      }, 0);
+    }
+  });
+};
+
 /**
  * Binds educator course, lecture, session, and report actions.
  */
@@ -382,7 +408,7 @@ const bindEducatorActions = (route: AppRoute): void => {
           course_id: courseId,
           lecture_id: lectureId,
           title: lectureTitle,
-          mode: 'in_person',
+          mode: getBackendSessionState().zoomRunning ? 'zoom' : 'in_person',
         });
         setActiveSession(session);
         renderApplication();
@@ -403,6 +429,10 @@ const bindEducatorActions = (route: AppRoute): void => {
   });
   document.querySelectorAll<HTMLAnchorElement>('.course-group summary a').forEach((anchor) => {
     anchor.addEventListener('click', (event) => event.stopPropagation());
+  });
+  document.querySelector<HTMLButtonElement>('[data-dismiss-zoom-banner]')?.addEventListener('click', () => {
+    setZoomBannerDismissed(true);
+    renderApplication();
   });
   document
     .querySelector<HTMLButtonElement>('[data-end-session]')
@@ -446,6 +476,7 @@ const bindAccountActions = (): void => {
     ?.addEventListener('click', async () => {
       await window.backend.logout();
       clearBackendSessionState();
+      window.bloomDesktop.setRole(null);
       window.location.hash = buildRouteHash('login');
     });
 };
@@ -522,6 +553,7 @@ const bindRenderedApplication = (route: AppRoute): void => {
   bindSummaryTabs();
   bindLibraryFilters();
   bindAuthentication();
+  bindZoomDesktop();
   bindStudentActions();
   bindEducatorActions(route);
   bindAccountActions();

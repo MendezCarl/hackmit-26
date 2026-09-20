@@ -292,6 +292,18 @@ type BackendApi = {
   readConsent: () => Promise<ConsentSettings>;
   updateConsent: (request: UpdateConsentRequest) => Promise<ConsentSettings>;
 };
+type BloomRole = 'professor' | 'student' | null;
+interface ZoomDetectedPayload {
+  running: boolean;
+}
+interface BloomDesktopApi {
+  setRole: (role: BloomRole) => void;
+  onZoomDetected: (callback: (payload: ZoomDetectedPayload) => void) => () => void;
+  onZoomOverlayOpen: (callback: () => void) => () => void;
+  overlayAction: (action: 'open' | 'dismiss') => void;
+  getOverlayRole: () => BloomRole;
+}
 interface Window {
   backend: BackendApi;
+  bloomDesktop: BloomDesktopApi;
 }

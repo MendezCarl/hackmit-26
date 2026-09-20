@@ -103,7 +103,10 @@ test('educator home renders metrics and course links', async () => {
     professorMetricsBySession: {},
     professorSummariesBySession: {},
     activeSession: null,
+    zoomRunning: true,
+    zoomBannerDismissed: false,
   });
+  assert.match(page, /Zoom detected — start a session from a course below/);
   assert.match(page, /No lecture data yet/);
   assert.match(page, /course\?course_id=course-1/);
   assert.match(page, /data-open-course-modal/);
