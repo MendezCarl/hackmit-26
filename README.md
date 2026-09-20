@@ -1,6 +1,10 @@
-# hackmit-26
+# Bloom
 
-Electron TypeScript desktop app with a Python FastAPI backend.
+Bloom is a privacy-first Electron desktop app with a Python FastAPI backend.
+
+## Branding
+
+Bloom's platform icons live in `frontend/build/`. The source SVG used by the renderer lives in `frontend/src/assets/`. The Electron package metadata defines the product name, application ID, platform icon paths, and packaged runtime icon resources.
 
 ## Vision Processing Roadmap
 
