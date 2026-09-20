@@ -324,7 +324,9 @@ class CreateRecoveryJobRequest(_StrictModel):
     end_ms: int = Field(gt=0, description="Half-open interval end in ms.")
     source_event_ids: list[str] = Field(
         default_factory=list,
-        description="Signal events that motivated this request; validated against the session.",
+        description=(
+            "Signal events that motivated this request; validated against the session."
+        ),
     )
 
     @model_validator(mode="after")

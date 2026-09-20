@@ -21,7 +21,10 @@ class SessionService:
     """Creation and retrieval of lecture sessions on one shared clock."""
 
     def __init__(
-        self, store: InMemoryStore, settings: Settings, session_access: SessionAccess
+        self,
+        store: InMemoryStore,
+        settings: Settings,
+        session_access: SessionAccess,
     ) -> None:
         """Bind the service to shared storage, settings, and access resolution.
 

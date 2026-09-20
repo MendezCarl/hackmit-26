@@ -10,6 +10,7 @@ from app.auth.access import StoreSessionAccess
 from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
 from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
+from app.core.logging_redaction import install_logging
 from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
 from app.learning.composition import install_learning_features
@@ -86,6 +87,7 @@ def create_app(
         recovery_generator = OpenAIRecoveryGenerator(
             OpenAI(timeout=20.0, max_retries=1), model
         )
+    install_logging()
 
     app = FastAPI(
         title="Lecture Recovery Assistant API",

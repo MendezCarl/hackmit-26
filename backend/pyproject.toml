@@ -6,21 +6,44 @@ build-backend = "setuptools.build_meta"
 name = "hackmit-26-backend"
 version = "0.1.0"
 description = "FastAPI backend for privacy-first lecture missed-content recovery."
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
   "fastapi[standard]>=0.116.0",
   "pyjwt>=2.10.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0", "ruff>=0.9", "mypy>=1.15", "httpx>=0.28", "jsonschema>=4.23"]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.9",
+  "mypy>=1.15",
+  "httpx>=0.28",
+  "jsonschema>=4.23",
+]
 ai = ["openai>=2,<4"]
 vision = ["numpy>=2", "opencv-python-headless>=4.11", "onnxruntime>=1.20"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["app", "app.*"]
 namespaces = false
+
+[tool.ruff]
+line-length = 92
+target-version = "py313"
+
+[tool.ruff.lint]
+# UP042 (str+Enum -> StrEnum) is disabled: the frozen contract enums already
+# serialize correctly through Pydantic/OpenAPI and churn risks contract drift.
+select = [
+  "E",  # pycodestyle errors
+  "W",  # pycodestyle warnings
+  "F",  # pyflakes
+  "I",  # import order
+  "UP", # pyupgrade
+  "B",  # bugbear
+  "SIM", # simplify
+]
+ignore = ["UP042"]
