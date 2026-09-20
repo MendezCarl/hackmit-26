@@ -37,6 +37,10 @@ def ts_type(schema: dict[str, Any]) -> str:
     if kind == "array":
         return "Array<" + ts_type(schema["items"]) + ">"
     if kind == "object":
+        if not schema.get("properties") and isinstance(
+            schema.get("additionalProperties"), dict
+        ):
+            return "Record<string, " + ts_type(schema["additionalProperties"]) + ">"
         required = schema.get("required", [])
         return (
             "{ "

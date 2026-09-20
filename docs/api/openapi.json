@@ -437,12 +437,159 @@
         "title": "DeliveryFinding",
         "type": "object"
       },
+      "DemoCostComparison": {
+        "additionalProperties": false,
+        "description": "Compare fixture text sizes without claiming measured provider savings.\n\nTokens use a character heuristic, not a model tokenizer. Dollar values use\na deliberately hypothetical rate, exclude prompts/output, and are not bills.",
+        "properties": {
+          "baseline_method": {
+            "const": "all_final_fixture_transcript_text",
+            "default": "all_final_fixture_transcript_text",
+            "title": "Baseline Method",
+            "type": "string"
+          },
+          "cache_hits": {
+            "minimum": 0.0,
+            "title": "Cache Hits",
+            "type": "integer"
+          },
+          "data_label": {
+            "const": "synthetic_estimate",
+            "default": "synthetic_estimate",
+            "title": "Data Label",
+            "type": "string"
+          },
+          "estimated_input_reduction_ratio": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Input Reduction Ratio",
+            "type": "number"
+          },
+          "estimation_method": {
+            "const": "ceil_unicode_characters_div_4",
+            "default": "ceil_unicode_characters_div_4",
+            "title": "Estimation Method",
+            "type": "string"
+          },
+          "full_transcript_characters": {
+            "minimum": 0.0,
+            "title": "Full Transcript Characters",
+            "type": "integer"
+          },
+          "full_transcript_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Full Transcript Estimated Tokens",
+            "type": "integer"
+          },
+          "full_transcript_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Full Transcript Illustrative Input Usd",
+            "type": "number"
+          },
+          "generation_calls_avoided": {
+            "minimum": 0.0,
+            "title": "Generation Calls Avoided",
+            "type": "integer"
+          },
+          "illustrative_input_reduction_usd": {
+            "minimum": 0.0,
+            "title": "Illustrative Input Reduction Usd",
+            "type": "number"
+          },
+          "illustrative_input_usd_per_million_tokens": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Illustrative Input Usd Per Million Tokens",
+            "type": "number"
+          },
+          "measured_input_tokens": {
+            "title": "Measured Input Tokens",
+            "type": "null"
+          },
+          "measured_output_tokens": {
+            "title": "Measured Output Tokens",
+            "type": "null"
+          },
+          "measured_savings_usd": {
+            "title": "Measured Savings Usd",
+            "type": "null"
+          },
+          "mock_generation_calls": {
+            "minimum": 0.0,
+            "title": "Mock Generation Calls",
+            "type": "integer"
+          },
+          "pricing_basis": {
+            "const": "hypothetical_not_provider_pricing",
+            "default": "hypothetical_not_provider_pricing",
+            "title": "Pricing Basis",
+            "type": "string"
+          },
+          "provider_api_calls": {
+            "const": 0,
+            "default": 0,
+            "title": "Provider Api Calls",
+            "type": "integer"
+          },
+          "scope": {
+            "const": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "default": "transcript_input_only_excludes_prompt_metadata_and_output",
+            "title": "Scope",
+            "type": "string"
+          },
+          "selected_context_characters": {
+            "minimum": 0.0,
+            "title": "Selected Context Characters",
+            "type": "integer"
+          },
+          "selected_context_estimated_tokens": {
+            "minimum": 0.0,
+            "title": "Selected Context Estimated Tokens",
+            "type": "integer"
+          },
+          "selected_context_illustrative_input_usd": {
+            "minimum": 0.0,
+            "title": "Selected Context Illustrative Input Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "full_transcript_characters",
+          "selected_context_characters",
+          "full_transcript_estimated_tokens",
+          "selected_context_estimated_tokens",
+          "estimated_input_reduction_ratio",
+          "full_transcript_illustrative_input_usd",
+          "selected_context_illustrative_input_usd",
+          "illustrative_input_reduction_usd",
+          "mock_generation_calls",
+          "cache_hits",
+          "generation_calls_avoided"
+        ],
+        "title": "DemoCostComparison",
+        "type": "object"
+      },
+      "DemoRunRequest": {
+        "additionalProperties": false,
+        "description": "Empty optional body: client identities, media and provider overrides are forbidden.",
+        "properties": {},
+        "title": "DemoRunRequest",
+        "type": "object"
+      },
       "DemoRunResult": {
         "description": "Summary of one fully synthetic demo run.",
         "properties": {
           "cached_recovery_job": {
             "$ref": "#/components/schemas/RecoveryJob",
             "description": "Repeated recovery job demonstrating cache reuse."
+          },
+          "professor_metrics": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Coverage-aware anonymous report using the synthetic policy."
+          },
+          "professor_metrics_suppressed": {
+            "$ref": "#/components/schemas/ProfessorMetrics",
+            "description": "Same safe report with too few synthetic participants."
           },
           "professor_summary": {
             "$ref": "#/components/schemas/ProfessorSummary",
@@ -472,12 +619,24 @@
             "title": "Submitted Event Ids",
             "type": "array"
           },
+          "token_cost_comparison": {
+            "$ref": "#/components/schemas/DemoCostComparison",
+            "description": "Input-only heuristic comparison, never measured savings."
+          },
           "transcript_chunk_ids": {
             "description": "Ingested synthetic transcript chunk ids.",
             "items": {
               "type": "string"
             },
             "title": "Transcript Chunk Ids",
+            "type": "array"
+          },
+          "usage_records": {
+            "description": "Synthetic generation and cache ledger entries.",
+            "items": {
+              "$ref": "#/components/schemas/CostMetrics"
+            },
+            "title": "Usage Records",
             "type": "array"
           }
         },
@@ -489,7 +648,11 @@
           "recovery_card",
           "cached_recovery_job",
           "professor_summary",
-          "professor_summary_suppressed"
+          "professor_summary_suppressed",
+          "professor_metrics",
+          "professor_metrics_suppressed",
+          "token_cost_comparison",
+          "usage_records"
         ],
         "title": "DemoRunResult",
         "type": "object"
@@ -2295,8 +2458,25 @@
     },
     "/api/v1/demo/runs": {
       "post": {
-        "description": "Execute the full synthetic recovery pipeline for demonstration.",
+        "description": "Requires APP_ENV=demo; no JWT needed because all data is synthetic and isolated. Optional empty JSON body only. Returns a sourced mock card, anonymous reports and an input-only heuristic cost illustration. No provider calls or persistent session IDs. Non-demo access: 404; invalid fields: 422; oversized body: 413; generation failure: 502.",
         "operationId": "run_demo_api_v1_demo_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DemoRunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -2307,6 +2487,66 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
           }
         },
         "summary": "Run the synthetic end-to-end demo",

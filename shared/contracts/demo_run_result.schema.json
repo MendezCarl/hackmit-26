@@ -1,0 +1,1178 @@
+{
+  "$defs": {
+    "CostMetrics": {
+      "description": "Provider usage metrics for one recovery generation.",
+      "properties": {
+        "baseline_method": {
+          "description": "Baseline comparison method; never implies fake responses save money.",
+          "title": "Baseline Method",
+          "type": "string"
+        },
+        "cache_status": {
+          "description": "``miss`` or ``hit`` for this generation.",
+          "title": "Cache Status",
+          "type": "string"
+        },
+        "data_label": {
+          "description": "``synthetic`` for mock usage; ``measured`` for real provider calls.",
+          "title": "Data Label",
+          "type": "string"
+        },
+        "input_usage": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Measured input usage, e.g. ``{\"characters\": 1200}``.",
+          "title": "Input Usage",
+          "type": "object"
+        },
+        "job_id": {
+          "description": "Recovery job the metrics belong to.",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "latency_ms": {
+          "description": "Generation latency in milliseconds.",
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "description": "Model identifier used.",
+          "title": "Model",
+          "type": "string"
+        },
+        "output_usage": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Measured output usage.",
+          "title": "Output Usage",
+          "type": "object"
+        },
+        "provider_mode": {
+          "description": "Mock or live provider mode.",
+          "title": "Provider Mode",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session the job belongs to.",
+          "title": "Session Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "session_id",
+        "provider_mode",
+        "model",
+        "input_usage",
+        "output_usage",
+        "cache_status",
+        "latency_ms",
+        "baseline_method",
+        "data_label"
+      ],
+      "title": "CostMetrics",
+      "type": "object"
+    },
+    "DeliveryFinding": {
+      "additionalProperties": false,
+      "description": "Professor-visible delivery evidence contains no detector identity or student data.",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "signal_type": {
+          "enum": [
+            "presenter_out_of_frame",
+            "board_or_screen_occluded",
+            "slide_text_low_legibility"
+          ],
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "suggested_action": {
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "signal_type",
+        "confidence",
+        "suggested_action"
+      ],
+      "title": "DeliveryFinding",
+      "type": "object"
+    },
+    "DemoCostComparison": {
+      "additionalProperties": false,
+      "description": "Compare fixture text sizes without claiming measured provider savings.\n\nTokens use a character heuristic, not a model tokenizer. Dollar values use\na deliberately hypothetical rate, exclude prompts/output, and are not bills.",
+      "properties": {
+        "baseline_method": {
+          "const": "all_final_fixture_transcript_text",
+          "default": "all_final_fixture_transcript_text",
+          "title": "Baseline Method",
+          "type": "string"
+        },
+        "cache_hits": {
+          "minimum": 0,
+          "title": "Cache Hits",
+          "type": "integer"
+        },
+        "data_label": {
+          "const": "synthetic_estimate",
+          "default": "synthetic_estimate",
+          "title": "Data Label",
+          "type": "string"
+        },
+        "estimated_input_reduction_ratio": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Estimated Input Reduction Ratio",
+          "type": "number"
+        },
+        "estimation_method": {
+          "const": "ceil_unicode_characters_div_4",
+          "default": "ceil_unicode_characters_div_4",
+          "title": "Estimation Method",
+          "type": "string"
+        },
+        "full_transcript_characters": {
+          "minimum": 0,
+          "title": "Full Transcript Characters",
+          "type": "integer"
+        },
+        "full_transcript_estimated_tokens": {
+          "minimum": 0,
+          "title": "Full Transcript Estimated Tokens",
+          "type": "integer"
+        },
+        "full_transcript_illustrative_input_usd": {
+          "minimum": 0,
+          "title": "Full Transcript Illustrative Input Usd",
+          "type": "number"
+        },
+        "generation_calls_avoided": {
+          "minimum": 0,
+          "title": "Generation Calls Avoided",
+          "type": "integer"
+        },
+        "illustrative_input_reduction_usd": {
+          "minimum": 0,
+          "title": "Illustrative Input Reduction Usd",
+          "type": "number"
+        },
+        "illustrative_input_usd_per_million_tokens": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Illustrative Input Usd Per Million Tokens",
+          "type": "number"
+        },
+        "measured_input_tokens": {
+          "default": null,
+          "title": "Measured Input Tokens",
+          "type": "null"
+        },
+        "measured_output_tokens": {
+          "default": null,
+          "title": "Measured Output Tokens",
+          "type": "null"
+        },
+        "measured_savings_usd": {
+          "default": null,
+          "title": "Measured Savings Usd",
+          "type": "null"
+        },
+        "mock_generation_calls": {
+          "minimum": 0,
+          "title": "Mock Generation Calls",
+          "type": "integer"
+        },
+        "pricing_basis": {
+          "const": "hypothetical_not_provider_pricing",
+          "default": "hypothetical_not_provider_pricing",
+          "title": "Pricing Basis",
+          "type": "string"
+        },
+        "provider_api_calls": {
+          "const": 0,
+          "default": 0,
+          "title": "Provider Api Calls",
+          "type": "integer"
+        },
+        "scope": {
+          "const": "transcript_input_only_excludes_prompt_metadata_and_output",
+          "default": "transcript_input_only_excludes_prompt_metadata_and_output",
+          "title": "Scope",
+          "type": "string"
+        },
+        "selected_context_characters": {
+          "minimum": 0,
+          "title": "Selected Context Characters",
+          "type": "integer"
+        },
+        "selected_context_estimated_tokens": {
+          "minimum": 0,
+          "title": "Selected Context Estimated Tokens",
+          "type": "integer"
+        },
+        "selected_context_illustrative_input_usd": {
+          "minimum": 0,
+          "title": "Selected Context Illustrative Input Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "full_transcript_characters",
+        "selected_context_characters",
+        "full_transcript_estimated_tokens",
+        "selected_context_estimated_tokens",
+        "estimated_input_reduction_ratio",
+        "full_transcript_illustrative_input_usd",
+        "selected_context_illustrative_input_usd",
+        "illustrative_input_reduction_usd",
+        "mock_generation_calls",
+        "cache_hits",
+        "generation_calls_avoided"
+      ],
+      "title": "DemoCostComparison",
+      "type": "object"
+    },
+    "JobFailure": {
+      "description": "A typed, recoverable failure attached to a failed job.",
+      "properties": {
+        "message": {
+          "description": "Human-readable, compassionate failure explanation.",
+          "title": "Message",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/JobFailureReason",
+          "description": "Stable typed failure reason."
+        }
+      },
+      "required": [
+        "reason",
+        "message"
+      ],
+      "title": "JobFailure",
+      "type": "object"
+    },
+    "JobFailureReason": {
+      "description": "Typed, recoverable failure reasons for recovery jobs.",
+      "enum": [
+        "missing_transcript_context",
+        "provider_refused",
+        "provider_timeout",
+        "provider_malformed_output",
+        "validation_failed",
+        "internal_error"
+      ],
+      "title": "JobFailureReason",
+      "type": "string"
+    },
+    "JobStatus": {
+      "description": "Lifecycle state of a recovery job.",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
+    "LectureSession": {
+      "description": "One running occurrence of a lecture on the shared lecture clock.",
+      "properties": {
+        "course_id": {
+          "description": "Owning course identifier.",
+          "title": "Course Id",
+          "type": "string"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "UTC ISO 8601 end time.",
+          "title": "Ended At"
+        },
+        "lecture_id": {
+          "description": "Identifier of the underlying lecture record.",
+          "title": "Lecture Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/SessionMode",
+          "description": "How the session is held."
+        },
+        "owner_id": {
+          "description": "Authenticated user who started the session.",
+          "title": "Owner Id",
+          "type": "string"
+        },
+        "session_clock_origin": {
+          "description": "UTC ISO 8601 origin of the shared lecture clock.",
+          "title": "Session Clock Origin",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Unique identifier for this occurrence.",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "started_at": {
+          "description": "UTC ISO 8601 start time ending in Z.",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/SessionStatus",
+          "description": "Current lifecycle state."
+        },
+        "title": {
+          "description": "Human-readable lecture-session title.",
+          "title": "Title",
+          "type": "string"
+        },
+        "zoom_meeting_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Zoom meeting identifier when authorized.",
+          "title": "Zoom Meeting Id"
+        }
+      },
+      "required": [
+        "session_id",
+        "lecture_id",
+        "owner_id",
+        "course_id",
+        "title",
+        "mode",
+        "status",
+        "started_at",
+        "session_clock_origin"
+      ],
+      "title": "LectureSession",
+      "type": "object"
+    },
+    "MetricsBucket": {
+      "additionalProperties": false,
+      "description": "One fixed bucket; suppression hides counts, ratios and evidence alike.",
+      "properties": {
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleasedRatio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "is_hotspot": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Hotspot"
+        },
+        "possible_missed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleasedRatio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "suppressed",
+            "insufficient_evidence"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Action"
+        },
+        "transcript_chunk_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Transcript Chunk Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "status"
+      ],
+      "title": "MetricsBucket",
+      "type": "object"
+    },
+    "ModelMetadata": {
+      "additionalProperties": false,
+      "description": "Provider metadata recorded with every generated card.",
+      "properties": {
+        "data_label": {
+          "default": "synthetic",
+          "description": "Synthetic for mock usage; measured only for real provider calls.",
+          "enum": [
+            "synthetic",
+            "measured"
+          ],
+          "title": "Data Label",
+          "type": "string"
+        },
+        "input_character_count": {
+          "description": "Bounded input size.",
+          "minimum": 0,
+          "title": "Input Character Count",
+          "type": "integer"
+        },
+        "latency_ms": {
+          "description": "Generation latency in milliseconds.",
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "description": "Model identifier used for generation.",
+          "title": "Model",
+          "type": "string"
+        },
+        "output_character_count": {
+          "description": "Generated output size.",
+          "minimum": 0,
+          "title": "Output Character Count",
+          "type": "integer"
+        },
+        "output_schema_version": {
+          "description": "Version of the output schema.",
+          "title": "Output Schema Version",
+          "type": "string"
+        },
+        "prompt_version": {
+          "description": "Version of the recovery prompt.",
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "provider": {
+          "description": "Provider name, e.g. ``mock`` or ``openai``.",
+          "title": "Provider",
+          "type": "string"
+        },
+        "provider_mode": {
+          "description": "Execution mode; mock responses are labeled synthetic.",
+          "enum": [
+            "mock",
+            "live"
+          ],
+          "title": "Provider Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "provider_mode",
+        "prompt_version",
+        "output_schema_version",
+        "input_character_count",
+        "output_character_count",
+        "latency_ms"
+      ],
+      "title": "ModelMetadata",
+      "type": "object"
+    },
+    "ProfessorMetrics": {
+      "additionalProperties": false,
+      "description": "Coverage-aware teaching report; missing learning outcomes are never invented.",
+      "properties": {
+        "bucket_ms": {
+          "title": "Bucket Ms",
+          "type": "integer"
+        },
+        "buckets": {
+          "items": {
+            "$ref": "#/$defs/MetricsBucket"
+          },
+          "title": "Buckets",
+          "type": "array"
+        },
+        "continuity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleasedRatio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "delivery_findings": {
+          "items": {
+            "$ref": "#/$defs/DeliveryFinding"
+          },
+          "title": "Delivery Findings",
+          "type": "array"
+        },
+        "minimum_group_size": {
+          "title": "Minimum Group Size",
+          "type": "integer"
+        },
+        "policy_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "recovery_outcomes_status": {
+          "const": "not_collected",
+          "default": "not_collected",
+          "title": "Recovery Outcomes Status",
+          "type": "string"
+        },
+        "session_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "suppressed",
+            "insufficient_evidence"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "policy_version",
+        "status",
+        "minimum_group_size",
+        "bucket_ms",
+        "buckets"
+      ],
+      "title": "ProfessorMetrics",
+      "type": "object"
+    },
+    "ProfessorSummary": {
+      "description": "Anonymous, aggregated, threshold-safe professor report.\n\nNever includes student IDs, names, device IDs, or individual confidence\nvalues. Small groups are suppressed.",
+      "properties": {
+        "aggregation_window_ms": {
+          "description": "Fixed bucket width in ms.",
+          "minimum": 1,
+          "title": "Aggregation Window Ms",
+          "type": "integer"
+        },
+        "generated_at": {
+          "description": "UTC ISO 8601 generation time ending in Z.",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "highest_signal_intervals": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SignalIntervalAggregate"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Anonymous dense intervals; null while suppressed.",
+          "title": "Highest Signal Intervals"
+        },
+        "is_suppressed": {
+          "description": "True when the group is too small to release aggregates.",
+          "title": "Is Suppressed",
+          "type": "boolean"
+        },
+        "minimum_group_size": {
+          "description": "Approved minimum group-size threshold.",
+          "minimum": 1,
+          "title": "Minimum Group Size",
+          "type": "integer"
+        },
+        "participant_count": {
+          "description": "Unique participating, opted-in users, not events; deduplicated.",
+          "minimum": 0,
+          "title": "Participant Count",
+          "type": "integer"
+        },
+        "session_id": {
+          "description": "Session the summary describes.",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "suggested_actions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compassionate suggestions; null while suppressed.",
+          "title": "Suggested Actions"
+        },
+        "summary_id": {
+          "description": "Unique summary identifier.",
+          "title": "Summary Id",
+          "type": "string"
+        },
+        "timeline_buckets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TimelineBucket"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Anonymous buckets; null while suppressed.",
+          "title": "Timeline Buckets"
+        }
+      },
+      "required": [
+        "summary_id",
+        "session_id",
+        "participant_count",
+        "minimum_group_size",
+        "aggregation_window_ms",
+        "is_suppressed",
+        "generated_at"
+      ],
+      "title": "ProfessorSummary",
+      "type": "object"
+    },
+    "RecoveryCard": {
+      "description": "A grounded, compassionate explanation of missed lecture content.",
+      "properties": {
+        "card_id": {
+          "description": "Unique recovery-card identifier.",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC ISO 8601 creation time ending in Z.",
+          "title": "Created At",
+          "type": "string"
+        },
+        "example_from_lecture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Closest lecture excerpt to the missed interval.",
+          "title": "Example From Lecture"
+        },
+        "follow_up_question": {
+          "description": "Suggested follow-up for the student.",
+          "title": "Follow Up Question",
+          "type": "string"
+        },
+        "key_facts": {
+          "description": "Grounded facts from the lecture context.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Key Facts",
+          "type": "array"
+        },
+        "model_metadata": {
+          "$ref": "#/$defs/ModelMetadata",
+          "description": "Provider and usage metadata."
+        },
+        "session_id": {
+          "description": "Session the card was generated for.",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "source_event_ids": {
+          "description": "Signal events that motivated this card.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Event Ids",
+          "type": "array"
+        },
+        "source_timestamps": {
+          "description": "Source references and timestamps grounding the card.",
+          "items": {
+            "$ref": "#/$defs/SourceTimestamp"
+          },
+          "title": "Source Timestamps",
+          "type": "array"
+        },
+        "topic": {
+          "description": "Short topic label for what was missed.",
+          "title": "Topic",
+          "type": "string"
+        },
+        "what_you_missed": {
+          "description": "Compassionate explanation of the missed content.",
+          "title": "What You Missed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_id",
+        "session_id",
+        "source_event_ids",
+        "topic",
+        "what_you_missed",
+        "key_facts",
+        "source_timestamps",
+        "follow_up_question",
+        "model_metadata",
+        "created_at"
+      ],
+      "title": "RecoveryCard",
+      "type": "object"
+    },
+    "RecoveryJob": {
+      "description": "Recovery generation job for one requested interval.",
+      "properties": {
+        "cache_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "miss",
+                "hit"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether generation reused a cached card.",
+          "title": "Cache Status"
+        },
+        "card_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Card reference when completed.",
+          "title": "Card Id"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "UTC ISO 8601 completion time ending in Z.",
+          "title": "Completed At"
+        },
+        "created_at": {
+          "description": "UTC ISO 8601 creation time ending in Z.",
+          "title": "Created At",
+          "type": "string"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JobFailure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Typed failure when failed."
+        },
+        "job_id": {
+          "description": "Unique recovery-job identifier.",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "requested_end_ms": {
+          "description": "Requested interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "Requested End Ms",
+          "type": "integer"
+        },
+        "requested_start_ms": {
+          "description": "Requested interval start in ms.",
+          "minimum": 0,
+          "title": "Requested Start Ms",
+          "type": "integer"
+        },
+        "session_id": {
+          "description": "Session the job belongs to.",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/JobStatus",
+          "description": "Current job status."
+        }
+      },
+      "required": [
+        "job_id",
+        "session_id",
+        "status",
+        "requested_start_ms",
+        "requested_end_ms",
+        "created_at"
+      ],
+      "title": "RecoveryJob",
+      "type": "object"
+    },
+    "ReleasedRatio": {
+      "additionalProperties": false,
+      "description": "A ratio with its denominator; absent means insufficient or suppressed evidence.",
+      "properties": {
+        "denominator": {
+          "exclusiveMinimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "ratio": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Ratio",
+          "type": "number"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "ratio"
+      ],
+      "title": "ReleasedRatio",
+      "type": "object"
+    },
+    "SessionMode": {
+      "description": "How a lecture session is held.",
+      "enum": [
+        "zoom",
+        "in_person"
+      ],
+      "title": "SessionMode",
+      "type": "string"
+    },
+    "SessionStatus": {
+      "description": "Lifecycle state of a lecture session.",
+      "enum": [
+        "created",
+        "active",
+        "ending",
+        "ended",
+        "failed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    },
+    "SignalIntervalAggregate": {
+      "description": "Anonymous aggregate for one interval with high signal density.",
+      "properties": {
+        "dominant_event_types": {
+          "description": "Most common event types; never individual confidence values.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dominant Event Types",
+          "type": "array"
+        },
+        "end_ms": {
+          "description": "Interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_count": {
+          "description": "Anonymous event count in the interval.",
+          "minimum": 0,
+          "title": "Event Count",
+          "type": "integer"
+        },
+        "start_ms": {
+          "description": "Interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_count",
+        "dominant_event_types"
+      ],
+      "title": "SignalIntervalAggregate",
+      "type": "object"
+    },
+    "SourceTimestamp": {
+      "additionalProperties": false,
+      "description": "A grounded source reference with lecture-relative timestamps.",
+      "properties": {
+        "chunk_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source transcript chunk.",
+          "title": "Chunk Id"
+        },
+        "end_ms": {
+          "description": "Half-open interval end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source system name.",
+          "title": "Source"
+        },
+        "start_ms": {
+          "description": "Half-open interval start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms"
+      ],
+      "title": "SourceTimestamp",
+      "type": "object"
+    },
+    "TimelineBucket": {
+      "description": "Anonymous aggregate event count for one fixed time bucket.",
+      "properties": {
+        "end_ms": {
+          "description": "Bucket end in ms.",
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_count": {
+          "description": "Anonymous event count in the bucket.",
+          "minimum": 0,
+          "title": "Event Count",
+          "type": "integer"
+        },
+        "start_ms": {
+          "description": "Bucket start in ms.",
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_count"
+      ],
+      "title": "TimelineBucket",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Summary of one fully synthetic demo run.",
+  "properties": {
+    "cached_recovery_job": {
+      "$ref": "#/$defs/RecoveryJob",
+      "description": "Repeated recovery job demonstrating cache reuse."
+    },
+    "professor_metrics": {
+      "$ref": "#/$defs/ProfessorMetrics",
+      "description": "Coverage-aware anonymous report using the synthetic policy."
+    },
+    "professor_metrics_suppressed": {
+      "$ref": "#/$defs/ProfessorMetrics",
+      "description": "Same safe report with too few synthetic participants."
+    },
+    "professor_summary": {
+      "$ref": "#/$defs/ProfessorSummary",
+      "description": "Anonymous professor summary for the run."
+    },
+    "professor_summary_suppressed": {
+      "$ref": "#/$defs/ProfessorSummary",
+      "description": "Summary demonstrating small-group suppression."
+    },
+    "recovery_card": {
+      "$ref": "#/$defs/RecoveryCard",
+      "description": "Generated recovery card."
+    },
+    "recovery_job": {
+      "$ref": "#/$defs/RecoveryJob",
+      "description": "First recovery job result."
+    },
+    "session": {
+      "$ref": "#/$defs/LectureSession",
+      "description": "Created synthetic lecture session."
+    },
+    "submitted_event_ids": {
+      "description": "Synthetic missed-window events submitted by participants.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Submitted Event Ids",
+      "type": "array"
+    },
+    "token_cost_comparison": {
+      "$ref": "#/$defs/DemoCostComparison",
+      "description": "Input-only heuristic comparison, never measured savings."
+    },
+    "transcript_chunk_ids": {
+      "description": "Ingested synthetic transcript chunk ids.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Transcript Chunk Ids",
+      "type": "array"
+    },
+    "usage_records": {
+      "description": "Synthetic generation and cache ledger entries.",
+      "items": {
+        "$ref": "#/$defs/CostMetrics"
+      },
+      "title": "Usage Records",
+      "type": "array"
+    }
+  },
+  "required": [
+    "session",
+    "transcript_chunk_ids",
+    "submitted_event_ids",
+    "recovery_job",
+    "recovery_card",
+    "cached_recovery_job",
+    "professor_summary",
+    "professor_summary_suppressed",
+    "professor_metrics",
+    "professor_metrics_suppressed",
+    "token_cost_comparison",
+    "usage_records"
+  ],
+  "title": "DemoRunResult",
+  "type": "object"
+}

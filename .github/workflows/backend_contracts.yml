@@ -5,14 +5,17 @@ on:
     paths:
       - "backend/**"
       - "docs/api/**"
+      - "shared/contracts/**"
       - ".github/workflows/backend_contracts.yml"
   push:
     branches:
       - dev
       - main
+      - feature/backend-demo-health-metrics
     paths:
       - "backend/**"
       - "docs/api/**"
+      - "shared/contracts/**"
       - ".github/workflows/backend_contracts.yml"
 
 permissions:
@@ -47,7 +50,9 @@ jobs:
       - name: Verify learning contracts and quality
         run: |
           backend/venv/bin/python backend/scripts/generate_learning_contracts.py --check
+          backend/venv/bin/python backend/scripts/generate_demo_contracts.py --check
           backend/venv/bin/python -m ruff check backend/app backend/tests backend/scripts
           backend/venv/bin/python -m ruff format --check backend/app backend/tests backend/scripts
           backend/venv/bin/python -m mypy --follow-imports=silent --ignore-missing-imports backend/app
           backend/venv/bin/python backend/scripts/demo_new_plan.py
+          backend/venv/bin/python backend/scripts/demo_feature_seven.py

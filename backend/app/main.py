@@ -12,7 +12,6 @@ from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
-from app.demo.runner import DemoRunner
 from app.learning.composition import install_learning_features
 from app.professor.routes import router as professor_router
 from app.professor.service import ProfessorService
@@ -142,13 +141,6 @@ def create_app(
     professor_service = ProfessorService(
         store, settings, session_access, signal_service, event_publisher
     )
-    demo_runner = DemoRunner(
-        session_service,
-        signal_service,
-        transcript_service,
-        recovery_service,
-        professor_service,
-    )
 
     app.state.settings = settings
     app.state.store = store
@@ -161,7 +153,6 @@ def create_app(
     app.state.transcript_service = transcript_service
     app.state.recovery_service = recovery_service
     app.state.professor_service = professor_service
-    app.state.demo_runner = demo_runner
 
     install_learning_features(app)
 
