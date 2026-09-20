@@ -81,6 +81,8 @@ class Settings(BaseModel):
     - ``OPENAI_API_KEY`` and ``OPENAI_MODEL``: OpenAI live-provider settings.
     - ``MUSE_API_KEY``, ``MUSE_MODEL``, and ``MUSE_BASE_URL``: Meta Muse
       live-provider settings.
+    - ``MONGODB_URI`` and ``MONGODB_DATABASE``: optional MongoDB persistence;
+      the URI is never logged.
     - Threshold and limit knobs documented per field below.
     """
 
@@ -168,6 +170,14 @@ class Settings(BaseModel):
         default="https://api.meta.ai/v1",
         description="Base URL for the OpenAI-compatible Meta Model API.",
     )
+    mongodb_uri: str | None = Field(
+        default=None,
+        description="MongoDB connection URI; never logged.",
+    )
+    mongodb_database: str = Field(
+        default="bloom",
+        description="MongoDB database name for optional persistence.",
+    )
 
     def is_demo_or_test(self) -> bool:
         """Return whether privileged demo/test helpers are available."""
@@ -209,6 +219,8 @@ def _settings_from_environment() -> Settings:
         muse_api_key=os.environ.get("MUSE_API_KEY"),
         muse_model=os.environ.get("MUSE_MODEL", "muse-spark-1.2"),
         muse_base_url=os.environ.get("MUSE_BASE_URL", "https://api.meta.ai/v1"),
+        mongodb_uri=os.environ.get("MONGODB_URI"),
+        mongodb_database=os.environ.get("MONGODB_DATABASE", "bloom"),
     )
     if settings.app_env not in KNOWN_ENVIRONMENTS:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")

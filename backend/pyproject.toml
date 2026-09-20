@@ -21,6 +21,7 @@ dev = [
   "jsonschema>=4.23",
 ]
 ai = ["openai>=2,<4"]
+mongodb = ["pymongo>=4.10,<5"]
 vision = ["numpy>=2", "opencv-python-headless>=4.11", "onnxruntime>=1.20"]
 live = [
   "openai>=1.100.0",

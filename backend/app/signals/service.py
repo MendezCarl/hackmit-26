@@ -174,6 +174,7 @@ class SignalService:
         records.extend(
             EventRecord(event=event, submitted_by=actor.user_id) for event in request.events
         )
+        self._store.events[session_id] = records
 
         self._publisher.publish(
             self._publisher.build_envelope(
@@ -273,7 +274,8 @@ class SignalService:
                 "Professors cannot correct student signal events.",
             )
 
-        for record in self._store.events.get(session_id, []):
+        records = self._store.events.get(session_id, [])
+        for record in records:
             if record.event.event_id == event_id:
                 if record.submitted_by != actor.user_id:
                     raise AppError(
@@ -281,6 +283,7 @@ class SignalService:
                         "Only the submitting student can correct this event.",
                     )
                 record.event.user_confirmed = request.user_confirmed
+                self._store.events[session_id] = records
                 self._publisher.publish(
                     self._publisher.build_envelope(
                         session_id,

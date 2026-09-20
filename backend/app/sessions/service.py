@@ -84,3 +84,23 @@ class SessionService:
 
         membership = self._session_access.resolve_membership(actor, session_id)
         return self._store.sessions[membership.session_id]
+
+    def end_session(self, session_id: str) -> LectureSession:
+        """End one session and persist the changed session record.
+
+        Args:
+            session_id: Session to finalize.
+
+        Returns:
+            The persisted ended session.
+
+        Raises:
+            KeyError: If the session does not exist.
+        """
+
+        session = self._store.sessions[session_id]
+        if session.status != SessionStatus.ENDED:
+            session.status = SessionStatus.ENDED
+            session.ended_at = utc_now_iso()
+            self._store.sessions[session_id] = session
+        return session
