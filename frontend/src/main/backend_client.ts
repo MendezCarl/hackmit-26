@@ -102,6 +102,12 @@ export class BackendClient {
   async createSession(request: CreateSessionRequest): Promise<LectureSession> {
     return this.request('POST', '/api/v1/sessions', { body: request });
   }
+  async listSessions(filter: SessionListFilter = {}): Promise<LectureSession[]> {
+    const query: Record<string, string> = {};
+    if (filter.lecture_id !== undefined) query.lecture_id = filter.lecture_id;
+    if (filter.course_id !== undefined) query.course_id = filter.course_id;
+    return this.request('GET', '/api/v1/sessions', { query });
+  }
   async readSession(sessionId: string): Promise<LectureSession> {
     return this.request('GET', `/api/v1/sessions/${encodeURIComponent(sessionId)}`);
   }

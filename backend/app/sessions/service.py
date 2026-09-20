@@ -10,7 +10,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from app.auth.access import SessionAccess
-from app.auth.tokens import AuthenticatedActor
+from app.auth.tokens import ROLE_PROFESSOR, AuthenticatedActor
 from app.config import Settings
 from app.contracts.models import CreateSessionRequest, LectureSession, SessionStatus
 from app.core.clock import utc_now_iso
@@ -116,6 +116,42 @@ class SessionService:
 
         membership = self._session_access.resolve_membership(actor, session_id)
         return self._store.sessions[membership.session_id]
+
+    def list_owned_sessions(
+        self,
+        actor: AuthenticatedActor,
+        lecture_id: str | None = None,
+        course_id: str | None = None,
+    ) -> list[LectureSession]:
+        """List professor-owned lecture sessions with optional filters.
+
+        Args:
+            actor: Authenticated professor requesting owned sessions.
+            lecture_id: Optional lecture identifier filter.
+            course_id: Optional course identifier filter.
+
+        Returns:
+            Sessions owned by the professor, newest first.
+
+        Raises:
+            AppError: If the actor is not a professor.
+        """
+        if actor.role != ROLE_PROFESSOR:
+            raise AppError(
+                ErrorCode.FORBIDDEN,
+                "Only professors can list owned lecture sessions.",
+            )
+        return sorted(
+            (
+                session
+                for session in self._store.sessions.values()
+                if session.owner_id == actor.user_id
+                and (lecture_id is None or session.lecture_id == lecture_id)
+                and (course_id is None or session.course_id == course_id)
+            ),
+            key=lambda session: session.started_at,
+            reverse=True,
+        )
 
     def end_session(self, session_id: str) -> LectureSession:
         """End one session and persist the changed session record.

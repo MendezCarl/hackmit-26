@@ -26,6 +26,7 @@ const backendApi: BackendApi = {
   listLectures: (courseId) => invokeBackend('listLectures', [courseId]),
   createLecture: (request) => invokeBackend('createLecture', [request]),
   createSession: (request) => invokeBackend('createSession', [request]),
+  listSessions: (filter) => invokeBackend('listSessions', [filter]),
   readSession: (sessionId) => invokeBackend('readSession', [sessionId]),
   resolveJoinCode: (joinCode) => invokeBackend('resolveJoinCode', [joinCode]),
   joinSession: (sessionId) => invokeBackend('joinSession', [sessionId]),
@@ -46,3 +47,25 @@ const backendApi: BackendApi = {
 };
 
 contextBridge.exposeInMainWorld('backend', backendApi);
+
+const subscribe = <T>(
+  channel: string,
+  callback: (payload: T) => void,
+): (() => void) => {
+  const listener = (_event: Electron.IpcRendererEvent, payload: T): void => callback(payload);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+};
+
+const bloomDesktop: BloomDesktopApi = {
+  setRole: (role) => ipcRenderer.send('app:set-role', role),
+  onZoomDetected: (callback) => subscribe('zoom:detected', callback),
+  onZoomOverlayOpen: (callback) => subscribe('zoom:overlay-open', callback),
+  overlayAction: (action) => ipcRenderer.send('overlay:action', { action }),
+  getOverlayRole: () => {
+    const role = new URLSearchParams(window.location.search).get('role');
+    return role === 'professor' || role === 'student' ? role : null;
+  },
+};
+
+contextBridge.exposeInMainWorld('bloomDesktop', bloomDesktop);

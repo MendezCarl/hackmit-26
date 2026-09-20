@@ -13,6 +13,8 @@ export type StudentDashboardModel = {
   joinedSessions: LectureSession[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
+  zoomRunning: boolean;
+  zoomBannerDismissed: boolean;
 };
 
 const FIXTURE_MODEL: StudentDashboardModel = {
@@ -23,6 +25,8 @@ const FIXTURE_MODEL: StudentDashboardModel = {
   joinedSessions: [],
   participantCount: null,
   submittedEvents: [],
+  zoomRunning: false,
+  zoomBannerDismissed: false,
 };
 
 /**
@@ -41,6 +45,7 @@ export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODE
     title: 'Pick up where learning left off.',
     demoMode: true,
     content: `
+      ${model.zoomRunning && !model.zoomBannerDismissed ? '<section class="panel zoom-banner" role="status"><p>Zoom detected — enter your join code</p><button class="icon-button zoom-banner__dismiss" type="button" data-dismiss-zoom-banner aria-label="Dismiss Zoom reminder">×</button></section>' : ''}
       ${buildJoinForm()}
       <section class="welcome-grid">
         <article class="feature-card feature-card--primary">
@@ -103,6 +108,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
     courses: model.courses,
     joinedSessions,
     content: `
+      ${model.zoomRunning && !model.zoomBannerDismissed ? '<section class="panel zoom-banner" role="status"><p>Zoom detected — enter your join code</p><button class="icon-button zoom-banner__dismiss" type="button" data-dismiss-zoom-banner aria-label="Dismiss Zoom reminder">×</button></section>' : ''}
       ${buildJoinForm()}
       ${
         session
