@@ -4665,7 +4665,7 @@
     },
     "/api/v1/sessions/{session_id}/end": {
       "post": {
-        "description": "Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected.",
+        "description": "Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected. Publishes `session.ended` to session subscribers and closes any Zoom RTMS transcript stream.",
         "operationId": "end_session_api_v1_sessions__session_id__end_post",
         "parameters": [
           {

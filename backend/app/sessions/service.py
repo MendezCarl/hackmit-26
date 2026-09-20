@@ -17,6 +17,9 @@ from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
 from app.sessions.join_codes import generate_join_code, normalize_join_code
 from app.storage.in_memory import InMemoryStore
+from app.ws.publisher import EventPublisher
+
+SESSION_ENDED_EVENT = "session.ended"
 
 
 class SessionService:
@@ -27,6 +30,7 @@ class SessionService:
         store: InMemoryStore,
         settings: Settings,
         session_access: SessionAccess,
+        event_publisher: EventPublisher | None = None,
     ) -> None:
         """Bind the service to shared storage, settings, and access resolution.
 
@@ -34,11 +38,14 @@ class SessionService:
             store: Injected storage connections.
             settings: Application settings.
             session_access: Shared membership resolver.
+            event_publisher: Publisher notified when a session ends; optional so
+                offline scenarios (demo runner) need no socket infrastructure.
         """
 
         self._store = store
         self._settings = settings
         self._session_access = session_access
+        self._publisher = event_publisher
 
     def create_session(
         self, actor: AuthenticatedActor, request: CreateSessionRequest
@@ -164,6 +171,10 @@ class SessionService:
 
         Raises:
             KeyError: If the session does not exist.
+
+        Side effects:
+            Publishes one ``session.ended`` event to session subscribers the
+            first time the session transitions to ended.
         """
 
         session = self._store.sessions[session_id]
@@ -172,4 +183,10 @@ class SessionService:
             session.ended_at = utc_now_iso()
             self._store.sessions[session_id] = session
             self._store.session_join_codes.pop(session.join_code, None)
+            if self._publisher is not None:
+                self._publisher.publish(
+                    self._publisher.build_envelope(
+                        session_id, SESSION_ENDED_EVENT, session.model_dump(mode="json")
+                    )
+                )
         return session

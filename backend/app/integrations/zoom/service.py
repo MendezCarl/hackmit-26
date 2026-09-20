@@ -370,6 +370,24 @@ class ZoomRtmsService:
                 return ZoomWebhookAck(status=WEBHOOK_ACCEPTED, event=RTMS_STOPPED_EVENT)
         return ZoomWebhookAck(status=WEBHOOK_IGNORED, event=RTMS_STOPPED_EVENT)
 
+    async def stop_session(self, session_id: str) -> None:
+        """Close the RTMS stream for a session that has ended.
+
+        Args:
+            session_id: Session whose transcript stream should stop.
+
+        Side effects:
+            Cancels the stream task and marks the status ``stopped`` when a
+            stream was running; a session without a stream is left untouched.
+        """
+
+        state = self._states.get(session_id)
+        if state is None or (state.stream is None and state.task is None):
+            return
+        await self._stop_stream(state)
+        state.status = ZoomRtmsStreamStatus.STOPPED
+        state.touch()
+
     # --------------------------------------------------------------- Streams
 
     async def start_stream(
@@ -464,7 +482,12 @@ class ZoomRtmsService:
     ) -> None:
         session = self._store.sessions.get(session_id)
         state = self._states.get(session_id)
-        if session is None or state is None or session.status == SessionStatus.ENDED:
+        if session is None or state is None:
+            return
+        if session.status == SessionStatus.ENDED:
+            # Ended sessions accept no more transcript; close the provider
+            # stream from outside the receive loop it is currently inside.
+            asyncio.get_running_loop().create_task(self.stop_session(session_id))
             return
         chunk = map_transcript_message(
             message,

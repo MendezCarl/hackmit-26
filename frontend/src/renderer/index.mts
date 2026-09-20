@@ -638,6 +638,8 @@ const bindZoomDesktop = (): void => {
       refreshProfessorZoomStatus();
     },
     repaintLiveTranscript,
+    // A full render drops the live subscription and status line for the ended session.
+    renderApplication,
   );
   window.bloomDesktop.onZoomDetected(({ running }) => {
     setZoomRunning(running);

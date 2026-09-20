@@ -136,17 +136,23 @@ def read_session(
 @router.post(
     "/{session_id}/end",
     response_model=LectureSession,
-    description="Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected.",
+    description="Session-owner JWT required. End the session idempotently; late student and delivery observations are rejected. Publishes `session.ended` to session subscribers and closes any Zoom RTMS transcript stream.",
 )
-def end_session(
+async def end_session(
     session_id: str,
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     request: Request,
 ) -> LectureSession:
-    """Finalize the trusted session lifecycle without accepting a client clock origin."""
+    """Finalize the trusted session lifecycle without accepting a client clock origin.
+
+    Ending also closes any Zoom RTMS transcript stream bound to the session so
+    no further provider transcript is received for an ended lecture.
+    """
     from app.core.errors import AppError, ErrorCode
 
     session = request.app.state.session_service.get_session(actor, session_id)
     if session.owner_id != actor.user_id:
         raise AppError(ErrorCode.FORBIDDEN, "Only the session owner can end the session.")
-    return request.app.state.session_service.end_session(session_id)
+    ended = request.app.state.session_service.end_session(session_id)
+    await request.app.state.zoom_rtms_service.stop_session(session_id)
+    return ended

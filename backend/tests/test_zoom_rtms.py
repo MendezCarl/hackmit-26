@@ -700,3 +700,49 @@ def test_rtms_handshake_failure_is_reported_in_status() -> None:
         failed = wait_for_status(client, session_id, {"failed"})
         assert "rejected" in failed["last_error"]
         assert CLIENT_SECRET not in json.dumps(failed)
+
+
+def test_ending_session_closes_stream_and_notifies_subscribers() -> None:
+    """Ending the lecture stops RTMS and pushes ``session.ended`` on the socket."""
+
+    server = FakeRtmsServer(
+        [transcript_frame(0, 1_000, "hold")], close_media_after_frames=False
+    )
+    with TestClient(create_app(SETTINGS, rtms_connector=server.connect)) as client:
+        session_id = create_session(client, zoom_meeting_id=MEETING_ID)
+        with client.websocket_connect(
+            f"/ws/v1/sessions/{session_id}?token={token_for('owner-1')}"
+        ) as socket:
+            assert socket.receive_json()["event_type"] == "session.connected"
+            body = rtms_started_body()
+            client.post(
+                "/api/v1/integrations/zoom/webhooks",
+                content=body,
+                headers=signed_webhook_headers(body),
+            )
+            wait_for_status(client, session_id, {"streaming"})
+            assert socket.receive_json()["event_type"] == "transcript.chunk.created"
+            assert socket.receive_json()["event_type"] == "transcript.ingested"
+
+            ended = client.post(
+                f"/api/v1/sessions/{session_id}/end", headers=auth_headers("owner-1")
+            )
+            assert ended.status_code == 200, ended.text
+            assert ended.json()["status"] == "ended"
+
+            notice = socket.receive_json()
+            assert notice["event_type"] == "session.ended"
+            assert notice["session_id"] == session_id
+            assert notice["payload"]["status"] == "ended"
+            assert notice["payload"]["ended_at"] is not None
+
+        status = wait_for_status(client, session_id, {"stopped"})
+        assert status["transcript_chunk_count"] == 1
+        assert {"msg_type": 21, "rtms_stream_id": STREAM_ID} in server.sent["signaling"]
+
+        # Ending again is idempotent and publishes nothing new.
+        again = client.post(
+            f"/api/v1/sessions/{session_id}/end", headers=auth_headers("owner-1")
+        )
+        assert again.status_code == 200
+        assert again.json()["ended_at"] == ended.json()["ended_at"]

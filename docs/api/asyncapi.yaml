@@ -39,6 +39,8 @@ channels:
         $ref: '#/components/messages/recovery_card_failed'
       professor_summary_ready:
         $ref: '#/components/messages/professor_summary_ready'
+      session_ended:
+        $ref: '#/components/messages/session_ended'
 operations:
   receive_session_events:
     action: receive
@@ -55,6 +57,7 @@ operations:
       - $ref: '#/channels/lecture_session/messages/recovery_card_completed'
       - $ref: '#/channels/lecture_session/messages/recovery_card_failed'
       - $ref: '#/channels/lecture_session/messages/professor_summary_ready'
+      - $ref: '#/channels/lecture_session/messages/session_ended'
   send_client_events:
     action: send
     channel:
@@ -107,6 +110,18 @@ components:
         shared/contracts/transcript_chunk.schema.json; a higher revision for
         an existing chunk_id replaces the earlier text. Only members of the
         session receive it.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    session_ended:
+      name: session_ended
+      title: Session ended
+      description: >-
+        event_type session.ended. Published once when the owner ends the
+        lecture via POST /api/v1/sessions/{session_id}/end. Payload is the
+        ended LectureSession (status ended, ended_at set). Any Zoom RTMS
+        transcript stream bound to the session is closed at the same time;
+        clients should leave their live state and stop expecting further
+        transcript.chunk.created events for that session.
       payload:
         $ref: '#/components/schemas/websocket_envelope'
     recovery_job_started:
