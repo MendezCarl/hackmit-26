@@ -2264,6 +2264,22 @@ body {
   justify-content: flex-start;
 }
 
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: 1.25rem;
+}
+
+.feature-card--primary .zoom-banner__actions {
+  justify-content: flex-start;
+}
+
+.zoom-live-transcript .zoom-join-button {
+  margin-top: var(--space-3);
+}
+
 .enrollment-panel {
   display: grid;
   gap: var(--space-3);

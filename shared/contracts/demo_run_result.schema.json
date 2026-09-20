@@ -366,6 +366,19 @@
           "title": "Title",
           "type": "string"
         },
+        "zoom_join_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Validated https Zoom join link members may open to attend the meeting; null when the owner has not shared one.",
+          "title": "Zoom Join Url"
+        },
         "zoom_meeting_id": {
           "anyOf": [
             {

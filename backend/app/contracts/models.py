@@ -102,6 +102,14 @@ class CreateSessionRequest(_StrictModel):
     title: str = Field(min_length=1, max_length=256)
     mode: SessionMode
     zoom_meeting_id: str | None = Field(default=None, max_length=128)
+    zoom_join_url: str | None = Field(
+        default=None,
+        max_length=2048,
+        description=(
+            "Optional https Zoom join link on a zoom.us/zoom.com host. When set, "
+            "its meeting number also becomes zoom_meeting_id unless one is given."
+        ),
+    )
 
 
 class LectureSession(BaseModel):
@@ -125,6 +133,13 @@ class LectureSession(BaseModel):
     )
     zoom_meeting_id: str | None = Field(
         default=None, description="Zoom meeting identifier when authorized."
+    )
+    zoom_join_url: str | None = Field(
+        default=None,
+        description=(
+            "Validated https Zoom join link members may open to attend the meeting; "
+            "null when the owner has not shared one."
+        ),
     )
 
 

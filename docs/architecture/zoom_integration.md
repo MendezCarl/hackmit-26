@@ -44,7 +44,9 @@ types. Only typed `TranscriptChunk` values cross into the application.
 Professor (Electron)                    Bloom backend                                Zoom
 ────────────────────                    ─────────────                                ────
 POST /sessions/{id}/zoom/rtms/start ──► ZoomRtmsService.link_session
-   {zoom_meeting_id}                    session.zoom_meeting_id = <id>
+   {zoom_meeting_id | zoom_join_url}    parse_zoom_join_url ➜ meeting id + pwd
+                                        session.zoom_meeting_id = <id>
+                                        session.zoom_join_url = <normalized https>
                                         status = awaiting_stream
                                                                      ◄── POST /integrations/zoom/webhooks
                                         verify x-zm-signature / timestamp        meeting.rtms_started
@@ -109,6 +111,16 @@ in storage and in connected renderers.
 - **Desktop**: the JWT is appended to the WebSocket URL in the Electron main
   process only. The renderer receives validated, session-scoped envelopes over
   IPC and never sees the token.
+- **Join links**: `backend/app/integrations/zoom/join_link.py` accepts only
+  `https://` links on `zoom.us`, `zoom.com`, `zoomgov.com` (and subdomains)
+  with a meeting or personal-room path, no userinfo, no explicit port, and at
+  most a `pwd` passcode; everything else (`javascript:`, `file:`, plain HTTP,
+  look-alike hosts, tracking parameters, fragments) is rejected or stripped.
+  The renderer never opens URLs itself: the `zoom:open-join` IPC handler in
+  `frontend/src/main/zoom_join_link.ts` re-runs the same allowlist on the
+  stored URL before calling `shell.openExternal`, preferring the
+  `zoommtg://<apex>/join?action=join&confno=…&pwd=…` desktop deep link and
+  falling back to the normalized HTTPS URL when no Zoom client is registered.
 - **Secrets**: `ZOOM_CLIENT_SECRET` and `ZOOM_WEBHOOK_SECRET_TOKEN` are read
   from settings and never logged. Error strings surfaced through
   `ZoomRtmsStatus.last_error` contain no secrets, signatures, or transcript
@@ -147,8 +159,16 @@ the event notification URL at `POST /api/v1/integrations/zoom/webhooks`.
 ## Frontend behavior
 
 - Professors see a **Zoom realtime transcript** panel on an active lecture
-  page. Entering a meeting id calls `rtms/start`; the status line follows
+  page. Pasting a Zoom join link (sent as `zoom_join_url`) or a bare meeting
+  id (sent as `zoom_meeting_id`) calls `rtms/start`; the status line follows
   `awaiting_stream → connecting → streaming → stopped`.
+- When the active session carries a validated `zoom_join_url`, a **Join Zoom
+  meeting** button appears in the professor panel, on the student live-lecture
+  prompt and active-session card, and in the student summary header. The
+  button is omitted (not merely hidden) when the link is `null` or the session
+  has ended; clicking it invokes `bloomDesktop.openZoomJoinLink`, which
+  resolves to `desktop`, `browser`, or `rejected` so the UI can explain a
+  refused link.
 - The Electron main process subscribes to `/ws/v1/sessions/{id}` for the
   active session, reconnects with exponential backoff (1 s → 30 s), sends
   `client.heartbeat` every 15 s, and stops permanently on close code 4401
@@ -169,6 +189,11 @@ mapping, malformed frames, duplicate replay, revision behavior, provider
 disconnects, signature failures, and WebSocket session isolation.
 `frontend/tests/unit/zoom_live_transcript.test.cjs` covers envelope/payload
 validation, revision-aware merging, subscription lifecycle, and page rendering.
+`backend/tests/test_zoom_join_link.py` and
+`frontend/tests/unit/zoom_join_link.test.cjs` cover the join-link allowlist on
+both sides (unsafe schemes, look-alike hosts, userinfo, ports, malformed paths
+and passcodes), meeting-id derivation, member-only exposure, the deep-link
+then-HTTPS fallback order, and button visibility.
 
 No test contacts Zoom. Live sandbox verification, if needed, must be an explicit
 opt-in run with a Zoom developer account and synthetic meeting content.
