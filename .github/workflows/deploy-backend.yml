@@ -52,6 +52,8 @@ jobs:
           put_env_var OPENAI_API_KEY "$OPENAI_API_KEY"
           put_env_var MUSE_API_KEY "$MUSE_API_KEY"
           put_env_var MONGODB_URI "$MONGODB_URI"
+          put_env_var LUMINA_METRICS_POLICY_JSON \
+            '{"policy_version":"bloom-render-v1","minimum_group_size":3,"bucket_ms":30000,"is_approved":true}'
 
       - name: Trigger Render deploy
         run: |
