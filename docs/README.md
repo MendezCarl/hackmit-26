@@ -2,7 +2,26 @@
 
 This directory is the context hub for developers and coding agents. Repository-level agent instructions live in `AGENTS.md`; task-specific product and technical context lives here.
 
-The repository currently contains a minimal Electron JavaScript frontend and FastAPI skeleton. The documents in this directory describe the target architecture; agents must distinguish planned structure from already implemented code.
+The baseline application contains a minimal Electron JavaScript frontend and
+FastAPI entry point. Backend signal/timeline, professor aggregation, and Dropbox
+features have been implemented and pushed on separate feature branches; they are
+not automatically mounted in the baseline app. Many architecture documents still
+describe the target system. Distinguish those plans from verified implementation.
+
+## Implemented backend work
+
+- [Backend implementation status](implementation/backend_status.md): completed
+  features, privacy boundaries, commit/CI evidence, packaging fix, and remaining work.
+- [Feature branch guide](../backend/FEATURE_BRANCHES.md): branch names and local worktrees.
+- [Feature runbook](../backend/LECTURE_FEATURES.md): branch selection and local-only combined demo.
+- [Phone observations](../backend/PHONE_SIGNALS.md): weak-signal rules and professor exclusions.
+- [Implemented feature API handoff](api/lecture_features.md): actual routes and host dependencies.
+
+These shared documents are maintained on the three existing feature branches.
+Only the feature installed on the checked-out branch is runnable there.
+
+The detailed status report records work verified on 2026-09-19. It is not a claim
+that the feature branches have been merged or that live providers are verified.
 
 ## Required reading order
 
@@ -18,6 +37,10 @@ Every developer or agent should read context in this order:
 `CLAUDE.md` contains Claude-specific workflow instructions but does not override `AGENTS.md`.
 
 ## Documentation structure
+
+The tree below describes the planned documentation structure; some indexed files
+have not been created. The implementation report above describes the work that
+exists and links to its evidence.
 
 ```text
 docs/
