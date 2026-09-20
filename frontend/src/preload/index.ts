@@ -1,3 +1,4 @@
+/** Safe, context-isolated bridge between the renderer and local backend. */
 import { contextBridge } from 'electron';
 
 type BackendHealth = {
@@ -15,6 +16,13 @@ type BackendApi = {
 
 const apiBaseUrl = 'http://127.0.0.1:8000';
 
+/**
+ * Reads and parses one JSON response from the local Bloom backend.
+ *
+ * @param path - Absolute backend path beginning with a slash.
+ * @returns Parsed JSON using the caller-provided response type.
+ * @throws Error When the backend returns a non-success status.
+ */
 const getJson = async <T>(path: string): Promise<T> => {
   const response = await fetch(`${apiBaseUrl}${path}`);
 

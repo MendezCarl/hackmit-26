@@ -1,3 +1,4 @@
+/** Response shapes exposed by the context-isolated preload bridge. */
 type BackendHealth = {
   status: string;
 };
