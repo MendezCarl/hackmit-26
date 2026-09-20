@@ -149,7 +149,11 @@ def test_model_verification_requires_approval_and_matching_digest(tmp_path):
     path = tmp_path / "synthetic.onnx"
     path.write_bytes(b"not a model")
     manifest = ModelManifest(
-        sha256="0" * 64, source="synthetic", license="synthetic-test", version="v1", input_size=320
+        sha256="0" * 64,
+        source="synthetic",
+        license="synthetic-test",
+        version="v1",
+        input_size=320,
     )
     with pytest.raises(ValueError):
         verify_model_file(path, manifest)

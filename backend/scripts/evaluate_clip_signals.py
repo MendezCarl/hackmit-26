@@ -53,7 +53,14 @@ def evaluate_clip(extractor: OnnxStudentAnalyzer, path: Path) -> dict[str, objec
             valid, frame = capture.retrieve()
             if valid:
                 person, phone = extractor.person_and_phone(frame)
-                rows.append((round(index / fps, 2), person, phone, extractor.face_score_and_yaw(frame)[1]))
+                rows.append(
+                    (
+                        round(index / fps, 2),
+                        person,
+                        phone,
+                        extractor.face_score_and_yaw(frame)[1],
+                    )
+                )
                 frame.fill(0)
         index += 1
     capture.release()
@@ -61,11 +68,17 @@ def evaluate_clip(extractor: OnnxStudentAnalyzer, path: Path) -> dict[str, objec
     return {
         "clip": path.name,
         "samples": len(rows),
-        "person_present": round(float(np.mean([r[1] >= PERSON_SCORE_THRESHOLD for r in rows])), 2),
-        "phone_visible": round(float(np.mean([r[2] >= PHONE_SCORE_THRESHOLD for r in rows])), 2),
+        "person_present": round(
+            float(np.mean([r[1] >= PERSON_SCORE_THRESHOLD for r in rows])), 2
+        ),
+        "phone_visible": round(
+            float(np.mean([r[2] >= PHONE_SCORE_THRESHOLD for r in rows])), 2
+        ),
         "face_found": round(float(np.mean([y is not None for y in yaws])), 2),
         "head_turned": round(
-            float(np.mean([y is not None and abs(y) > HEAD_TURN_YAW_THRESHOLD for y in yaws])),
+            float(
+                np.mean([y is not None and abs(y) > HEAD_TURN_YAW_THRESHOLD for y in yaws])
+            ),
             2,
         ),
         "timeline": [
@@ -84,11 +97,15 @@ def main() -> None:
     """Evaluate each clip and print one JSON summary per clip."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("clips", nargs="+", type=Path)
-    parser.add_argument("--person-model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument(
+        "--person-model", type=Path, default=Path("models/person_detector.onnx")
+    )
     parser.add_argument(
         "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
     )
-    parser.add_argument("--timeline", action="store_true", help="Include per-sample timelines.")
+    parser.add_argument(
+        "--timeline", action="store_true", help="Include per-sample timelines."
+    )
     arguments = parser.parse_args()
     extractor = load_analyzer(arguments.person_model, arguments.face_model)
     for clip in arguments.clips:

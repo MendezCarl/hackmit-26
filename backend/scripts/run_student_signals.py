@@ -16,7 +16,9 @@ from app.local_ml.student_signals import Frame, StudentSignalPolicy, StudentSign
 from scripts.evaluate_clip_signals import load_analyzer
 
 
-def analyze_clip(worker: StudentSignalWorker, path: Path, sampling_ms: int) -> dict[str, object]:
+def analyze_clip(
+    worker: StudentSignalWorker, path: Path, sampling_ms: int
+) -> dict[str, object]:
     """Run one clip through the worker and return its derived signals.
 
     Args:
@@ -48,7 +50,9 @@ def analyze_clip(worker: StudentSignalWorker, path: Path, sampling_ms: int) -> d
     return {
         "clip": path.name,
         "seconds": round(index / fps, 1),
-        "signals": [s.model_dump(mode="json") for s in sorted(signals, key=lambda s: s.start_ms)],
+        "signals": [
+            s.model_dump(mode="json") for s in sorted(signals, key=lambda s: s.start_ms)
+        ],
     }
 
 
@@ -56,7 +60,9 @@ def main() -> None:
     """Print one JSON summary per clip."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("clips", nargs="+", type=Path)
-    parser.add_argument("--person-model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument(
+        "--person-model", type=Path, default=Path("models/person_detector.onnx")
+    )
     parser.add_argument(
         "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
     )

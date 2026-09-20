@@ -80,7 +80,10 @@ def test_flush_drops_interval_shorter_than_minimum_duration():
 def test_load_events_reads_worker_lines_and_runner_summaries(tmp_path):
     path = tmp_path / "events.jsonl"
     worker_line = make_event(1).model_dump(mode="json")
-    summary_line = {"video": "synthetic.mp4", "events": [make_event(2).model_dump(mode="json")]}
+    summary_line = {
+        "video": "synthetic.mp4",
+        "events": [make_event(2).model_dump(mode="json")],
+    }
     path.write_text(json.dumps(worker_line) + "\n" + json.dumps(summary_line) + "\n")
     assert [event.event_id for event in load_events(path)] == ["delivery_1", "delivery_2"]
 
@@ -115,7 +118,10 @@ def test_post_events_surfaces_backend_rejection():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(403, json={"error": {"code": "forbidden"}})
 
-    with httpx.Client(
-        base_url="http://127.0.0.1:8000", transport=httpx.MockTransport(handler)
-    ) as client, pytest.raises(httpx.HTTPStatusError):
+    with (
+        httpx.Client(
+            base_url="http://127.0.0.1:8000", transport=httpx.MockTransport(handler)
+        ) as client,
+        pytest.raises(httpx.HTTPStatusError),
+    ):
         post_events(client, "session_1", [make_event(1)], "synthetic-token")

@@ -23,7 +23,9 @@ from app.contracts.learning import StrictPayload
 from app.local_ml.vision import ModelManifest
 
 Frame = NDArray[np.uint8]
-StudentSignalLabel = Literal["student_left_frame", "face_absent", "head_away", "phone_visible"]
+StudentSignalLabel = Literal[
+    "student_left_frame", "face_absent", "head_away", "phone_visible"
+]
 
 DETECTOR_INPUT_SIZE = 320
 COCO_PERSON_CLASS_ID = 1  # torchvision 91-index COCO scheme.
@@ -138,14 +140,20 @@ class OnnxStudentAnalyzer:
         inputs = self.session.get_inputs()
         if (
             len(inputs) != 1
-            or inputs[0].shape != [1, 3, person_manifest.input_size, person_manifest.input_size]
+            or inputs[0].shape
+            != [1, 3, person_manifest.input_size, person_manifest.input_size]
             or inputs[0].type != "tensor(float)"
         ):
             raise ValueError("Unsupported model input tensor")
         self.input_name = inputs[0].name
         self.input_size = person_manifest.input_size
         self.face_detector = cv2.FaceDetectorYN.create(
-            str(face_model), "", (DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE), FACE_SCORE_THRESHOLD, 0.3, 50
+            str(face_model),
+            "",
+            (DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE),
+            FACE_SCORE_THRESHOLD,
+            0.3,
+            50,
         )
 
     @classmethod
@@ -165,23 +173,34 @@ class OnnxStudentAnalyzer:
         """
         return cls(
             person_model,
-            ModelManifest.model_validate_json(person_model.with_suffix(".manifest.json").read_text()),
+            ModelManifest.model_validate_json(
+                person_model.with_suffix(".manifest.json").read_text()
+            ),
             face_model,
-            ModelManifest.model_validate_json(face_model.with_suffix(".manifest.json").read_text()),
+            ModelManifest.model_validate_json(
+                face_model.with_suffix(".manifest.json").read_text()
+            ),
         )
 
     def _detect(self, image: NDArray[np.uint8]) -> NDArray[np.float32]:
         """Return validated Nx6 normalized xyxy/score/class rows; erase temporaries."""
         resized = cv2.resize(image, (self.input_size, self.input_size))
         tensor = (
-            np.ascontiguousarray(resized[:, :, ::-1].transpose(2, 0, 1)[None], dtype=np.float32)
+            np.ascontiguousarray(
+                resized[:, :, ::-1].transpose(2, 0, 1)[None], dtype=np.float32
+            )
             / 255.0
         )
         outputs: list[NDArray[np.float32]] = []
         try:
             outputs = self.session.run(None, {self.input_name: tensor})
             rows = np.array(outputs[0], dtype=np.float32)
-            if rows.ndim != 2 or rows.shape[1] != 6 or rows.shape[0] > 1000 or not np.isfinite(rows).all():
+            if (
+                rows.ndim != 2
+                or rows.shape[1] != 6
+                or rows.shape[0] > 1000
+                or not np.isfinite(rows).all()
+            ):
                 raise ValueError("Unsupported model output tensor")
             return rows
         finally:
@@ -223,8 +242,15 @@ class OnnxStudentAnalyzer:
             lower = min(height, int(y1 + bottom * box_height))
             if right - left > MINIMUM_CROP_PIXELS and lower - upper > MINIMUM_CROP_PIXELS:
                 crop_rows = self._detect(frame[upper:lower, left:right])
-                phone_body = max(phone_body, self._best_score(crop_rows, COCO_CELL_PHONE_CLASS_ID))
-        return person_score, phone_full, phone_body, (float(best[3] - best[1]), float(best[1]))
+                phone_body = max(
+                    phone_body, self._best_score(crop_rows, COCO_CELL_PHONE_CLASS_ID)
+                )
+        return (
+            person_score,
+            phone_full,
+            phone_body,
+            (float(best[3] - best[1]), float(best[1])),
+        )
 
     def person_and_phone(self, frame: Frame) -> tuple[float, float]:
         """Return the person score and the higher of the whole-frame and body-crop phone scores."""
@@ -310,7 +336,9 @@ class StudentSignalWorker:
         self.previous_ms = None
         self.is_available = False
 
-    def _flags(self, observation: FrameObservation) -> dict[StudentSignalLabel, tuple[bool, float]]:
+    def _flags(
+        self, observation: FrameObservation
+    ) -> dict[StudentSignalLabel, tuple[bool, float]]:
         """Map one observation to (is_positive, confidence contribution) per label."""
         policy = self.policy
         is_person = observation.person_score >= policy.person_threshold
@@ -322,11 +350,19 @@ class StudentSignalWorker:
                 has_face and abs(observation.face_yaw or 0.0) > policy.head_turn_yaw,
                 observation.face_score,
             ),
-            "phone_visible": (observation.phone_score >= policy.phone_threshold, observation.phone_score),
+            "phone_visible": (
+                observation.phone_score >= policy.phone_threshold,
+                observation.phone_score,
+            ),
         }
 
     def _close(
-        self, label: StudentSignalLabel, begin_ms: int, count: int, total: float, end_ms: int
+        self,
+        label: StudentSignalLabel,
+        begin_ms: int,
+        count: int,
+        total: float,
+        end_ms: int,
     ) -> StudentSignal | None:
         """Build a signal for a finished candidate, or None when it was too short."""
         if end_ms - begin_ms < self.policy.minimum_duration_ms or count == 0:

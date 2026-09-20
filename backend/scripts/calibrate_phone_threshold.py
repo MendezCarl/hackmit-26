@@ -76,11 +76,15 @@ def main() -> None:
     parser.add_argument("--negative-clips", nargs="+", type=Path, default=[])
     parser.add_argument("--negative-recordings", nargs="+", type=Path, default=[])
     parser.add_argument("--max-false-positive-rate", type=float, default=0.01)
-    parser.add_argument("--person-model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument(
+        "--person-model", type=Path, default=Path("models/person_detector.onnx")
+    )
     parser.add_argument(
         "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
     )
-    parser.add_argument("--output", type=Path, default=Path("data/local/eval/phone_calibration.json"))
+    parser.add_argument(
+        "--output", type=Path, default=Path("data/local/eval/phone_calibration.json")
+    )
     arguments = parser.parse_args()
     extractor = load_analyzer(arguments.person_model, arguments.face_model)
 
@@ -93,34 +97,53 @@ def main() -> None:
         negative_sources[path.name] = {"samples": len(scores), "max": round(max(scores), 2)}
     for path in arguments.negative_recordings:
         scores = sparse_phone_scores(extractor, path)
-        if not scores:  # Too short to sample (e.g. the 6 s synthetic clips): never a negative.
+        if (
+            not scores
+        ):  # Too short to sample (e.g. the 6 s synthetic clips): never a negative.
             continue
         negatives += scores
-        negative_sources[path.name[:40]] = {"samples": len(scores), "max": round(max(scores), 2)}
+        negative_sources[path.name[:40]] = {
+            "samples": len(scores),
+            "max": round(max(scores), 2),
+        }
 
-    print(f"positives: {sum(map(len, positives.values()))} frames in {len(positives)} clips; "
-          f"negatives: {len(negatives)} frames from {len(negative_sources)} sources")
-    print("threshold  TPR(all)  FPR   " + "  ".join(f"TPR {name[:9]}" for name in positives))
+    print(
+        f"positives: {sum(map(len, positives.values()))} frames in {len(positives)} clips; "
+        f"negatives: {len(negatives)} frames from {len(negative_sources)} sources"
+    )
+    print(
+        "threshold  TPR(all)  FPR   " + "  ".join(f"TPR {name[:9]}" for name in positives)
+    )
     for threshold in THRESHOLD_GRID:
         per_clip = "  ".join(f"{rate(s, threshold):9.2f}" for s in positives.values())
         every = [x for s in positives.values() for x in s]
-        print(f"{threshold:9.2f}  {rate(every, threshold):8.2f}  {rate(negatives, threshold):.3f}  {per_clip}")
+        print(
+            f"{threshold:9.2f}  {rate(every, threshold):8.2f}  {rate(negatives, threshold):.3f}  {per_clip}"
+        )
 
     chosen = choose_threshold(negatives, arguments.max_false_positive_rate)
     recall_at_chosen = {name: round(rate(s, chosen), 2) for name, s in positives.items()}
     print(f"\nchosen threshold at FPR <= {arguments.max_false_positive_rate}: {chosen}")
     print("recall per positive clip at that threshold:", recall_at_chosen)
     top_negatives = sorted(negatives, reverse=True)[:5]
-    print("highest negative scores (inspect these by eye):", [round(x, 2) for x in top_negatives])
+    print(
+        "highest negative scores (inspect these by eye):",
+        [round(x, 2) for x in top_negatives],
+    )
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output.write_text(json.dumps({
-        "chosen_threshold": chosen,
-        "max_false_positive_rate": arguments.max_false_positive_rate,
-        "negative_frames": len(negatives),
-        "recall_per_positive_clip": recall_at_chosen,
-        "negative_sources": negative_sources,
-    }, indent=2))
+    arguments.output.write_text(
+        json.dumps(
+            {
+                "chosen_threshold": chosen,
+                "max_false_positive_rate": arguments.max_false_positive_rate,
+                "negative_frames": len(negatives),
+                "recall_per_positive_clip": recall_at_chosen,
+                "negative_sources": negative_sources,
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

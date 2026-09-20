@@ -20,7 +20,9 @@ def separable_data(count: int = 200, seed: int = 0):
     generator = np.random.default_rng(seed)
     negatives = generator.normal([0.0, 0.0], 0.5, size=(count, 2))
     positives = generator.normal([3.0, 0.0], 0.5, size=(count, 2))
-    return np.vstack([negatives, positives]), np.concatenate([np.zeros(count), np.ones(count)])
+    return np.vstack([negatives, positives]), np.concatenate(
+        [np.zeros(count), np.ones(count)]
+    )
 
 
 def test_fit_separates_synthetic_clusters_on_held_out_data():
@@ -47,7 +49,9 @@ def test_threshold_keeps_training_false_positive_rate_within_target():
 
 def test_class_balancing_handles_rare_positives():
     generator = np.random.default_rng(3)
-    x = np.vstack([generator.normal(0, 0.5, (300, 2)), generator.normal([3, 0], 0.5, (10, 2))])
+    x = np.vstack(
+        [generator.normal(0, 0.5, (300, 2)), generator.normal([3, 0], 0.5, (10, 2))]
+    )
     y = np.concatenate([np.zeros(300), np.ones(10)])
     model = fit_logistic(x, y)
     assert np.mean(predict(x[y == 1], model) >= 0.5) > 0.8
