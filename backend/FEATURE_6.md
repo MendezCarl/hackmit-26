@@ -54,3 +54,15 @@ This branch contains one feature plus the identical shared support needed to run
 it independently. Keep shared-support edits synchronized across feature branches.
 Review public contracts with frontend and backend owners before merging.
 The combined integration checkout is maintained separately.
+
+## Packaging and clean installation
+
+`pyproject.toml` explicitly uses setuptools as the build backend and includes
+only `app` and `app.*` packages. Automatic flat-layout discovery also detects
+`feature_tests` and rejects editable builds, so package discovery must stay
+explicit as new feature test folders are added. Setuptools is a build dependency,
+not an application runtime dependency; no runtime packages were added.
+
+The CI dependency-install step runs in a fresh virtual environment and is the
+regression check for this failure. Feature tests remain in the checkout and run
+through the documented Pytest command; they are not installed as application code.
