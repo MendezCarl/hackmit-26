@@ -12,6 +12,9 @@ dependencies = [
 dev = [
   "pytest>=8.0.0",
 ]
+live = [
+  "openai>=1.100.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -86,6 +86,14 @@ class Settings(BaseModel):
         description="Maximum accepted text length for one transcript chunk.",
         ge=1,
     )
+    openai_api_key: str | None = Field(
+        default=None,
+        description="API key for the live OpenAI adapter; opt-in only.",
+    )
+    openai_model: str = Field(
+        default="gpt-4o-mini",
+        description="Model used by the live OpenAI adapter.",
+    )
 
     def is_demo_or_test(self) -> bool:
         """Return whether privileged demo/test helpers are available."""
@@ -109,6 +117,8 @@ def _settings_from_environment() -> Settings:
         provider_mode=os.environ.get("PROVIDER_MODE", MOCK_PROVIDER_MODE),
         app_secret=os.environ.get("APP_SECRET", DEFAULT_DEMO_SECRET),
         jwt_algorithm=os.environ.get("JWT_ALGORITHM", "HS256"),
+        openai_api_key=os.environ.get("OPENAI_API_KEY"),
+        openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
     )
     if settings.app_env not in KNOWN_ENVIRONMENTS:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")

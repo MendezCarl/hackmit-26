@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Request, Response, status
 
 from app.auth.dependencies import get_current_actor
 from app.auth.tokens import AuthenticatedActor
@@ -36,10 +36,21 @@ def create_recovery_job(
     request_body: CreateRecoveryJobRequest,
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     service: Annotated[RecoveryService, Depends(get_recovery_service)],
+    idempotency_key: Annotated[
+        str | None,
+        Header(
+            alias="Idempotency-Key",
+            description="Retries with the same key return the original job.",
+        ),
+    ] = None,
 ) -> RecoveryJob:
-    """Recover missed content for ``[start_ms, end_ms)`` in one session."""
+    """Recover missed content for ``[start_ms, end_ms)`` in one session.
 
-    return service.create_job(actor, session_id, request_body)
+    Supplying an ``Idempotency-Key`` header makes the request safe to retry:
+    the same key returns the original job instead of creating a duplicate.
+    """
+
+    return service.create_job(actor, session_id, request_body, idempotency_key)
 
 
 @router.get(

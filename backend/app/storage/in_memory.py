@@ -50,4 +50,6 @@ class InMemoryStore:
     recovery_cards: dict[str, CardRecord] = field(default_factory=dict)
     # Authorization-scoped cache key -> card_id.
     recovery_cache: dict[str, str] = field(default_factory=dict)
+    # Scoped idempotency key (user|session|key) -> job_id.
+    recovery_idempotency: dict[str, str] = field(default_factory=dict)
     cost_ledger: list[CostMetrics] = field(default_factory=list)

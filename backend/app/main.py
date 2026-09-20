@@ -72,10 +72,15 @@ def create_app(
 
     if settings is None:
         settings = get_settings()
-    if settings.provider_mode == LIVE_PROVIDER_MODE:
-        raise RuntimeError(
-            "PROVIDER_MODE=live is not implemented yet; use PROVIDER_MODE=mock."
-        )
+    generator: RecoveryGenerator
+    if recovery_generator is not None:
+        generator = recovery_generator
+    elif settings.provider_mode == LIVE_PROVIDER_MODE:
+        from app.integrations.openai.adapter import create_openai_generator
+
+        generator = create_openai_generator(settings)
+    else:
+        generator = DeterministicRecoveryGenerator()
 
     app = FastAPI(
         title="Lecture Recovery Assistant API",
@@ -107,7 +112,6 @@ def create_app(
     session_access = StoreSessionAccess(store)
     event_publisher = WebSocketEventPublisher()
     cost_ledger = CostLedger()
-    generator = recovery_generator or DeterministicRecoveryGenerator()
 
     session_service = SessionService(store, settings, session_access)
     signal_service = SignalService(store, settings, session_access, event_publisher)
