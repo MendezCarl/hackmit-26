@@ -1,8 +1,10 @@
 # Local Vision Model, Data, and Attribution
 
-**Status:** Draft; evaluated on consented recordings and short synthetic clips  
+**Status:** Draft; evaluated on consented recordings, short synthetic clips and one real laptop webcam  
 **Owner:** ML and Backend teams  
 **Last updated:** 2026-09-20
+
+The rules themselves are listed on [rule cards](student_signal_rule_cards.md), generated from the code.
 
 This document records what the local vision pipeline uses, where every external
 component came from, what was and was not trained, and how it was evaluated. It
@@ -190,20 +192,20 @@ frames per second in memory and reports per-clip signal fractions.
 Ground truth is the author's visual reading of an 8-frame contact sheet per clip and is
 approximate (about +/-0.7 s). A phone is in hand for the whole clip in all three
 student clips. The teacher leaves between about 3.5 s and 5.2 s in both teacher clips.
-Frame fractions at the calibrated phone threshold of 0.5:
+Frame fractions at the calibrated phone threshold of 0.4:
 
 | Clip | Person present | Phone visible | Face found | Head turned |
 | --- | --- | --- | --- | --- |
 | `student_a` | 1.00 | 1.00 | 1.00 | 0.00 |
-| `student_b` | 1.00 | 0.92 | 1.00 | 0.00 |
-| `student_d` | 1.00 | 0.04 | 1.00 | 0.33 |
+| `student_b` | 1.00 | 1.00 | 1.00 | 0.00 |
+| `student_d` | 1.00 | 0.21 | 1.00 | 0.33 |
 | `teacher_a` | 0.92 | 0.00 | 0.83 | 0.04 |
 | `teacher_b` | 0.96 | 0.00 | 0.79 | 0.04 |
 
 Findings:
 
 - **Phone.** The pretrained `cell phone` class found the phone in nearly every sample for
-  `student_a` and `student_b`, but almost never for `student_d` (4%). Searching the whole
+  `student_a` and `student_b`, but only 21% for `student_d` (4% before the person-in-frame rule allowed a lower threshold). Searching the whole
   frame alone was much worse (4% for `student_b`), because a phone is a few pixels wide at
   the 320x320 detector input. Running the detector on crops of the person's body fixed
   `student_b`. The teacher clips gave no phone detections at 0.5.
@@ -243,6 +245,20 @@ they look like a shared tablet screen or handwriting page being read as a phone.
 makes the negatives a harder test than a single-person webcam. The negative set contains
 duplicates (the two identical professor downloads and one recording present in both
 folders).
+
+Second calibration, after adding the rule that a phone counts only while a person is in frame
+(same 1,921 negatives; `phone_calibration_person_gated.json`): false alarms fell at every
+threshold, and the threshold that keeps them under 1% moved from 0.5 to **0.4**.
+
+| Threshold | Recall (a / b / d) | False-positive rate, before rule | After rule |
+| --- | --- | --- | --- |
+| 0.30 | 100% / 100% / 38% | 3.9% | 1.6% |
+| **0.40 (chosen)** | 100% / 100% / 21% | 2.2% | 0.7% |
+| 0.50 | 100% / 92% / 4% | 0.8% | 0.3% |
+
+The worker default is now 0.4. The five highest-scoring negatives are still 0.56-0.71, so a
+few false detections survive with a person in frame. The classifier experiment below was run
+before this change and compares against the earlier 0.5 rule.
 
 ### Trained phone classifier (experiment, not adopted)
 
@@ -295,22 +311,38 @@ rules and emits `StudentSignal` intervals that fit the backend `SignalEvent` fie
 
 | Label | Condition | Confidence |
 | --- | --- | --- |
-| `phone_visible` | phone score at least 0.5 | mean phone score |
-| `head_away` | face found and yaw magnitude above 0.7 | mean face score |
+| `phone_visible` | a person is in frame and phone score is at least 0.4 | mean phone score |
+| `head_away` | face found and yaw differs from this person's own baseline by more than 0.7 | mean face score |
 | `face_absent` | person present but no face | placeholder 0.5 |
 | `student_left_frame` | no person | placeholder 0.5 |
 
 Each condition must persist for 1000 ms (sampling about every 334 ms) and a gap over
-2000 ms discards the candidate. Frames are erased on every exit; only labelled intervals,
-timestamps and a confidence leave the worker. `backend/scripts/run_student_signals.py`
-replays a clip through it. Worker output on the synthetic clips:
+2000 ms between samples discards a candidate that is still running. Three rules steady the
+per-frame flags:
+
+- **Merging.** A condition that stops for less than 1 s and resumes is one interval, so a brief
+  detector dropout no longer splits an event. `student_b`'s phone was two events (1.0-3.0 s,
+  3.7-5.7 s) and is now one covering the whole clip.
+- **Head-angle baseline.** Head turn is measured against the person's own median yaw, so
+  someone who sits at an angle is not flagged. It is judged only after three face-found
+  frames. Turned frames never feed the baseline, so a long turn keeps being reported, and a
+  turn longer than 60 s is taken as a new seating position. Someone already turned away in
+  the first frames is treated as facing their normal direction, and a slow drift in posture
+  is absorbed into the baseline.
+- **Corroboration.** A phone counts only while a person is in frame. Fusing labels into a
+  combined confidence was not added, because it would be invented statistics.
+
+Frames are erased on every exit; only labelled intervals, timestamps and a confidence leave
+the worker. `backend/scripts/run_student_signals.py` replays a clip through it. Worker output
+on the synthetic clips:
 
 | Clip | Emitted signals | Against ground truth |
 | --- | --- | --- |
 | `student_a` | `phone_visible` 0.0-5.7 s | whole clip: correct |
-| `student_b` | `phone_visible` 1.0-3.0 s and 3.7-5.7 s | whole clip: about two thirds found |
-| `student_d` | `head_away` 1.7-2.7 s | first turn found; second turn (about 0.8 s) under the 1 s minimum; phone missed |
-| teacher clips | none | absence under 1 s, below the minimum; no false alarms |
+| `student_b` | `phone_visible` 0.0-5.7 s | whole clip: correct |
+| `student_d` | `head_away` 1.7-2.7 s; `phone_visible` 2.7-3.7 s | first turn found; second turn (about 0.8 s) under the 1 s minimum; phone mostly missed |
+| `teacher_a` | none | leaving is under 1 s of absence |
+| `teacher_b` | `face_absent` 4.7-5.7 s | the teacher leaving: a true detection |
 
 Integration pieces, all opt-in and never launched by the application:
 
@@ -318,20 +350,144 @@ Integration pieces, all opt-in and never launched by the application:
   `--consent-local-camera`, both model paths (each with a manifest beside it) and a session
   clock offset. It prints derived signals as JSON lines. If the camera is lost it marks the
   worker unavailable and emits nothing further, so a vanished source is never reported as
-  the student leaving. It has not been run against a physical camera; only a fake source
-  was tested.
+  the student leaving. Its capture loop (`run_capture`, shared with the smoke test) has been
+  exercised on a real laptop webcam through the smoke test below; the CLI's own `main` has not
+  been launched separately.
 - `backend/scripts/post_student_signals.py` validates worker output and posts it to
   `POST /api/v1/sessions/{id}/events/batch` in batches of 50. The student token comes from
   the `STUDENT_TOKEN` environment variable, never an argument, and non-loopback hosts are
   refused unless `--allow-remote` is passed. Identity comes from the token.
-- Tests (16, synthetic frames and a fake analyzer only): timing, label mapping, frame
-  erasure, flush, invalid input, digest gating, `SignalEvent` compatibility, posting
+- Tests (synthetic frames and a fake analyzer only): timing, merging, the head-angle
+  baseline, phone-needs-person, label mapping, frame erasure, flush, invalid input, digest gating, `SignalEvent` compatibility, posting
   through the real FastAPI app, a stranger being rejected with 403, clip-to-lecture time
   offsets, and camera loss. A 40 s phone-only signal is accepted but never marked recovery
   eligible, while a 40 s head turn meets the backend's 30 s rule.
 - End to end with the real models: the four signals from the synthetic clips above were
   posted to the real app in-process and accepted. None was recovery eligible, because they
   last a few seconds and the backend's default minimum is 30 s.
+
+## Demo readiness
+
+### The 30-second eligibility rule does not gate recovery cards
+
+`recovery_eligible_event_ids` in the signal-ingestion response is the only place the
+30-second rule (`min_missed_window_ms`) is applied. The frontend never reads it, and the
+recovery service accepts any requested interval, citing signal events by id. This was
+verified: a real 5.7 s `phone_visible` signal from a clip was accepted with an empty eligible
+list, and a recovery request citing it still returned a completed card grounded on transcript
+chunks. What is missing for an automatic flow is a trigger, which today is the student's
+"I missed that" action.
+
+Even so, the minimum is now configurable per signal type. `min_head_away_window_ms`
+(environment variable `MIN_HEAD_AWAY_WINDOW_MS`) applies only to `head_away`; it is unset by
+default so behavior is unchanged, and `APP_ENV=demo` sets it to 5 s. `phone_visible` never
+qualifies alone regardless of duration (that is a product rule), and absence signals keep the
+30 s rule. Four tests cover this.
+
+`backend/scripts/demo_student_to_card.py --clip <clip>` runs one clip through the local models,
+posts the signal to the real app in-process, requests a card the way "I missed that" does, and
+prints it. The card comes from the deterministic mock generator over a synthetic transcript,
+not OpenAI.
+
+### Presenter absence is left out of the demo
+
+All four inspected presenter-absence events were layout changes (see Presenter statistics), so
+the demo should lead with the student signals. The rule remains in the worker but should not
+be presented as validated.
+
+### Looking down: no valid rule from this data
+
+The proposed rule (face found, pitch below a threshold, no phone, for 2 s) was tested on the
+cached features: 72 student frames (looking down at a phone) against 79 matched
+looking-ahead frames. The landmark pitch proxy separates them barely better than chance
+(AUC 0.59). The features that separate well are face height (0.85) and face position in the
+frame (0.80), which describe camera placement and distance, not head angle, so a rule built
+on them would recognize the recording setup instead of the behavior. No looking-down signal
+is shipped. A proper head-pose estimate from the landmarks, tested on real webcam clips from
+several people, is the next step.
+
+### Reproducible model setup
+
+Model files are not committed. `make export-model APPROVE=1` (from `backend/`) creates a
+throwaway environment with torch, exports the person detector, downloads YuNet, and writes
+both manifests into `models/`. The person model's manifest is generated from the exported
+file rather than checked in, because its SHA-256 depends on the exact torch build; on this
+machine the export was byte-identical across runs. The YuNet download is pinned to a fixed
+SHA-256 and rejected if it differs. Passing `APPROVE=1` records that the operator reviewed
+the model licenses; without it the worker refuses to load the models. A fresh export was
+verified to run the worker with identical output. Publishing the exported weights as a
+GitHub release asset was not done: it would redistribute COCO-trained weights and needs a
+license decision by the team.
+
+### Physical-camera smoke test (run once on one laptop webcam)
+
+`backend/scripts/smoke_test_camera.py` is a guided test for a real webcam. It requires
+`--consent-local-camera`, counts the person in, prints prompts, scores itself, and saves
+derived signals, per-frame scores (numbers only) and a summary under the gitignored
+`data/local/eval/`; no video is saved. If the camera cannot open it exits with the usual causes,
+and a run that ends early is marked "CAMERA PROBLEM", so an empty run is never read as a
+pass. `--live` prints the scores once a second, and `--width`/`--height` set the capture size
+(default 640x480). If loading hangs on a machine, `backend/scripts/diagnose_model_load.py`
+tests each loading step in its own process with a time limit. Run these from a terminal app
+that has camera permission (System Settings > Privacy & Security > Camera), from the repository
+root:
+
+```sh
+PYTHONPATH=backend .venv-ml/bin/python -m scripts.smoke_test_camera \
+  --consent-local-camera --mode false-alarms          # sit normally for 5 minutes
+PYTHONPATH=backend .venv-ml/bin/python -m scripts.smoke_test_camera \
+  --consent-local-camera --mode guided --live         # follow the prompts (2 minutes)
+```
+
+The false-alarm run passes when phone and head-turn signals stay at or below 0.2 per minute.
+The guided script is: normal (0-30 s), phone in hand (30-60 s), look to the side (60-80 s),
+leave and return (80-100 s), normal again (100-120 s). A phase counts as detected when its
+expected labels cover at least half of it, and signals within 3 s of a boundary are not
+counted as errors. These pass thresholds are the author's choice, not validated values.
+
+**Results.** One person, one MacBook Air built-in camera, one room. No threshold or rule was
+tuned from these runs.
+
+| Run | Result |
+| --- | --- |
+| False alarms, 300 s sitting normally | 0 signals of any kind. Verdict PASS. |
+| Guided, 120 s | Verdict **REVIEW**: 2 of 4 expected behaviors missed or mislabelled (below). |
+| Live phone test, 45 s (`--live`) | 4 `phone_visible` events; see below. |
+
+Guided run in detail (the first version of this run did not record per-frame scores):
+
+- **Normal phases (0-30 s, 100-120 s):** no signals. No false alarms.
+- **Phone (30-60 s):** **missed entirely** (0% coverage). Why is unconfirmed, because scores were
+  not recorded; the later live test suggests the phone was not held where the camera could see it.
+- **Look to the side (60-80 s):** `head_away` at 61.8-62.9, 64.6-66.8 and 67.8-69.6 s, then
+  `face_absent` at 69.6-73.5 and 75.7-76.7 s. So the turn was detected but split across two
+  labels, because a face turned far to the side is no longer found and the worker relabelled it
+  "face absent". Only 25% of the phase counted as `head_away`.
+- **Leave and return (80-100 s):** `student_left_frame` 87.0-101.8 s, 65% coverage of the
+  phase: detected, about 7 s after the prompt and running 1.8 s into the next phase.
+
+Live phone test, run with default 640x480 capture: `phone_visible` at 3.6-18.5, 20.2-30.0,
+31.8-35.0 and 36.4-42.7 s. The phone score had a median of 0.67, 0.83 and 0.86 over the
+three stretches (maximum 0.99), against the 0.4 threshold, with a person found in 99% of frames
+and a face in 99%. So the detector and threshold work on this camera when the phone is held up
+near the face, and resolution and threshold are not what caused the guided-run miss. The
+tester's exact timing was not recorded: the scores are high throughout, including the stretches
+intended to have no phone, so the phone was probably held for most of the run, but that is
+unconfirmed. The gaps between the four events (1.4-1.8 s) are longer than the 1 s merge gap.
+
+Changes made after these runs, not yet re-run on a camera: the guided prompt for the phone
+now says to hold it up near the chin with the screen toward you, and a face that disappears
+right after a head turn now continues `head_away` instead of becoming `face_absent`. A rerun
+of the guided test is needed to confirm either. The scoring logic is unit-tested on synthetic
+signals.
+
+### Not done: Electron integration
+
+Launching the worker from the Electron main process (consent flag, pipe JSON lines through
+IPC into the batch poster) was not built. It edits the team's released frontend, which is not
+part of this branch's base, needs the packaged app to locate a Python environment and the
+model files, and depends on macOS camera-permission behavior that cannot be tested without a
+physical camera and a display. Until then the worker is an opt-in command-line tool.
 
 ## Limitations
 
@@ -353,11 +509,13 @@ Integration pieces, all opt-in and never launched by the application:
   unavailable and does not detect layout changes that leave a plausible-looking tile.
 - **Confidence is partly a placeholder.** Presenter events, `face_absent` and
   `student_left_frame` use a fixed 0.5 instead of a detector score.
-- **Not run on a live camera or a live server.** The camera CLI was tested only with a
-  fake source, and posting was tested through the in-process app and a mocked transport,
-  not against a running server. Delivery events use `post_delivery_events.py` the same way.
-  The backend's default 30-second minimum would not mark the short events these clips
-  produce as possible missed windows; longer real sessions are needed for that path.
+- **Tested on one webcam, briefly.** One person, one laptop camera, one room, and one
+  guided run that did not pass (phone missed, head turn split across labels). The fixes made
+  afterwards have not been rerun on a camera. Posting was tested through the in-process app and
+  a mocked transport, not against a running server; delivery events use
+  `post_delivery_events.py` the same way. The backend's default 30-second minimum would not mark
+  the short events these runs produce as possible missed windows; longer real sessions are needed
+  for that path.
 - **Looking down is not detected.** The label is not emitted.
 - **Signals are not attention signals.** They describe framing and visible head or phone
   position. They say nothing about attention or comprehension.
