@@ -1,177 +1,228 @@
-import { AppRoute, buildRouteHash, resolveRoute } from './app/router.mjs';
+import { buildRouteHash, resolveRoute, type AppRoute } from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
+import { getBackendSessionState, setActiveSession, setBackendCourses, setBackendLectures, setBackendState, setBackendUser, setConsent } from './services/backend_session_state.mjs';
+import { checkBackendHealth, joinLectureSession, loadAccountWorkspace, loadEducatorWorkspace, loadProfessorReport, loadTranscriptWorkspace, recordRecoveryCard, recordSubmittedEvent } from './services/lecture_workspace.mjs';
+import { buildMomentsFromEvents, buildMomentsFromSummary, sessionDurationMs } from './services/lecture_view_models.mjs';
 
 const appRoot = document.querySelector<HTMLElement>('#app');
+if (!appRoot) throw new Error('Bloom requires an #app mount element.');
 
-if (!appRoot) {
-  throw new Error('Bloom requires an #app mount element.');
-}
-
-/**
- * Refreshes the navigation status using the local backend health endpoint.
- *
- * @returns A promise that settles after the visible status is updated.
- */
-const updateBackendStatus = async (): Promise<void> => {
-  const statusPill = document.querySelector<HTMLElement>('[data-backend-state]');
-  const statusLabel = document.querySelector<HTMLElement>('[data-backend-label]');
-
-  if (!statusPill || !statusLabel) {
-    return;
-  }
-
-  statusPill.dataset.backendState = 'checking';
-  statusLabel.textContent = 'Checking local service';
-
-  try {
-    const health = await window.backend.health();
-    statusPill.dataset.backendState = 'connected';
-    statusLabel.textContent = health.status === 'ok' ? 'Local service ready' : 'Local service connected';
-  } catch {
-    statusPill.dataset.backendState = 'offline';
-    statusLabel.textContent = 'Demo mode';
-  }
+const formErrorMessage = (error: unknown): string => {
+  const typed = error as Partial<BackendRequestErrorShape>;
+  return typeof typed.message === 'string' ? typed.message : 'The local service could not complete that request.';
 };
 
-/**
- * Connects timeline markers to the route-appropriate moment detail panel.
- *
- * @param route - Current application route used to select audience language.
- * @returns Nothing; event listeners are registered on rendered markers.
- */
+const readFormValues = (form: HTMLFormElement): Record<string, string> =>
+  Object.fromEntries(Array.from(form.elements).filter((element): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement => 'name' in element && 'value' in element && Boolean(element.name)).map((element) => [element.name, element.value]));
+
 const bindTimelineInteractions = (route: AppRoute): void => {
-  const momentButtons = document.querySelectorAll<HTMLButtonElement>('[data-moment-id]');
-
-  momentButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const momentId = button.dataset.momentId;
-      const detail = document.querySelector<HTMLElement>('[data-moment-detail]');
-
-      if (!momentId || !detail) {
-        return;
-      }
-
-      momentButtons.forEach((candidate) => candidate.classList.remove('is-selected'));
-      button.classList.add('is-selected');
-      const audience = route === 'educator-summary' ? 'educator' : 'student';
-      detail.outerHTML = renderSelectedMoment(momentId, audience);
-    });
-  });
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-moment-id]');
+  const state = getBackendSessionState();
+  const duration = state.activeSession ? sessionDurationMs(state.activeSession) : 1;
+  const moments = route === 'educator-summary' && state.professorSummary
+    ? buildMomentsFromSummary(state.professorSummary, duration)
+    : route === 'student-summary' && state.submittedEvents.length
+      ? buildMomentsFromEvents(state.submittedEvents, duration)
+      : undefined;
+  buttons.forEach((button) => button.addEventListener('click', () => {
+    const detail = document.querySelector<HTMLElement>('[data-moment-detail]');
+    if (!detail) return;
+    buttons.forEach((candidate) => candidate.classList.remove('is-selected'));
+    button.classList.add('is-selected');
+    detail.outerHTML = renderSelectedMoment(button.dataset.momentId ?? '', route === 'educator-summary' ? 'educator' : 'student', moments);
+  }));
 };
 
-/**
- * Connects summary tab buttons to their corresponding content panels.
- *
- * @returns Nothing; event listeners are registered on rendered tabs.
- */
 const bindSummaryTabs = (): void => {
-  const tabButtons = document.querySelectorAll<HTMLButtonElement>('[data-tab]');
-  const tabPanels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
-
-  tabButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const tabName = button.dataset.tab;
-
-      tabButtons.forEach((candidate) => {
-        const isSelected = candidate === button;
-        candidate.classList.toggle('is-active', isSelected);
-        candidate.setAttribute('aria-selected', String(isSelected));
-      });
-
-      tabPanels.forEach((panel) => {
-        panel.hidden = panel.dataset.tabPanel !== tabName;
-      });
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-tab]');
+  const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
+  buttons.forEach((button) => button.addEventListener('click', () => {
+    const tab = button.dataset.tab;
+    buttons.forEach((candidate) => {
+      const active = candidate === button;
+      candidate.classList.toggle('is-active', active);
+      candidate.setAttribute('aria-selected', String(active));
     });
-  });
+    panels.forEach((panel) => { panel.hidden = panel.dataset.tabPanel !== tab; });
+  }));
 };
 
-/**
- * Connects lecture search and status controls to the visible card set.
- *
- * @returns Nothing; event listeners are registered when controls are present.
- */
 const bindLibraryFilters = (): void => {
-  const searchInput = document.querySelector<HTMLInputElement>('[data-library-search]');
-  const statusFilter = document.querySelector<HTMLSelectElement>('[data-library-filter]');
+  const search = document.querySelector<HTMLInputElement>('[data-library-search]');
+  const status = document.querySelector<HTMLSelectElement>('[data-library-filter]');
   const cards = document.querySelectorAll<HTMLElement>('[data-lecture-title]');
-  const emptyState = document.querySelector<HTMLElement>('[data-library-empty]');
-
-  if (!searchInput || !statusFilter || !emptyState) {
-    return;
-  }
-
-  const applyFilters = (): void => {
-    const query = searchInput.value.trim().toLowerCase();
-    const selectedStatus = statusFilter.value;
-    let visibleCount = 0;
-
+  const empty = document.querySelector<HTMLElement>('[data-library-empty]');
+  if (!search || !status || !empty) return;
+  const apply = (): void => {
+    const query = search.value.trim().toLowerCase();
+    const selected = status.value;
+    let visible = 0;
     cards.forEach((card) => {
-      const matchesQuery = card.dataset.lectureTitle?.includes(query) ?? false;
-      const matchesStatus = selectedStatus === 'all' || card.dataset.lectureStatus === selectedStatus;
-      const isVisible = matchesQuery && matchesStatus;
-      card.hidden = !isVisible;
-      visibleCount += isVisible ? 1 : 0;
+      const match = (card.dataset.lectureTitle ?? '').includes(query) && (selected === 'all' || card.dataset.lectureStatus === selected);
+      card.hidden = !match;
+      if (match) visible += 1;
     });
-
-    emptyState.hidden = visibleCount > 0;
+    empty.hidden = visible > 0;
   };
-
-  searchInput.addEventListener('input', applyFilters);
-  statusFilter.addEventListener('change', applyFilters);
+  search.addEventListener('input', apply);
+  status.addEventListener('change', apply);
 };
 
-/**
- * Connects page-specific prototype buttons and forms.
- *
- * @returns Nothing; event listeners are registered when actions are present.
- */
-const bindPageActions = (): void => {
-  const consentDialog = document.querySelector<HTMLDialogElement>('[data-consent-dialog]');
-  const openConsentButton = document.querySelector<HTMLButtonElement>('[data-open-consent]');
-  openConsentButton?.addEventListener('click', () => consentDialog?.showModal());
-
-  const loginForm = document.querySelector<HTMLFormElement>('[data-login-form]');
-  loginForm?.addEventListener('submit', (event) => {
+const bindAuthentication = (): void => {
+  const form = document.querySelector<HTMLFormElement>('[data-login-form]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-auth-toggle]');
+  if (!form || !toggle) return;
+  let registration = false;
+  toggle.addEventListener('click', () => {
+    registration = !registration;
+    form.dataset.authMode = registration ? 'register' : 'login';
+    document.querySelectorAll<HTMLElement>('[data-register-field]').forEach((field) => { field.hidden = !registration; field.querySelector('input,select')?.toggleAttribute('required', registration); });
+    document.querySelector<HTMLElement>('[data-auth-eyebrow]')!.textContent = registration ? 'New to Bloom' : 'Welcome back';
+    document.querySelector<HTMLElement>('[data-auth-title]')!.textContent = registration ? 'Create your Bloom account' : 'Sign in to Bloom';
+    document.querySelector<HTMLButtonElement>('[data-auth-submit]')!.textContent = registration ? 'Create account' : 'Sign in';
+    toggle.textContent = registration ? 'Sign in instead' : 'Create account';
+  });
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (loginForm.reportValidity()) {
-      window.location.hash = buildRouteHash('student-dashboard');
+    if (!form.reportValidity()) return;
+    const values = readFormValues(form);
+    const message = form.querySelector<HTMLElement>('[data-form-message]');
+    try {
+      const session = registration
+        ? await window.backend.register({ display_name: String(values.display_name), email: String(values.email), password: String(values.password), role: String(values.role) as 'student' | 'professor' })
+        : await window.backend.login({ email: String(values.email), password: String(values.password) });
+      setBackendUser(session.user);
+      setBackendState('connected');
+      window.location.hash = buildRouteHash(session.user.role === 'professor' ? 'educator-dashboard' : 'student-dashboard');
+    } catch (error) {
+      if (message) message.textContent = formErrorMessage(error);
     }
   });
+};
 
-  document.querySelector<HTMLButtonElement>('[data-export-report]')?.addEventListener('click', (event) => {
-    const button = event.currentTarget as HTMLButtonElement;
-    button.textContent = 'Summary exported';
-    button.disabled = true;
+const bindStudentActions = (): void => {
+  const dialog = document.querySelector<HTMLDialogElement>('[data-consent-dialog]');
+  document.querySelector<HTMLButtonElement>('[data-open-consent]')?.addEventListener('click', () => dialog?.showModal());
+  dialog?.querySelector('form')?.addEventListener('submit', async (event) => {
+    const submitter = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (submitter?.value !== 'enable') return;
+    const session = getBackendSessionState().activeSession;
+    if (!session) return;
+    event.preventDefault();
+    try { await window.backend.updateAggregationConsent(session.session_id, { is_allowed: true }); dialog.close(); } catch (error) { dialog.querySelector('p:last-child')!.textContent = formErrorMessage(error); }
   });
+  const joinForm = document.querySelector<HTMLFormElement>('[data-join-session-form]');
+  joinForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const sessionId = String(new FormData(joinForm).get('session_id') ?? '').trim();
+    const message = joinForm.querySelector<HTMLElement>('[data-join-message]');
+    try { await joinLectureSession(sessionId); renderApplication(); } catch (error) { if (message) message.textContent = formErrorMessage(error); }
+  });
+  const session = getBackendSessionState().activeSession;
+  document.querySelector<HTMLButtonElement>('[data-missed-that]')?.addEventListener('click', async () => {
+    if (!session) return;
+    const now = Math.max(30_000, Date.now() - Date.parse(session.session_clock_origin));
+    const event: SignalEvent = { event_id: crypto.randomUUID(), session_id: session.session_id, event_type: 'possible_missed_window', start_ms: now - 30_000, end_ms: now, confidence: 1, signals: ['self_report'], user_confirmed: true };
+    try { await window.backend.ingestEvents(session.session_id, { lecture_id: session.lecture_id, events: [event] }); recordSubmittedEvent(event); window.location.hash = buildRouteHash('student-summary'); } catch { setBackendState('offline'); }
+  });
+  const transcriptForm = document.querySelector<HTMLFormElement>('[data-transcript-form]');
+  transcriptForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!session) return;
+    const values = readFormValues(transcriptForm);
+    const text = String(values.text ?? '').trim();
+    const now = Math.max(1, Date.now() - Date.parse(session.session_clock_origin));
+    const previous = getBackendSessionState().transcriptChunks.at(-1)?.end_ms ?? 0;
+    const chunk: TranscriptChunk = { chunk_id: crypto.randomUUID(), session_id: session.session_id, source: 'local_transcription', start_ms: previous, end_ms: Math.max(previous + 1, now), text, is_final: true, revision: 1, speaker_label: 'Professor' };
+    const message = transcriptForm.querySelector<HTMLElement>('[data-transcript-message]');
+    try { await window.backend.ingestTranscript(session.session_id, { lecture_id: session.lecture_id, chunks: [chunk] }); await loadTranscriptWorkspace(session.session_id, chunk.end_ms); if (message) message.textContent = 'Transcript added.'; } catch (error) { if (message) message.textContent = formErrorMessage(error); }
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-request-recovery]').forEach((button) => button.addEventListener('click', async () => {
+    const session = getBackendSessionState().activeSession;
+    const event = getBackendSessionState().submittedEvents.find((candidate) => candidate.event_id === button.dataset.requestRecovery);
+    if (!session || !event) return;
+    try {
+      const job = await window.backend.requestRecoveryCard(session.session_id, { start_ms: event.start_ms, end_ms: event.end_ms, source_event_ids: [event.event_id] }, event.event_id);
+      if (job.status === 'failed') throw new Error(job.failure?.message ?? 'Recovery card generation failed.');
+      if (!job.card_id) throw new Error('Recovery card is not available yet.');
+      recordRecoveryCard(await window.backend.readRecoveryCard(session.session_id, job.card_id));
+      renderApplication();
+    } catch (error) {
+      button.insertAdjacentHTML('afterend', `<p class="form-message">${formErrorMessage(error)}</p>`);
+    }
+  }));
+};
 
-  document.querySelector<HTMLButtonElement>('[data-delete-local-data]')?.addEventListener('click', (event) => {
-    const button = event.currentTarget as HTMLButtonElement;
-    button.textContent = 'Demo: no local data deleted';
+const bindEducatorActions = (): void => {
+  const courseForm = document.querySelector<HTMLFormElement>('[data-course-form]');
+  courseForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const values = readFormValues(courseForm);
+    try { const course = await window.backend.createCourse({ code: String(values.code), title: String(values.title) }); setBackendCourses([...getBackendSessionState().courses, course]); renderApplication(); } catch (error) { document.querySelector<HTMLElement>('[data-educator-message]')!.textContent = formErrorMessage(error); }
+  });
+  const lectureForm = document.querySelector<HTMLFormElement>('[data-lecture-form]');
+  lectureForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const values = readFormValues(lectureForm);
+    try { const lecture = await window.backend.createLecture({ course_id: String(values.course_id), title: String(values.title) }); setBackendLectures(lecture.course_id, [...(getBackendSessionState().lecturesByCourse[lecture.course_id] ?? []), lecture]); renderApplication(); } catch (error) { document.querySelector<HTMLElement>('[data-educator-message]')!.textContent = formErrorMessage(error); }
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-start-session]').forEach((button) => button.addEventListener('click', async () => {
+    try { const session = await window.backend.createSession({ course_id: button.dataset.courseId!, lecture_id: button.dataset.startSession!, title: button.dataset.lectureTitle!, mode: 'in_person' }); setActiveSession(session); renderApplication(); } catch (error) { document.querySelector<HTMLElement>('[data-educator-message]')!.textContent = formErrorMessage(error); }
+  }));
+  document.querySelector<HTMLButtonElement>('[data-end-session]')?.addEventListener('click', async () => {
+    const session = getBackendSessionState().activeSession;
+    if (!session) return;
+    try { setActiveSession(await window.backend.endSession(session.session_id)); window.location.hash = buildRouteHash('educator-summary'); } catch (error) { document.querySelector<HTMLElement>('[data-educator-message]')!.textContent = formErrorMessage(error); }
   });
 };
 
-/**
- * Renders the active hash route and binds interactions for the new page tree.
- *
- * @returns Nothing; the application mount element is replaced in place.
- */
-const renderApplication = (): void => {
-  const route = resolveRoute(window.location.hash);
-  appRoot.innerHTML = renderPage(route);
-  document.title = `Bloom · ${route.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')}`;
+const bindAccountActions = (): void => {
+  document.querySelector<HTMLInputElement>('[data-analytics-consent]')?.addEventListener('change', async (event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    try { setConsent(await window.backend.updateConsent({ analytics_opt_in: input.checked })); } catch (error) { document.querySelector<HTMLElement>('[data-consent-message]')!.textContent = formErrorMessage(error); }
+  });
+  document.querySelector<HTMLButtonElement>('[data-logout]')?.addEventListener('click', async () => { await window.backend.logout(); setBackendUser(null); window.location.hash = buildRouteHash('login'); });
+};
 
-  bindTimelineInteractions(route);
-  bindSummaryTabs();
-  bindLibraryFilters();
-  bindPageActions();
+const loadRouteData = async (route: AppRoute): Promise<void> => {
+  if (route === 'educator-dashboard' || (route === 'lecture-library' && getBackendSessionState().user?.role === 'professor')) await loadEducatorWorkspace();
+  if (route === 'account') await loadAccountWorkspace();
+  if (route === 'educator-summary' && getBackendSessionState().activeSession) await loadProfessorReport(getBackendSessionState().activeSession!.session_id);
+  if (route === 'student-summary' && getBackendSessionState().activeSession) await loadTranscriptWorkspace(getBackendSessionState().activeSession!.session_id, sessionDurationMs(getBackendSessionState().activeSession!));
+};
+
+const updateBackendStatus = async (): Promise<void> => {
+  const pill = document.querySelector<HTMLElement>('[data-backend-state]');
+  const label = document.querySelector<HTMLElement>('[data-backend-label]');
+  if (!pill || !label) return;
+  pill.dataset.backendState = 'checking';
+  label.textContent = 'Checking local service';
+  await checkBackendHealth();
+  const connected = getBackendSessionState().backendState === 'connected';
+  pill.dataset.backendState = connected ? 'connected' : 'offline';
+  label.textContent = connected ? 'Local service ready' : 'Local service offline · demo mode';
+};
+
+const renderApplication = (): void => {
+  const state = getBackendSessionState();
+  const route = resolveRoute(window.location.hash);
+  if (route !== 'login' && !state.user) {
+    window.location.hash = buildRouteHash('login');
+    return;
+  }
+  appRoot.innerHTML = renderPage(route, state);
+  document.title = `Bloom · ${route.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')}`;
+  bindTimelineInteractions(route); bindSummaryTabs(); bindLibraryFilters(); bindAuthentication(); bindStudentActions(); bindEducatorActions(); bindAccountActions();
   void updateBackendStatus();
+  void loadRouteData(route).then(() => {
+    if (getBackendSessionState().backendState === 'connected' && route !== 'login') {
+      appRoot.innerHTML = renderPage(route, getBackendSessionState());
+      bindTimelineInteractions(route); bindSummaryTabs(); bindLibraryFilters(); bindStudentActions(); bindEducatorActions(); bindAccountActions();
+    }
+  });
 };
 
 window.addEventListener('hashchange', renderApplication);
-
-if (!window.location.hash) {
-  window.location.hash = buildRouteHash('student-dashboard');
-} else {
-  renderApplication();
-}
+if (!window.location.hash) window.location.hash = buildRouteHash('login');
+else renderApplication();

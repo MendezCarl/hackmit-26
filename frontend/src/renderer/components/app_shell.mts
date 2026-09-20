@@ -10,6 +10,7 @@ export type AppShellOptions = {
   eyebrow?: string;
   content: string;
   showSidebar?: boolean;
+  demoMode?: boolean;
 };
 
 /**
@@ -41,6 +42,7 @@ export function AppShell(options: AppShellOptions): string {
         <main class="page-content" id="main-content" tabindex="-1">
           ${pageHeading}
           ${options.content}
+          ${options.demoMode === false || options.route === 'login' ? '' : '<span class="demo-badge">Demo mode · synthetic data</span>'}
         </main>
       </div>
     </div>

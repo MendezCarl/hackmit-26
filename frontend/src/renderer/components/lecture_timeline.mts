@@ -1,4 +1,4 @@
-import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
+import { LectureMoment } from '../fixtures/demo_content.mjs';
 
 /**
  * Builds an interactive lecture timeline from synthetic lecture moments.
@@ -7,7 +7,7 @@ import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
  * @param selectedMomentId - Moment currently selected in the detail panel.
  * @returns Timeline markup with one button per lecture moment.
  */
-export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: string): string {
+export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: string, durationLabel = 'Lecture end'): string {
   const markers = moments
     .map(
       (moment) => `
@@ -36,7 +36,7 @@ export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: str
         <div class="timeline-baseline"></div>
         ${markers}
       </div>
-      <div class="timeline-labels"><span>0:00</span><span>${ACTIVE_LECTURE.durationLabel}</span></div>
+      <div class="timeline-labels"><span>0:00</span><span>${durationLabel}</span></div>
     </section>
   `;
 }

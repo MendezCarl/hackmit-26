@@ -3,7 +3,7 @@ import { buildRouteHash } from '../app/router.mjs';
 /**
  * Builds the public navigation displayed on the login page.
  *
- * @returns Header markup with Bloom branding and a prototype link.
+ * @returns Header markup with Bloom branding.
  */
 export function LoginNavigation(): string {
   return `
@@ -12,7 +12,7 @@ export function LoginNavigation(): string {
         <img src="./assets/bloom-icon.svg" alt="" />
         <span>Bloom</span>
       </a>
-      <a class="role-switch" href="${buildRouteHash('student-dashboard')}">View prototype</a>
+      <span class="role-switch">Local service</span>
     </header>
   `;
 }

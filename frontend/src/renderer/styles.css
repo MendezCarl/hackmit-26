@@ -131,6 +131,18 @@ p {
   border: 0;
 }
 
+.demo-badge {
+  display: inline-block;
+  margin-top: 1rem;
+  border: 1px solid rgba(105, 109, 125, 0.2);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  color: var(--slate);
+  background: rgba(255, 253, 247, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .app-frame {
   min-height: 100vh;
 }

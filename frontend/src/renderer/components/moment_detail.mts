@@ -48,10 +48,10 @@ export function MomentDetail(
 export function renderSelectedMoment(
   momentId: string,
   audience: 'student' | 'educator',
+  moments: LectureMoment[] = ACTIVE_LECTURE.moments,
 ): string {
   const moment =
-    ACTIVE_LECTURE.moments.find((candidate) => candidate.momentId === momentId) ??
-    ACTIVE_LECTURE.moments[0];
+    moments.find((candidate) => candidate.momentId === momentId) ?? moments[0] ?? ACTIVE_LECTURE.moments[0];
 
   return MomentDetail(moment, audience);
 }

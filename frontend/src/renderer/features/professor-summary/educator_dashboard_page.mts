@@ -3,18 +3,26 @@ import { AppShell } from '../../components/app_shell.mjs';
 import { MetricCard } from '../../components/metric_card.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
 
+export type EducatorDashboardModel = { isDemo: boolean; courses: Course[]; lecturesByCourse: Record<string, Lecture[]>; activeSession: LectureSession | null };
+const FIXTURE_MODEL: EducatorDashboardModel = { isDemo: true, courses: [], lecturesByCourse: {}, activeSession: null };
+
 /**
  * Builds the educator course-insights dashboard.
  *
  * @returns Educator dashboard markup with anonymous synthetic metrics.
  */
-export function EducatorDashboardPage(): string {
+export function EducatorDashboardPage(model: EducatorDashboardModel = FIXTURE_MODEL): string {
+  const courses = model.courses;
+  const lectures = courses.flatMap((course) => model.lecturesByCourse[course.course_id] ?? []);
   return AppShell({
     route: 'educator-dashboard',
     role: 'educator',
     eyebrow: `${ACTIVE_LECTURE.courseCode} · Post-lecture overview`,
     title: 'Teach forward with clearer evidence.',
+    demoMode: model.isDemo,
     content: `
+      <section class="section-block"><form data-course-form><p class="eyebrow">Course setup</p><label>Course code<input name="code" required /></label><label>Course title<input name="title" required /></label><button class="secondary-button" type="submit">Create course</button></form><form data-lecture-form><label>Course<select name="course_id" required>${courses.map((course) => `<option value="${course.course_id}">${course.code} · ${course.title}</option>`).join('')}</select></label><label>Lecture title<input name="title" required /></label><button class="secondary-button" type="submit">Create lecture</button></form><p class="form-message" data-educator-message></p></section>
+      ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${model.activeSession.title}</h2><p>Join code: <strong>${model.activeSession.session_id}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
       <section class="metrics-grid" aria-label="Lecture metrics">
         ${MetricCard('Lecture continuity', '78%', '41 of 52 valid intervals had no hotspot', 'teal')}
         ${MetricCard('Evidence coverage', '83%', '68 of 82 opted-in participants', 'sage')}
@@ -49,6 +57,7 @@ export function EducatorDashboardPage(): string {
           ${ACTIVE_LECTURE.moments.map((moment) => `<a class="review-table__row" role="row" href="${buildRouteHash('educator-summary')}"><span>${moment.startLabel}</span><strong>${moment.title}</strong><span>${moment.evidence}</span><span>${moment.action}</span></a>`).join('')}
         </div>
       </section>
+      <section class="section-block"><h2>Lectures</h2><div class="lecture-row-list">${lectures.map((lecture) => `<div class="lecture-row"><span><strong>${lecture.title}</strong><small>${lecture.course_id}</small></span><button class="primary-button" type="button" data-start-session="${lecture.lecture_id}" data-course-id="${lecture.course_id}" data-lecture-title="${lecture.title}">Start session</button></div>`).join('')}</div></section>
     `,
   });
 }
