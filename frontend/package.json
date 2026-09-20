@@ -3,22 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "description": "Bloom Electron desktop app with a Python FastAPI backend.",
+  "author": "Bloom Team",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "rm -rf dist && tsc && cp index.html dist/ && cp src/renderer/styles.css dist/ && cp -R src/assets dist/",
+    "build": "node scripts/build.mjs",
     "dev": "npm run build && electron .",
     "start": "npm run build && electron .",
+    "package": "npm run build && electron-builder --publish never",
+    "package:linux": "npm run build && electron-builder --linux AppImage deb --x64 --publish never",
+    "package:mac": "npm run build && electron-builder --mac dmg zip --universal --publish never",
+    "package:win": "npm run build && electron-builder --win nsis zip --x64 --publish never",
     "test": "npm run build && node --test tests/**/*.test.cjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
-    "electron": "^38.1.0",
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.9.2"
   },
   "build": {
     "appId": "com.mendezcarl.bloom",
     "productName": "Bloom",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
     "directories": {
       "buildResources": "build",
       "output": "release"
@@ -31,6 +42,7 @@
     ],
     "mac": {
       "icon": "build/bloom-icon.icns",
+      "identity": null,
       "category": "public.app-category.education"
     },
     "win": {

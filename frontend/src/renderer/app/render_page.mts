@@ -24,6 +24,7 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
         activeSession: state?.activeSession ?? null,
         joinedSessions: state?.joinedSessions ?? [],
         participantCount: state?.participantCount ?? null,
+        submittedEvents: state?.submittedEvents ?? [],
       }),
     'student-summary': () =>
       StudentSummaryPage({

@@ -4,8 +4,13 @@ import { BackendClient } from './backend_client.js';
 type BackendOperationResult =
   { ok: true; value: unknown } | { ok: false; error: BackendRequestErrorShape };
 
+/** Returns the configured backend origin, falling back to BackendClient defaults. */
+function readBackendBaseUrl(): string | undefined {
+  return process.env.BLOOM_BACKEND_URL?.trim() || undefined;
+}
+
 /** Registers one serialized IPC handler for each backend operation. */
-export function registerBackendIpc(client = new BackendClient()): void {
+export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl())): void {
   const operations: Record<string, (...args: never[]) => Promise<unknown>> = {
     health: () => client.health(),
     apiStatus: () => client.apiStatus(),
