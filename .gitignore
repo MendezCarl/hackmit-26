@@ -25,3 +25,8 @@ venv/
 .env
 .env.*
 !.env.example
+
+# Private local media and operator-supplied models (never commit)
+data/local/
+models/
+*.onnx

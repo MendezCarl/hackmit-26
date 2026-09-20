@@ -1,0 +1,5 @@
+# Operator-only tooling for backend/scripts/export_person_detector.py.
+# Not application dependencies: install in a separate environment from the backend.
+torch>=2.9,<3
+torchvision>=0.24,<1
+onnx>=1.19,<2
