@@ -232,3 +232,28 @@ def test_baseline_is_discarded_when_the_camera_is_lost():
     assert len(worker.yaw_history) > 0
     worker.unavailable()
     assert len(worker.yaw_history) == 0
+
+
+def test_face_lost_after_a_turn_continues_head_away_instead_of_face_absent():
+    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
+    profile = FrameObservation(0.99, 0.0, 0.0, None)  # Person still there, face no longer found.
+    worker = sequence_worker([forward] * 4 + [turned] * 4 + [profile] * 8)
+    signals = run(worker, 16) + worker.flush(15 * STEP_MS)
+    assert [s.event_type for s in signals] == ["head_away"]
+    assert signals[0].end_ms - signals[0].start_ms >= 5_000  # One turn, not split in two.
+
+
+def test_face_lost_while_facing_forward_is_face_absent():
+    forward, covered = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.0, None)
+    worker = sequence_worker([forward] * 4 + [covered] * 6)
+    signals = run(worker, 10) + worker.flush(9 * STEP_MS)
+    assert [s.event_type for s in signals] == ["face_absent"]
+
+
+def test_leaving_after_a_turn_reports_left_frame_and_forgets_the_turn():
+    forward, turned = FrameObservation(0.99, 0.0, 0.9, 0.0), FrameObservation(0.99, 0.0, 0.9, 1.3)
+    gone, back_no_face = FrameObservation(0.0, 0.0, 0.0, None), FrameObservation(0.99, 0.0, 0.0, None)
+    worker = sequence_worker([forward] * 4 + [turned] * 3 + [gone] * 4 + [back_no_face] * 6)
+    signals = run(worker, 17) + worker.flush(16 * STEP_MS)
+    labels = [s.event_type for s in signals]
+    assert "student_left_frame" in labels and labels[-1] == "face_absent"

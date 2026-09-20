@@ -342,6 +342,9 @@ class StudentSignalWorker:
       baseline, so a long turn keeps being reported; a turn longer than
       ``baseline_reset_ms`` is taken as a new seating position and re-baselined. The first
       frames define "normal", so someone already turned away at the start is not flagged.
+    - **Turn continuity:** if the face disappears while the head was already turned (a profile
+      the face detector cannot see), that continues ``head_away``. ``face_absent`` means the
+      face disappeared while the person was facing forward, or was never seen.
     - **Corroboration:** ``phone_visible`` counts only while a person is in frame, since a
       phone has to be held by someone. This removes phone detections on screens or objects
       with nobody present.
@@ -354,6 +357,7 @@ class StudentSignalWorker:
         self.active: dict[StudentSignalLabel, _Candidate] = {}
         self.yaw_history: deque[float] = deque(maxlen=policy.baseline_window_samples)
         self.turn_since_ms: int | None = None
+        self.last_face_was_turned: bool | None = None
         self.previous_ms: int | None = None
         self.last_latency_ms = 0
         self.is_available = True
@@ -363,6 +367,7 @@ class StudentSignalWorker:
         self.active.clear()
         self.yaw_history.clear()
         self.turn_since_ms = None
+        self.last_face_was_turned = None
         self.previous_ms = None
         self.is_available = False
 
@@ -397,10 +402,16 @@ class StudentSignalWorker:
             and baseline is not None
             and abs((observation.face_yaw or 0.0) - baseline) > policy.head_turn_yaw
         )
+        # A turned head that leaves the detector's view (a profile) loses the face; that is
+        # still the same turn, so it continues "head_away" instead of becoming "face_absent".
+        lost_after_turn = is_person and not has_face and bool(self.last_face_was_turned)
         return {
             "student_left_frame": (not is_person, PLACEHOLDER_CONFIDENCE),
-            "face_absent": (is_person and not has_face, PLACEHOLDER_CONFIDENCE),
-            "head_away": (is_turned, observation.face_score),
+            "face_absent": (is_person and not has_face and not lost_after_turn, PLACEHOLDER_CONFIDENCE),
+            "head_away": (
+                is_turned or lost_after_turn,
+                observation.face_score if is_turned else PLACEHOLDER_CONFIDENCE,
+            ),
             "phone_visible": (
                 is_person and observation.phone_score >= policy.phone_threshold,
                 observation.phone_score,
@@ -496,6 +507,10 @@ class StudentSignalWorker:
             self.previous_ms = lecture_time_ms
             observation = self.analyzer.analyze(frame)
             flags = self._flags(observation, self._yaw_baseline())
+            if observation.face_yaw is not None:
+                self.last_face_was_turned = flags["head_away"][0]
+            elif observation.person_score < self.policy.person_threshold:
+                self.last_face_was_turned = None
             self._update_baseline(observation.face_yaw, flags["head_away"][0], lecture_time_ms)
             for label, (is_positive, contribution) in flags.items():
                 signal = self._advance(label, is_positive, contribution, lecture_time_ms)
