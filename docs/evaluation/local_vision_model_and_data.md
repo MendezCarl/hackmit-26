@@ -1,6 +1,6 @@
 # Local Vision Model, Data, and Attribution
 
-**Status:** Draft; evaluated on consented recordings and short synthetic clips  
+**Status:** Draft; evaluated on consented recordings, short synthetic clips and one real laptop webcam  
 **Owner:** ML and Backend teams  
 **Last updated:** 2026-09-20
 
@@ -336,8 +336,9 @@ Integration pieces, all opt-in and never launched by the application:
   `--consent-local-camera`, both model paths (each with a manifest beside it) and a session
   clock offset. It prints derived signals as JSON lines. If the camera is lost it marks the
   worker unavailable and emits nothing further, so a vanished source is never reported as
-  the student leaving. It has not been run against a physical camera; only a fake source
-  was tested.
+  the student leaving. Its capture loop (`run_capture`, shared with the smoke test) has been
+  exercised on a real laptop webcam through the smoke test below; the CLI's own `main` has not
+  been launched separately.
 - `backend/scripts/post_student_signals.py` validates worker output and posts it to
   `POST /api/v1/sessions/{id}/events/batch` in batches of 50. The student token comes from
   the `STUDENT_TOKEN` environment variable, never an argument, and non-loopback hosts are
@@ -404,20 +405,67 @@ verified to run the worker with identical output. Publishing the exported weight
 GitHub release asset was not done: it would redistribute COCO-trained weights and needs a
 license decision by the team.
 
-### Physical-camera smoke test (not yet run)
+### Physical-camera smoke test (run once on one laptop webcam)
 
-The camera CLI has only been run against a fake source. To measure its false-alarm rate on a
-real webcam, run it for five minutes while doing none of the behaviors (sit normally, look at
-the screen, do not pick up a phone). Every signal it prints is then a false alarm:
+`backend/scripts/smoke_test_camera.py` is a guided test for a real webcam. It requires
+`--consent-local-camera`, counts the person in, prints prompts, scores itself, and saves
+derived signals, per-frame scores (numbers only) and a summary under the gitignored
+`data/local/eval/`; no video is saved. If the camera cannot open it exits with the usual causes,
+and a run that ends early is marked "CAMERA PROBLEM", so an empty run is never read as a
+pass. `--live` prints the scores once a second, and `--width`/`--height` set the capture size
+(default 640x480). If loading hangs on a machine, `backend/scripts/diagnose_model_load.py`
+tests each loading step in its own process with a time limit. Run these from a terminal app
+that has camera permission (System Settings > Privacy & Security > Camera), from the repository
+root:
 
 ```sh
-python -m app.local_ml.student_worker --consent-local-camera \
-  --person-model models/person_detector.onnx --face-model models/face_detection_yunet_2023mar.onnx \
-  --clock-offset-ms 0 --max-seconds 300 > /dev/null
+PYTHONPATH=backend .venv-ml/bin/python -m scripts.smoke_test_camera \
+  --consent-local-camera --mode false-alarms          # sit normally for 5 minutes
+PYTHONPATH=backend .venv-ml/bin/python -m scripts.smoke_test_camera \
+  --consent-local-camera --mode guided --live         # follow the prompts (2 minutes)
 ```
 
-The summary on stderr gives counts and events per minute per label. macOS will ask for camera
-permission for the terminal application the first time.
+The false-alarm run passes when phone and head-turn signals stay at or below 0.2 per minute.
+The guided script is: normal (0-30 s), phone in hand (30-60 s), look to the side (60-80 s),
+leave and return (80-100 s), normal again (100-120 s). A phase counts as detected when its
+expected labels cover at least half of it, and signals within 3 s of a boundary are not
+counted as errors. These pass thresholds are the author's choice, not validated values.
+
+**Results.** One person, one MacBook Air built-in camera, one room. No threshold or rule was
+tuned from these runs.
+
+| Run | Result |
+| --- | --- |
+| False alarms, 300 s sitting normally | 0 signals of any kind. Verdict PASS. |
+| Guided, 120 s | Verdict **REVIEW**: 2 of 4 expected behaviors missed or mislabelled (below). |
+| Live phone test, 45 s (`--live`) | 4 `phone_visible` events; see below. |
+
+Guided run in detail (the first version of this run did not record per-frame scores):
+
+- **Normal phases (0-30 s, 100-120 s):** no signals. No false alarms.
+- **Phone (30-60 s):** **missed entirely** (0% coverage). Why is unconfirmed, because scores were
+  not recorded; the later live test suggests the phone was not held where the camera could see it.
+- **Look to the side (60-80 s):** `head_away` at 61.8-62.9, 64.6-66.8 and 67.8-69.6 s, then
+  `face_absent` at 69.6-73.5 and 75.7-76.7 s. So the turn was detected but split across two
+  labels, because a face turned far to the side is no longer found and the worker relabelled it
+  "face absent". Only 25% of the phase counted as `head_away`.
+- **Leave and return (80-100 s):** `student_left_frame` 87.0-101.8 s, 65% coverage of the
+  phase: detected, about 7 s after the prompt and running 1.8 s into the next phase.
+
+Live phone test, run with default 640x480 capture: `phone_visible` at 3.6-18.5, 20.2-30.0,
+31.8-35.0 and 36.4-42.7 s. The phone score had a median of 0.67, 0.83 and 0.86 over the
+three stretches (maximum 0.99), against the 0.4 threshold, with a person found in 99% of frames
+and a face in 99%. So the detector and threshold work on this camera when the phone is held up
+near the face, and resolution and threshold are not what caused the guided-run miss. The
+tester's exact timing was not recorded: the scores are high throughout, including the stretches
+intended to have no phone, so the phone was probably held for most of the run, but that is
+unconfirmed. The gaps between the four events (1.4-1.8 s) are longer than the 1 s merge gap.
+
+Changes made after these runs, not yet re-run on a camera: the guided prompt for the phone
+now says to hold it up near the chin with the screen toward you, and a face that disappears
+right after a head turn now continues `head_away` instead of becoming `face_absent`. A rerun
+of the guided test is needed to confirm either. The scoring logic is unit-tested on synthetic
+signals.
 
 ### Not done: Electron integration
 
@@ -447,11 +495,13 @@ physical camera and a display. Until then the worker is an opt-in command-line t
   unavailable and does not detect layout changes that leave a plausible-looking tile.
 - **Confidence is partly a placeholder.** Presenter events, `face_absent` and
   `student_left_frame` use a fixed 0.5 instead of a detector score.
-- **Not run on a live camera or a live server.** The camera CLI was tested only with a
-  fake source, and posting was tested through the in-process app and a mocked transport,
-  not against a running server. Delivery events use `post_delivery_events.py` the same way.
-  The backend's default 30-second minimum would not mark the short events these clips
-  produce as possible missed windows; longer real sessions are needed for that path.
+- **Tested on one webcam, briefly.** One person, one laptop camera, one room, and one
+  guided run that did not pass (phone missed, head turn split across labels). The fixes made
+  afterwards have not been rerun on a camera. Posting was tested through the in-process app and
+  a mocked transport, not against a running server; delivery events use
+  `post_delivery_events.py` the same way. The backend's default 30-second minimum would not mark
+  the short events these runs produce as possible missed windows; longer real sessions are needed
+  for that path.
 - **Looking down is not detected.** The label is not emitted.
 - **Signals are not attention signals.** They describe framing and visible head or phone
   position. They say nothing about attention or comprehension.

@@ -92,7 +92,7 @@ are erased after use; only labelled intervals with a confidence leave the worker
 | **Rule** | A person is in frame and the phone score is at least the threshold. The phone search also runs on crops of the person's body, because a phone is tiny at the detector's input size. |
 | **Numbers** | Phone score at least {student.phone_threshold}; person score at least {student.person_threshold}. |
 | **Why** | The threshold is the lowest value that kept false positives under 1% on about 1,900 frames of class recordings (0.7% at this value, counting a phone only while a person is present). |
-| **Evidence** | Found for the whole of `student_a` and `student_b`; about a fifth of `student_d`. No phone detections on the teacher clips at this threshold. |
+| **Evidence** | Found for the whole of `student_a` and `student_b`; about a fifth of `student_d`. No phone detections on the teacher clips at this threshold. On a real laptop webcam a phone held up near the face scored 0.7-0.9 (median) and fired; in a guided run where it was probably held lower, it fired nothing. |
 | **Known failure** | Recall is poor when the phone is small or held low (`student_d`). A shared tablet screen or handwriting page can still be read as a phone: the highest-scoring negatives were 0.56-0.71. |
 | **Not claimed** | A visible phone does not mean distraction; phones are used for notes, chat and accessibility. It never creates a possible missed window on its own. |
 
@@ -113,7 +113,7 @@ are erased after use; only labelled intervals with a confidence leave the worker
 | **Rule** | A face is found and its yaw (nose offset over eye distance, from landmarks) differs from this person's own baseline by more than the threshold. |
 | **Numbers** | Yaw difference above {student.head_turn_yaw}. |
 | **Why** | Measuring against the person's own posture avoids flagging someone who simply sits at an angle. |
-| **Evidence** | Fired on `student_d`'s first turn (yaw about 1.0-1.5 against a baseline near 0.1); not on `student_a`, who sits at an angle (yaw about 0.4). |
+| **Evidence** | Fired on `student_d`'s first turn (yaw about 1.0-1.5 against a baseline near 0.1); not on `student_a`, who sits at an angle (yaw about 0.4). On a real webcam it fired for the first part of a turn to the side, then the face was lost (see turn continuity). |
 | **Known failure** | The threshold was chosen after inspecting the same three clips, so it is not independently tested. It measures yaw only; it cannot tell looking down. |
 
 ## Head-angle baseline
@@ -126,15 +126,25 @@ are erased after use; only labelled intervals with a confidence leave the worker
 | **Evidence** | Unit tests cover an angled person, a real turn, a 30 s turn, a turn past the reset, and camera loss discarding the baseline. |
 | **Known failure** | Whoever is turned away in the first frames is treated as facing their normal direction. Slow posture drift is absorbed. |
 
+## Turn continuity: a turned head that loses its face is still a turn
+
+| | |
+| --- | --- |
+| **Rule** | If the face disappears while the person is still in frame and the last face seen was turned, the turn continues as `head_away`. It does not become `face_absent`. |
+| **Numbers** | None beyond the head-turn threshold; no time limit, and the memory is cleared when the person leaves the frame or the camera is lost. |
+| **Why** | The face detector only sees near-frontal faces. A real turn to the side loses the face, and the worker used to switch labels midway. |
+| **Evidence** | On a real webcam (guided smoke test, look to the side) one turn was reported as three `head_away` intervals followed by two `face_absent` intervals. Unit tests cover the fix; it has not been rerun on a camera yet. |
+| **Known failure** | A person who turns and then covers their face is still reported as a turn. |
+
 ## `face_absent`
 
 | | |
 | --- | --- |
-| **Rule** | A person is detected but no face is found. |
+| **Rule** | A person is detected but no face is found, and the last face seen was facing forward (or none was seen). |
 | **Numbers** | Face score threshold 0.6 (detector). Confidence is a fixed placeholder of 0.5. |
 | **Why** | Distinguishes "turned or leaning away" from "left the frame". |
 | **Evidence** | Fired as the teacher left in `teacher_b` (4.7-5.7 s). |
-| **Known failure** | Also fires when a face is hidden by a hand, hair or low light. Confidence is a placeholder, not a measurement. |
+| **Known failure** | Fires when a face is hidden by a hand, hair or low light while facing forward. Confidence is a placeholder, not a measurement. |
 
 ## `student_left_frame`
 
@@ -143,7 +153,7 @@ are erased after use; only labelled intervals with a confidence leave the worker
 | **Rule** | No person is detected. |
 | **Numbers** | Person score below {student.person_threshold}. Confidence is a fixed placeholder of 0.5. |
 | **Why** | Reports that the student is no longer in the camera view. |
-| **Evidence** | Unit tests only. The synthetic clips end before a full {seconds(student.minimum_duration_ms)} absence. |
+| **Evidence** | Fired on a real webcam when the person left the camera view (87.0-101.8 s in the guided run), and stayed silent for 5 minutes of normal sitting. |
 | **Known failure** | Not evaluated on real footage. A covered lens still delivers frames and is reported as this signal; only a lost camera source is reported as unavailable, with no event. |
 
 ## Backend: which signals become possible missed windows
