@@ -13,6 +13,7 @@
   --white: #fffdf7;
   --border: rgba(105, 109, 125, 0.2);
   --shadow: 0 18px 55px rgba(63, 68, 82, 0.12);
+  --space-3: 0.75rem;
   color: var(--ink);
   background: var(--cream);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -305,7 +306,8 @@ p {
 
 .course-list {
   display: grid;
-  gap: 0.65rem;
+  gap: var(--space-3);
+  padding: 0 0.75rem;
 }
 
 .course-list__item {
@@ -318,17 +320,12 @@ p {
   font-size: 0.72rem;
 }
 
-.course-list__item strong,
-.course-list__item small {
+.course-list__item .course-group__code,
+.course-list__item .course-group__title {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.course-list__item small {
-  color: var(--slate);
-  font-size: 0.64rem;
 }
 
 .side-nav {
@@ -399,8 +396,33 @@ p {
 }
 
 .course-group summary a {
+  display: block;
+  width: 100%;
   color: var(--ink);
   text-decoration: none;
+}
+
+.course-group summary > a {
+  grid-column: 1 / -1;
+}
+
+.course-group__code {
+  display: block;
+  color: var(--teal-dark);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.course-group__title {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--slate-dark);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .course-dot {
@@ -453,6 +475,9 @@ p {
 }
 
 .page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   width: min(1180px, 100%);
   min-width: 0;
   margin: 0 auto;
@@ -631,6 +656,7 @@ p {
 
 .lecture-row-list {
   display: grid;
+  gap: var(--space-3);
   margin-top: 1rem;
 }
 
@@ -677,6 +703,29 @@ p {
   display: grid;
   gap: 0.28rem;
   font-size: 0.82rem;
+}
+
+.lecture-row__content {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.lecture-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.lecture-row__meta code {
+  border-radius: 6px;
+  padding: 0.12rem 0.35rem;
+  color: var(--slate-dark);
+  background: rgba(200, 213, 185, 0.48);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
 }
 
 .lecture-row small,
@@ -1878,7 +1927,7 @@ body {
 
 .table-list {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-3);
 }
 
 .table-row {
@@ -1962,7 +2011,12 @@ body {
 }
 
 .form-card {
+  width: 100%;
   max-width: 520px;
+}
+
+.student-form-card {
+  max-width: none;
 }
 
 .inline-form {
@@ -2123,7 +2177,7 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
 
 .zoom-banner__dismiss {
