@@ -8,7 +8,7 @@ import json
 import time
 from typing import Any
 
-from pydantic import Field, ValidationError
+from pydantic import Field
 
 from app.contracts.learning import RecoveryDraft
 from app.contracts.models import (
@@ -105,7 +105,7 @@ class OpenAIRecoveryGenerator:
                 or min(response.usage.input_tokens, response.usage.output_tokens) < 0
             ):
                 raise ValueError("Missing usage")
-        except ValueError, ValidationError:
+        except ValueError:
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
                 "The recap could not be validated against its sources.",

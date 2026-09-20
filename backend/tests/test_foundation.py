@@ -107,6 +107,18 @@ def test_unknown_provider_mode_is_rejected(monkeypatch) -> None:
         raise AssertionError("Unknown PROVIDER_MODE must be rejected.")
 
 
+def test_unknown_live_provider_is_rejected(monkeypatch) -> None:
+    """Unknown LIVE_PROVIDER values must fail fast."""
+
+    monkeypatch.setenv("LIVE_PROVIDER", "bogus")
+    try:
+        _settings_from_environment()
+    except ValueError as exc:
+        assert "LIVE_PROVIDER" in str(exc)
+    else:
+        raise AssertionError("Unknown LIVE_PROVIDER must be rejected.")
+
+
 def test_environment_threshold_overrides_are_loaded(monkeypatch) -> None:
     """Documented numeric environment variables must affect runtime settings."""
 
