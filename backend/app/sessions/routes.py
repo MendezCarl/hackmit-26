@@ -42,6 +42,26 @@ def create_session(
 
 
 @router.get(
+    "",
+    response_model=list[LectureSession],
+    summary="List owned lecture sessions",
+)
+def list_sessions(
+    actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
+    service: Annotated[SessionService, Depends(get_session_service)],
+    lecture_id: str | None = None,
+    course_id: str | None = None,
+) -> list[LectureSession]:
+    """List the authenticated professor's sessions with optional filters.
+
+    Only professors can access this ownership-scoped list. Students receive a
+    forbidden error. Results are ordered newest first by session start time.
+    """
+
+    return service.list_owned_sessions(actor, lecture_id, course_id)
+
+
+@router.get(
     "/by-join-code/{join_code}",
     response_model=LectureSession,
     summary="Resolve a join code",
