@@ -30,9 +30,9 @@ jobs:
 
       - name: Sync provider keys to Render
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.OPENAI_KEY }}
           MUSE_API_KEY: ${{ secrets.MUSE_API_KEY }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI || secrets.MONGODB_URL }}
         run: |
           set -euo pipefail
           put_env_var() {
