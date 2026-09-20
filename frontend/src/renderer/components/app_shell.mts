@@ -15,6 +15,9 @@ export type AppShellOptions = {
   profileName?: string;
   courses?: Course[];
   joinedSessions?: LectureSession[];
+  lecturesByCourse?: Record<string, Lecture[]>;
+  currentCourseId?: string;
+  currentLectureId?: string;
 };
 
 /**
@@ -33,6 +36,9 @@ export function AppShell(options: AppShellOptions): string {
           options.demoMode !== false,
           options.courses,
           options.joinedSessions,
+          options.lecturesByCourse,
+          options.currentCourseId,
+          options.currentLectureId,
         );
   const layoutClass =
     options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';

@@ -2,13 +2,13 @@ import { AppRoute, buildRouteHash } from '../app/router.mjs';
 import { escapeHtml } from './html_text.mjs';
 
 const STUDENT_LINKS: Array<{ label: string; route: AppRoute; icon: string }> = [
-  { label: 'Overview', route: 'student-dashboard', icon: '⌂' },
+  { label: 'Home', route: 'student-dashboard', icon: '⌂' },
   { label: 'Lecture library', route: 'lecture-library', icon: '▤' },
   { label: 'Latest summary', route: 'student-summary', icon: '✦' },
 ];
 
 const EDUCATOR_LINKS: Array<{ label: string; route: AppRoute; icon: string }> = [
-  { label: 'Course insights', route: 'educator-dashboard', icon: '⌂' },
+  { label: 'Home', route: 'home', icon: '⌂' },
   { label: 'Lecture report', route: 'educator-summary', icon: '↗' },
 ];
 
@@ -20,6 +20,8 @@ const EDUCATOR_LINKS: Array<{ label: string; route: AppRoute; icon: string }> = 
  * @param isDemo - Whether to render synthetic fixture navigation.
  * @param courses - Backend courses available to an educator.
  * @param joinedSessions - Backend sessions joined by a student.
+ * @param currentCourseId - Course currently displayed by the page.
+ * @param currentLectureId - Lecture currently displayed by the page.
  * @returns Sidebar markup with expandable course content.
  */
 export function CourseSidebar(
@@ -28,6 +30,9 @@ export function CourseSidebar(
   isDemo = true,
   courses: Course[] = [],
   joinedSessions: LectureSession[] = [],
+  lecturesByCourse: Record<string, Lecture[]> = {},
+  currentCourseId?: string,
+  currentLectureId?: string,
 ): string {
   const links = role === 'student' ? STUDENT_LINKS : EDUCATOR_LINKS;
   const courseById = new Map(courses.map((course) => [course.course_id, course]));
@@ -40,9 +45,24 @@ export function CourseSidebar(
     )
     .join('');
 
+  const educatorCourses = courses.length
+    ? `<p class="sidebar-label sidebar-label--courses">Classes</p>${courses
+        .map((course) => {
+          const recentLectures = [...(lecturesByCourse[course.course_id] ?? [])]
+            .sort((left, right) => right.created_at.localeCompare(left.created_at))
+            .slice(0, 5);
+          const isCurrent = currentCourseId === course.course_id || recentLectures.some((lecture) => lecture.lecture_id === currentLectureId);
+          return `<details class="course-group" ${isCurrent ? 'open' : ''}>
+            <summary><a href="${buildRouteHash('course', { course_id: course.course_id })}">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</a></summary>
+            ${recentLectures.length ? recentLectures.map((lecture) => `<a href="${buildRouteHash('lecture', { lecture_id: lecture.lecture_id })}">${escapeHtml(lecture.title)}</a>`).join('') : '<span class="course-group__empty">No lectures yet</span>'}
+          </details>`;
+        })
+        .join('')}`
+    : '<p class="empty-state">No courses are available yet.</p>';
+
   return `
     <aside class="course-sidebar" aria-label="Course navigation">
-      <p class="sidebar-label">Workspace</p>
+      ${role === 'educator' && !isDemo ? '' : '<p class="sidebar-label">Workspace</p>'}
       <nav class="side-nav">${renderedLinks}</nav>
       ${
         isDemo
@@ -58,14 +78,7 @@ export function CourseSidebar(
         <a href="${buildRouteHash(role === 'student' ? 'student-summary' : 'educator-summary')}">Sep 18 · Molecular geometry</a>
       </details>`
           : role === 'educator'
-            ? courses.length
-              ? `<p class="sidebar-label sidebar-label--courses">Courses</p><div class="course-list">${courses
-                  .map(
-                    (course) =>
-                      `<p class="course-list__item"><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.code)}</small></p>`,
-                  )
-                  .join('')}</div>`
-              : '<p class="empty-state">No courses are available yet.</p>'
+            ? educatorCourses
             : joinedSessions.length
               ? `<p class="sidebar-label sidebar-label--courses">Joined sessions</p><div class="course-list">${joinedSessions
                   .map(

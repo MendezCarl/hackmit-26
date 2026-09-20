@@ -127,7 +127,7 @@ No privacy-settings endpoint can enable raw webcam or raw system-audio upload be
 | `GET` | `/api/v1/sessions/{session_id}` | Read session status and metadata | None | `LectureSession` |
 | `PATCH` | `/api/v1/sessions/{session_id}` | Update allowed session metadata | `UpdateSessionRequest` | `LectureSession` |
 | `POST` | `/api/v1/sessions/{session_id}/end` | End a session idempotently | `EndSessionRequest` | `LectureSession` |
-| `GET` | `/api/v1/sessions` | List the current user's sessions | Query parameters | `PaginatedLectureSessions` |
+| `GET` | `/api/v1/sessions` | List professor-owned lecture sessions, optionally filtered by lecture or course | `lecture_id`, `course_id` query parameters | `LectureSession[]` |
 
 ### Privacy-preserving signal events
 

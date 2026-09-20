@@ -4,7 +4,10 @@ export type BackendSessionState = {
   user: UserProfile | null;
   courses: Course[];
   lecturesByCourse: Record<string, Lecture[]>;
+  sessions: LectureSession[];
+  sessionsByLecture: Record<string, LectureSession[]>;
   activeSession: LectureSession | null;
+  selectedSession: LectureSession | null;
   joinedSessions: LectureSession[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
@@ -12,6 +15,8 @@ export type BackendSessionState = {
   recoveryCards: RecoveryCard[];
   professorSummary: ProfessorSummary | null;
   professorMetrics: ProfessorMetrics | null;
+  professorSummariesBySession: Record<string, ProfessorSummary>;
+  professorMetricsBySession: Record<string, ProfessorMetrics>;
   professorSummaryError: string | null;
   professorMetricsError: string | null;
   consent: ConsentSettings | null;
@@ -24,7 +29,10 @@ const state: BackendSessionState = {
   user: null,
   courses: [],
   lecturesByCourse: {},
+  sessions: [],
+  sessionsByLecture: {},
   activeSession: null,
+  selectedSession: null,
   joinedSessions: [],
   participantCount: null,
   submittedEvents: [],
@@ -32,6 +40,8 @@ const state: BackendSessionState = {
   recoveryCards: [],
   professorSummary: null,
   professorMetrics: null,
+  professorSummariesBySession: {},
+  professorMetricsBySession: {},
   professorSummaryError: null,
   professorMetricsError: null,
   consent: null,
@@ -60,9 +70,26 @@ export function setBackendLectures(courseId: string, lectures: Lecture[]): void 
   state.lecturesByCourse[courseId] = lectures;
 }
 
+/** Stores owned sessions and indexes them by lecture identifier. */
+export function setBackendSessions(sessions: LectureSession[]): void {
+  state.sessions = sessions;
+  state.sessionsByLecture = sessions.reduce<Record<string, LectureSession[]>>(
+    (byLecture, session) => {
+      (byLecture[session.lecture_id] ??= []).push(session);
+      return byLecture;
+    },
+    {},
+  );
+}
+
 /** Stores the current lecture session. */
 export function setActiveSession(session: LectureSession | null): void {
   state.activeSession = session;
+}
+
+/** Stores the session selected by an educator lecture route. */
+export function setSelectedSession(session: LectureSession | null): void {
+  state.selectedSession = session;
 }
 
 /** Adds a joined session to the current renderer run. */
@@ -106,6 +133,16 @@ export function setProfessorReport(
   state.professorMetricsError = metricsError;
 }
 
+/** Stores one session's professor report for aggregate educator views. */
+export function setProfessorReportForSession(
+  sessionId: string,
+  summary: ProfessorSummary | null,
+  metrics: ProfessorMetrics | null,
+): void {
+  if (summary) state.professorSummariesBySession[sessionId] = summary;
+  if (metrics) state.professorMetricsBySession[sessionId] = metrics;
+}
+
 /** Stores the account's consent settings. */
 export function setConsent(consent: ConsentSettings | null): void {
   state.consent = consent;
@@ -131,7 +168,10 @@ export function clearBackendSessionState(): void {
   state.user = null;
   state.courses = [];
   state.lecturesByCourse = {};
+  state.sessions = [];
+  state.sessionsByLecture = {};
   state.activeSession = null;
+  state.selectedSession = null;
   state.joinedSessions = [];
   state.participantCount = null;
   state.submittedEvents = [];
@@ -139,6 +179,8 @@ export function clearBackendSessionState(): void {
   state.recoveryCards = [];
   state.professorSummary = null;
   state.professorMetrics = null;
+  state.professorSummariesBySession = {};
+  state.professorMetricsBySession = {};
   state.professorSummaryError = null;
   state.professorMetricsError = null;
   state.consent = null;
