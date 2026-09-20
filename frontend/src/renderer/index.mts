@@ -1,6 +1,7 @@
 import { buildRouteHash, resolveRoute, type AppRoute } from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
+import { escapeHtml } from './components/html_text.mjs';
 import {
   clearBackendSessionState,
   getBackendSessionState,
@@ -49,6 +50,11 @@ const readFormValues = (form: HTMLFormElement): Record<string, string> =>
 
 let sessionClockTimer: number | undefined;
 
+/**
+ * Binds timeline marker selection to the current route's live moments.
+ *
+ * @param route - Route whose moment view model should be rendered.
+ */
 const bindTimelineInteractions = (route: AppRoute): void => {
   const buttons = document.querySelectorAll<HTMLButtonElement>('[data-moment-id]');
   const state = getBackendSessionState();
@@ -76,6 +82,9 @@ const bindTimelineInteractions = (route: AppRoute): void => {
   );
 };
 
+/**
+ * Binds the summary and transcript tab controls in the rendered page.
+ */
 const bindSummaryTabs = (): void => {
   const buttons = document.querySelectorAll<HTMLButtonElement>('[data-tab]');
   const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
@@ -94,6 +103,9 @@ const bindSummaryTabs = (): void => {
   );
 };
 
+/**
+ * Binds search and status filtering for rendered lecture cards.
+ */
 const bindLibraryFilters = (): void => {
   const search = document.querySelector<HTMLInputElement>('[data-library-search]');
   const status = document.querySelector<HTMLSelectElement>('[data-library-filter]');
@@ -117,6 +129,9 @@ const bindLibraryFilters = (): void => {
   status.addEventListener('change', apply);
 };
 
+/**
+ * Binds login and registration form actions to the backend session client.
+ */
 const bindAuthentication = (): void => {
   const form = document.querySelector<HTMLFormElement>('[data-login-form]');
   const toggle = document.querySelector<HTMLButtonElement>('[data-auth-toggle]');
@@ -165,6 +180,9 @@ const bindAuthentication = (): void => {
   });
 };
 
+/**
+ * Binds student session, consent, event, transcript, and recovery actions.
+ */
 const bindStudentActions = (): void => {
   const dialog = document.querySelector<HTMLDialogElement>('[data-consent-dialog]');
   document
@@ -277,13 +295,16 @@ const bindStudentActions = (): void => {
       } catch (error) {
         button.insertAdjacentHTML(
           'afterend',
-          `<p class="form-message">${formErrorMessage(error)}</p>`,
+          `<p class="form-message">${escapeHtml(formErrorMessage(error))}</p>`,
         );
       }
     }),
   );
 };
 
+/**
+ * Binds educator course, lecture, session, and report actions.
+ */
 const bindEducatorActions = (): void => {
   const courseForm = document.querySelector<HTMLFormElement>('[data-course-form]');
   courseForm?.addEventListener('submit', async (event) => {
@@ -356,6 +377,9 @@ const bindEducatorActions = (): void => {
     });
 };
 
+/**
+ * Binds account consent and logout controls.
+ */
 const bindAccountActions = (): void => {
   document
     .querySelector<HTMLInputElement>('[data-analytics-consent]')
@@ -377,6 +401,11 @@ const bindAccountActions = (): void => {
     });
 };
 
+/**
+ * Loads backend data required by a route and stores it for rendering.
+ *
+ * @param route - Route whose backend workspace should be loaded.
+ */
 const loadRouteData = async (route: AppRoute): Promise<void> => {
   if (
     route === 'educator-dashboard' ||
@@ -394,6 +423,9 @@ const loadRouteData = async (route: AppRoute): Promise<void> => {
   }
 };
 
+/**
+ * Refreshes the health status shown in the shared navigation.
+ */
 const updateBackendStatus = async (): Promise<void> => {
   const pill = document.querySelector<HTMLElement>('[data-backend-state]');
   const label = document.querySelector<HTMLElement>('[data-backend-label]');
@@ -406,6 +438,9 @@ const updateBackendStatus = async (): Promise<void> => {
   label.textContent = connected ? 'Local service ready' : 'Local service offline · demo mode';
 };
 
+/**
+ * Updates the active-session elapsed clock until the page is rerendered.
+ */
 const bindSessionClock = (): void => {
   if (sessionClockTimer !== undefined) window.clearInterval(sessionClockTimer);
   const session = getBackendSessionState().activeSession;
@@ -419,6 +454,11 @@ const bindSessionClock = (): void => {
   sessionClockTimer = window.setInterval(update, 1000);
 };
 
+/**
+ * Installs all route-specific interactions after page markup is rendered.
+ *
+ * @param route - Current application route.
+ */
 const bindRenderedApplication = (route: AppRoute): void => {
   bindTimelineInteractions(route);
   bindSummaryTabs();

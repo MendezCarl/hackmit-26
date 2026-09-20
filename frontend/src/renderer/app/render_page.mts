@@ -28,7 +28,9 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
     'student-summary': () =>
       StudentSummaryPage({
         isDemo: !isReal,
+        profileName: state?.user?.display_name,
         session: state?.activeSession ?? null,
+        joinedSessions: state?.joinedSessions ?? [],
         submittedEvents: state?.submittedEvents ?? [],
         recoveryCards: state?.recoveryCards ?? [],
         transcript: state?.transcriptChunks ?? [],
@@ -38,6 +40,7 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
     'lecture-library': () =>
       LectureLibraryPage({
         isDemo: !isReal,
+        profileName: state?.user?.display_name,
         role: state?.user?.role === 'professor' ? 'educator' : 'student',
         courses: state?.courses ?? [],
         lectures: Object.values(state?.lecturesByCourse ?? {}).flat(),
@@ -48,6 +51,7 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
     'educator-dashboard': () =>
       EducatorDashboardPage({
         isDemo: !isReal,
+        profileName: state?.user?.display_name,
         courses: state?.courses ?? [],
         lecturesByCourse: state?.lecturesByCourse ?? {},
         activeSession: state?.activeSession ?? null,
@@ -57,7 +61,9 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
     'educator-summary': () =>
       EducatorSummaryPage({
         isDemo: !isReal,
+        profileName: state?.user?.display_name,
         session: state?.activeSession ?? null,
+        courses: state?.courses ?? [],
         summary: state?.professorSummary ?? null,
         metrics: state?.professorMetrics ?? null,
         summaryError: state?.professorSummaryError,
@@ -69,6 +75,8 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
       AccountPage({
         isDemo: !isReal,
         user: state?.user ?? null,
+        courses: state?.courses ?? [],
+        joinedSessions: state?.joinedSessions ?? [],
         consent: state?.consent ?? null,
         routeError: state?.routeError,
         isLoading: state?.routeLoading,

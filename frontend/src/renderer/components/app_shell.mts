@@ -1,5 +1,6 @@
 import { AppRoute } from '../app/router.mjs';
 import { CourseSidebar } from './course_sidebar.mjs';
+import { escapeHtml } from './html_text.mjs';
 import { LoginNavigation } from './login_navigation.mjs';
 import { TopNavigation } from './top_navigation.mjs';
 
@@ -12,6 +13,8 @@ export type AppShellOptions = {
   showSidebar?: boolean;
   demoMode?: boolean;
   profileName?: string;
+  courses?: Course[];
+  joinedSessions?: LectureSession[];
 };
 
 /**
@@ -24,7 +27,13 @@ export function AppShell(options: AppShellOptions): string {
   const sidebar =
     options.showSidebar === false
       ? ''
-      : CourseSidebar(options.route, options.role, options.demoMode !== false);
+      : CourseSidebar(
+          options.route,
+          options.role,
+          options.demoMode !== false,
+          options.courses,
+          options.joinedSessions,
+        );
   const layoutClass =
     options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';
   const navigation =
@@ -35,8 +44,8 @@ export function AppShell(options: AppShellOptions): string {
     options.title || options.eyebrow
       ? `
           <header class="page-heading">
-            ${options.eyebrow ? `<p class="eyebrow">${options.eyebrow}</p>` : ''}
-            ${options.title ? `<h1>${options.title}</h1>` : ''}
+            ${options.eyebrow ? `<p class="eyebrow">${escapeHtml(options.eyebrow)}</p>` : ''}
+            ${options.title ? `<h1>${escapeHtml(options.title)}</h1>` : ''}
           </header>
         `
       : '';

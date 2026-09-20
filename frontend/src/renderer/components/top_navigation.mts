@@ -1,4 +1,18 @@
 import { AppRoute, buildRouteHash } from '../app/router.mjs';
+import { escapeHtml } from './html_text.mjs';
+
+/**
+ * Derives a compact avatar label from a display name.
+ *
+ * @param profileName - Current user's display name.
+ * @returns Up to two initials, or `?` when no name is available.
+ */
+export function deriveProfileInitials(profileName: string): string {
+  const words = profileName.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+}
 
 /**
  * Builds the authenticated top navigation with role and account controls.
@@ -10,8 +24,9 @@ import { AppRoute, buildRouteHash } from '../app/router.mjs';
 export function TopNavigation(
   route: AppRoute,
   role: 'student' | 'educator',
-  profileName = 'Account',
+  profileName = '?',
 ): string {
+  const safeProfileName = escapeHtml(profileName);
   const roleRoute = role === 'student' ? 'educator-dashboard' : 'student-dashboard';
   const roleLabel = role === 'student' ? 'Educator view' : 'Student view';
 
@@ -28,8 +43,8 @@ export function TopNavigation(
         </span>
         <a class="role-switch" href="${buildRouteHash(roleRoute)}">${roleLabel}</a>
         <a class="profile-link ${route === 'account' ? 'is-active' : ''}" href="${buildRouteHash('account')}" aria-label="Open account settings">
-          <span class="avatar">${profileName.slice(0, 2).toUpperCase()}</span>
-          <span class="profile-link__copy"><strong>${profileName}</strong><small>${role === 'student' ? 'Student' : 'Educator'}</small></span>
+          <span class="avatar">${escapeHtml(deriveProfileInitials(profileName))}</span>
+          <span class="profile-link__copy"><strong>${safeProfileName}</strong><small>${role === 'student' ? 'Student' : 'Educator'}</small></span>
         </a>
       </div>
     </header>

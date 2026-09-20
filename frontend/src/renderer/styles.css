@@ -303,6 +303,25 @@ p {
   margin-top: 1.8rem;
 }
 
+.course-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.course-list__item {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.2rem 0;
+  color: var(--slate-dark);
+  font-size: 0.72rem;
+}
+
+.course-list__item small {
+  color: var(--slate);
+  font-size: 0.64rem;
+}
+
 .side-nav {
   display: grid;
   gap: 0.3rem;
@@ -608,6 +627,10 @@ p {
   align-items: center;
   border-top: 1px solid var(--border);
   padding: 0.95rem 0.3rem;
+}
+
+.lecture-row--backend {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .lecture-row:first-child {
@@ -1406,13 +1429,22 @@ p {
 }
 
 .login-card input[type="email"],
-.login-card input[type="password"] {
+.login-card input[type="password"],
+.login-card input:not([type="checkbox"]),
+.login-card select,
+.login-card textarea {
   min-height: 46px;
   border: 1px solid var(--border);
   border-radius: 11px;
   padding: 0 0.8rem;
   color: var(--slate-dark);
   background: var(--white);
+}
+
+.login-card textarea {
+  min-height: 120px;
+  padding-top: 0.7rem;
+  resize: vertical;
 }
 
 .form-row {

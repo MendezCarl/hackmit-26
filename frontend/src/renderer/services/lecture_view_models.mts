@@ -66,12 +66,21 @@ export function buildMomentsFromSummary(
   );
 }
 
-/** Maps policy-gated professor metrics to privacy-safe timeline moments. */
+/**
+ * Maps policy-gated professor metrics to privacy-safe timeline moments.
+ *
+ * Buckets that round to the same rendered timeline position are merged so
+ * their evidence and suggested actions remain readable in one marker.
+ *
+ * @param metrics - Aggregated metrics returned by the professor report API.
+ * @param sessionDurationMs - Total lecture duration in milliseconds.
+ * @returns Privacy-safe timeline moments deduplicated by marker position.
+ */
 export function buildMomentsFromMetrics(
   metrics: ProfessorMetrics,
   sessionDurationMs: number,
 ): LectureMoment[] {
-  return metrics.buckets.map((bucket) => {
+  const moments = metrics.buckets.map((bucket) => {
     const ratio = bucket.possible_missed?.ratio;
     const hasHotspot = bucket.is_hotspot === true && ratio !== undefined;
     const title = hasHotspot
@@ -94,6 +103,23 @@ export function buildMomentsFromMetrics(
       sessionDurationMs,
     );
   });
+
+  return Array.from(
+    moments.reduce((byPosition, moment) => {
+      const existing = byPosition.get(moment.startPercent);
+      if (!existing) {
+        byPosition.set(moment.startPercent, moment);
+        return byPosition;
+      }
+      existing.title = `${existing.title} · ${moment.title}`;
+      existing.summary = `${existing.summary} ${moment.summary}`;
+      existing.evidence = `${existing.evidence} ${moment.evidence}`;
+      existing.action = `${existing.action} ${moment.action}`;
+      existing.endLabel = moment.endLabel;
+      existing.widthPercent = Math.max(existing.widthPercent, moment.widthPercent);
+      return byPosition;
+    }, new Map<number, LectureMoment>()),
+  ).map(([, moment]) => moment);
 }
 
 /** Maps one private recovery card to the existing lecture moment view. */
