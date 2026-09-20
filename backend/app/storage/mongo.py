@@ -219,6 +219,11 @@ def build_mongo_store(database: Any) -> InMemoryStore:
         courses=_model_mapping(database["courses"], Course),
         lectures=_model_mapping(database["lectures"], Lecture),
         sessions=_model_mapping(database["sessions"], LectureSession),
+        session_join_codes=MongoCollectionMapping(
+            database["session_join_codes"],
+            lambda value: value,
+            lambda value: value,
+        ),
         participants=MongoCollectionMapping(
             database["participants"], _encode_participants, _decode_participants
         ),

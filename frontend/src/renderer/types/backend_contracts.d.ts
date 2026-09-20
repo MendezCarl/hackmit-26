@@ -37,7 +37,7 @@ interface Course {
 }
 interface CreateCourseRequest {
   title: string;
-  code: string;
+  code?: string | null;
 }
 interface Lecture {
   lecture_id: string;
@@ -56,6 +56,7 @@ interface LectureSession {
   owner_id: string;
   course_id: string;
   title: string;
+  join_code: string;
   mode: SessionMode;
   status: SessionStatus;
   started_at: string;
@@ -69,6 +70,10 @@ interface CreateSessionRequest {
   title: string;
   mode: SessionMode;
   zoom_meeting_id?: string | null;
+}
+interface SessionListFilter {
+  lecture_id?: string;
+  course_id?: string;
 }
 interface ParticipantResponse {
   session_id: string;
@@ -257,7 +262,9 @@ type BackendApi = {
   listLectures: (courseId: string) => Promise<Lecture[]>;
   createLecture: (request: CreateLectureRequest) => Promise<Lecture>;
   createSession: (request: CreateSessionRequest) => Promise<LectureSession>;
+  listSessions: (filter?: SessionListFilter) => Promise<LectureSession[]>;
   readSession: (sessionId: string) => Promise<LectureSession>;
+  resolveJoinCode: (joinCode: string) => Promise<LectureSession>;
   joinSession: (sessionId: string) => Promise<ParticipantResponse>;
   updateAggregationConsent: (
     sessionId: string,
@@ -285,6 +292,18 @@ type BackendApi = {
   readConsent: () => Promise<ConsentSettings>;
   updateConsent: (request: UpdateConsentRequest) => Promise<ConsentSettings>;
 };
+type BloomRole = 'professor' | 'student' | null;
+interface ZoomDetectedPayload {
+  running: boolean;
+}
+interface BloomDesktopApi {
+  setRole: (role: BloomRole) => void;
+  onZoomDetected: (callback: (payload: ZoomDetectedPayload) => void) => () => void;
+  onZoomOverlayOpen: (callback: () => void) => () => void;
+  overlayAction: (action: 'open' | 'dismiss') => void;
+  getOverlayRole: () => BloomRole;
+}
 interface Window {
   backend: BackendApi;
+  bloomDesktop: BloomDesktopApi;
 }

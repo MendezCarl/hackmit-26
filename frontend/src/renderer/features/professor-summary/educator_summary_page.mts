@@ -67,6 +67,7 @@ export function EducatorSummaryPage(model: EducatorSummaryModel = FIXTURE_MODEL)
 
 function buildRealEducatorSummary(model: EducatorSummaryModel): string {
   const session = model.session;
+  const course = model.courses.find((candidate) => candidate.course_id === session?.course_id);
   const duration = session ? sessionDurationMs(session) : 1;
   const summary = model.summary;
   const metrics = model.metrics;
@@ -95,7 +96,7 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
     route: 'educator-summary',
     role: 'educator',
     profileName: model.profileName,
-    eyebrow: session ? `Session ${session.course_id}` : 'Educator report',
+    eyebrow: course?.code ?? 'Educator report',
     title: session?.title ?? 'Lecture report',
     demoMode: false,
     courses: model.courses,

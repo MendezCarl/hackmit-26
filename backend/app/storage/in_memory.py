@@ -70,6 +70,7 @@ class InMemoryStore:
     courses: MutableMapping[str, Course] = field(default_factory=dict)
     lectures: MutableMapping[str, Lecture] = field(default_factory=dict)
     sessions: MutableMapping[str, LectureSession] = field(default_factory=dict)
+    session_join_codes: MutableMapping[str, str] = field(default_factory=dict)
     participants: MutableMapping[str, dict[str, ParticipantRecord]] = field(
         default_factory=dict
     )

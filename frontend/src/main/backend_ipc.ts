@@ -23,7 +23,9 @@ export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl
     listLectures: (courseId) => client.listLectures(courseId),
     createLecture: (request) => client.createLecture(request),
     createSession: (request) => client.createSession(request),
+    listSessions: (filter) => client.listSessions(filter),
     readSession: (sessionId) => client.readSession(sessionId),
+    resolveJoinCode: (joinCode) => client.resolveJoinCode(joinCode),
     joinSession: (sessionId) => client.joinSession(sessionId),
     updateAggregationConsent: (sessionId, consent) =>
       client.updateAggregationConsent(sessionId, consent),

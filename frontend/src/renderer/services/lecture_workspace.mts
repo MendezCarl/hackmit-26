@@ -6,11 +6,14 @@ import {
   setActiveSession,
   setBackendCourses,
   setBackendLectures,
+  setBackendSessions,
   setBackendState,
   setBackendUser,
   setConsent,
   setParticipantCount,
   setProfessorReport,
+  setProfessorReportForSession,
+  setSelectedSession,
   setTranscriptChunks,
 } from './backend_session_state.mjs';
 
@@ -24,18 +27,24 @@ export async function loadAccountWorkspace(): Promise<void> {
     window.backend.readConsent(),
   ]);
   setBackendUser(user);
+  window.bloomDesktop.setRole(user.role === 'professor' ? 'professor' : 'student');
   setConsent(consent);
 }
 
 /** Loads professor-owned courses and their lectures. */
 export async function loadEducatorWorkspace(): Promise<void> {
-  const courses = await window.backend.listCourses();
+  const [courses, sessions] = await Promise.all([
+    window.backend.listCourses(),
+    window.backend.listSessions(),
+  ]);
   setBackendCourses(courses);
   await Promise.all(
     courses.map(async (course) => {
       setBackendLectures(course.course_id, await window.backend.listLectures(course.course_id));
     }),
   );
+  setBackendSessions(sessions);
+  await Promise.all(sessions.slice(0, 5).map((session) => loadProfessorReport(session.session_id)));
 }
 
 /** Loads professor summary and metrics for the active ended session. */
@@ -52,6 +61,42 @@ export async function loadProfessorReport(sessionId: string): Promise<void> {
     summaryResult.status === 'rejected' ? errorMessage(summaryResult.reason) : null,
     metricsResult.status === 'rejected' ? errorMessage(metricsResult.reason) : null,
   );
+  setProfessorReportForSession(sessionId, summary, metrics);
+}
+
+/** Loads one course's lectures and sessions for its detail page. */
+export async function loadCourseWorkspace(courseId: string): Promise<void> {
+  const courses = getBackendSessionState().courses;
+  if (!courses.some((course) => course.course_id === courseId)) {
+    setBackendCourses(await window.backend.listCourses());
+  }
+  const [lectures, sessions] = await Promise.all([
+    window.backend.listLectures(courseId),
+    window.backend.listSessions({ course_id: courseId }),
+  ]);
+  setBackendLectures(courseId, lectures);
+  setBackendSessions(sessions);
+}
+
+/** Loads one lecture's sessions and latest available professor report. */
+export async function loadLectureWorkspace(lectureId: string): Promise<void> {
+  const sessions = await window.backend.listSessions({ lecture_id: lectureId });
+  setBackendSessions(sessions);
+  let courses = getBackendSessionState().courses;
+  if (!courses.length) {
+    courses = await window.backend.listCourses();
+    setBackendCourses(courses);
+  }
+  if (!Object.values(getBackendSessionState().lecturesByCourse).flat().some((lecture) => lecture.lecture_id === lectureId)) {
+    await Promise.all(
+      courses.map(async (course) => {
+        setBackendLectures(course.course_id, await window.backend.listLectures(course.course_id));
+      }),
+    );
+  }
+  const latest = sessions[0] ?? null;
+  setSelectedSession(latest);
+  if (latest) await loadProfessorReport(latest.session_id);
 }
 
 /** Loads transcript excerpts for the active student session. */
@@ -60,10 +105,13 @@ export async function loadTranscriptWorkspace(sessionId: string, endMs: number):
   setTranscriptChunks(response.chunks);
 }
 
-/** Joins and reads one student lecture session. */
-export async function joinLectureSession(sessionId: string): Promise<void> {
-  const participant = await window.backend.joinSession(sessionId);
-  const session = await window.backend.readSession(sessionId);
+/** Resolves a human-entered code and joins its student lecture session.
+ *
+ * @param joinCode - Raw code entered by the student.
+ */
+export async function joinLectureSession(joinCode: string): Promise<void> {
+  const session = await window.backend.resolveJoinCode(joinCode);
+  const participant = await window.backend.joinSession(session.session_id);
   addJoinedSession(session);
   setActiveSession(session);
   setParticipantCount(participant.participant_count);

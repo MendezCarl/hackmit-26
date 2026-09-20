@@ -26,6 +26,13 @@ const FIXTURE_MODEL: AccountModel = {
  */
 export function AccountPage(model: AccountModel = FIXTURE_MODEL): string {
   const user = model.user;
+  const createdDate = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString(undefined, {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Unavailable';
   return AppShell({
     route: 'account',
     role: user?.role === 'professor' ? 'educator' : 'student',
@@ -39,10 +46,15 @@ export function AccountPage(model: AccountModel = FIXTURE_MODEL): string {
       ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">Account unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <section class="settings-layout">
-        <article class="settings-card">
-          <h2>Profile</h2>
-          <div class="profile-summary"><span class="avatar avatar--large">${escapeHtml(user?.display_name?.slice(0, 2).toUpperCase() ?? '--')}</span><div><strong>${escapeHtml(user?.display_name ?? 'Profile unavailable')}</strong><p>${escapeHtml(user?.email ?? 'No profile loaded')}</p></div><button class="secondary-button" type="button" disabled>Edit profile unavailable</button></div>
-        </article>
+        <section class="panel profile-panel">
+          <div class="panel__header"><h2>Profile</h2><span class="avatar avatar--large">${escapeHtml(user?.display_name?.slice(0, 2).toUpperCase() ?? '--')}</span></div>
+          <dl class="profile-fields">
+            <div><dt>Display name</dt><dd>${escapeHtml(user?.display_name ?? 'Profile unavailable')}</dd></div>
+            <div><dt>Email</dt><dd>${escapeHtml(user?.email ?? 'No profile loaded')}</dd></div>
+            <div><dt>Role</dt><dd>${escapeHtml(user?.role === 'professor' ? 'Educator' : user?.role ?? 'Unavailable')}</dd></div>
+            <div><dt>Created</dt><dd>${escapeHtml(createdDate)}</dd></div>
+          </dl>
+        </section>
         <article class="settings-card">
           <h2>On-device processing</h2>
           ${SettingRow('System audio capture', 'Capture lecture audio locally when you explicitly enable a session.', true)}
