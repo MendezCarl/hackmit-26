@@ -27,6 +27,7 @@ export async function loadAccountWorkspace(): Promise<void> {
     window.backend.readConsent(),
   ]);
   setBackendUser(user);
+  window.bloomDesktop.setRole(user.role === 'professor' ? 'professor' : 'student');
   setConsent(consent);
 }
 

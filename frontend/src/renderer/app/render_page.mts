@@ -42,6 +42,8 @@ export function renderPage(
         joinedSessions: state?.joinedSessions ?? [],
         participantCount: state?.participantCount ?? null,
         submittedEvents: state?.submittedEvents ?? [],
+        zoomRunning: state?.zoomRunning ?? false,
+        zoomBannerDismissed: state?.zoomBannerDismissed ?? false,
       }),
     'student-summary': () =>
       StudentSummaryPage({
@@ -77,6 +79,8 @@ export function renderPage(
         professorMetricsBySession: state?.professorMetricsBySession ?? {},
         professorSummariesBySession: state?.professorSummariesBySession ?? {},
         activeSession: state?.activeSession ?? null,
+        zoomRunning: state?.zoomRunning ?? false,
+        zoomBannerDismissed: state?.zoomBannerDismissed ?? false,
         routeError: state?.routeError,
         isLoading: state?.routeLoading,
       }),

@@ -12,6 +12,8 @@ export type HomeModel = {
   professorMetricsBySession: Record<string, ProfessorMetrics>;
   professorSummariesBySession: Record<string, ProfessorSummary>;
   activeSession: LectureSession | null;
+  zoomRunning: boolean;
+  zoomBannerDismissed: boolean;
   routeError?: string | null;
   isLoading?: boolean;
 };
@@ -24,6 +26,8 @@ const FIXTURE_MODEL: HomeModel = {
   professorMetricsBySession: {},
   professorSummariesBySession: {},
   activeSession: null,
+  zoomRunning: false,
+  zoomBannerDismissed: false,
 };
 
 function formatDate(timestamp: string): string {
@@ -99,6 +103,10 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
 
   const courseById = new Map(model.courses.map((course) => [course.course_id, course]));
   const recentSessions = model.sessions.slice(0, 5);
+  const recentLectures = Object.values(model.lecturesByCourse)
+    .flat()
+    .sort((left, right) => right.created_at.localeCompare(left.created_at))
+    .slice(0, 3);
   return AppShell({
     route: 'home',
     role: 'educator',
@@ -107,8 +115,9 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
     title: 'Home',
     demoMode: false,
     courses: model.courses,
-    lecturesByCourse: model.lecturesByCourse,
+      lecturesByCourse: model.lecturesByCourse,
     content: `
+      ${model.zoomRunning && !model.zoomBannerDismissed ? buildZoomBanner(recentLectures, courseById) : ''}
       ${model.isLoading ? '<p class="empty-state">Loading lecture data…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">${escapeHtml(model.routeError)}</p>` : ''}
       <section class="metrics-grid" aria-label="Lecture metrics">${buildMetrics(model.professorMetricsBySession, model.professorSummariesBySession)}</section>
@@ -154,6 +163,33 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
       ${courseModal()}
     `,
   });
+}
+
+function buildZoomBanner(
+  lectures: Lecture[],
+  courses: Map<string, Course>,
+): string {
+  return `
+    <section class="panel zoom-banner" role="status">
+      <div>
+        <p class="eyebrow">Zoom detected</p>
+        <p>Zoom detected — start a session from a course below</p>
+      </div>
+      <div class="zoom-banner__actions">
+        ${lectures.length
+          ? lectures
+              .map(
+                (lecture) => `
+                  <button class="secondary-button" type="button" data-start-session="${escapeHtml(lecture.lecture_id)}" data-course-id="${escapeHtml(lecture.course_id)}" data-lecture-title="${escapeHtml(lecture.title)}">
+                    Start ${escapeHtml(courses.get(lecture.course_id)?.code ?? lecture.title)}
+                  </button>`,
+              )
+              .join('')
+          : '<span class="empty-state">Create a lecture to start a Zoom session.</span>'}
+        <button class="icon-button zoom-banner__dismiss" type="button" data-dismiss-zoom-banner aria-label="Dismiss Zoom reminder">×</button>
+      </div>
+    </section>
+  `;
 }
 
 function courseModal(): string {

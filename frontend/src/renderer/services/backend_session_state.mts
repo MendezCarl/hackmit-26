@@ -8,6 +8,8 @@ export type BackendSessionState = {
   sessionsByLecture: Record<string, LectureSession[]>;
   activeSession: LectureSession | null;
   selectedSession: LectureSession | null;
+  zoomRunning: boolean;
+  zoomBannerDismissed: boolean;
   joinedSessions: LectureSession[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
@@ -33,6 +35,8 @@ const state: BackendSessionState = {
   sessionsByLecture: {},
   activeSession: null,
   selectedSession: null,
+  zoomRunning: false,
+  zoomBannerDismissed: false,
   joinedSessions: [],
   participantCount: null,
   submittedEvents: [],
@@ -90,6 +94,26 @@ export function setActiveSession(session: LectureSession | null): void {
 /** Stores the session selected by an educator lecture route. */
 export function setSelectedSession(session: LectureSession | null): void {
   state.selectedSession = session;
+}
+
+/**
+ * Stores whether the local Zoom process is currently detected.
+ *
+ * @param zoomRunning - Whether a local Zoom process is running.
+ * @returns Nothing.
+ */
+export function setZoomRunning(zoomRunning: boolean): void {
+  state.zoomRunning = zoomRunning;
+}
+
+/**
+ * Controls whether the current Zoom reminder is visible.
+ *
+ * @param dismissed - Whether the reminder should be hidden.
+ * @returns Nothing.
+ */
+export function setZoomBannerDismissed(dismissed: boolean): void {
+  state.zoomBannerDismissed = dismissed;
 }
 
 /** Adds a joined session to the current renderer run. */
@@ -172,6 +196,8 @@ export function clearBackendSessionState(): void {
   state.sessionsByLecture = {};
   state.activeSession = null;
   state.selectedSession = null;
+  state.zoomRunning = false;
+  state.zoomBannerDismissed = false;
   state.joinedSessions = [];
   state.participantCount = null;
   state.submittedEvents = [];
