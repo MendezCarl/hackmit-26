@@ -12,7 +12,7 @@ export function LoginNavigation(): string {
         <img src="./assets/bloom-icon.svg" alt="" />
         <span>Bloom</span>
       </a>
-      <span class="role-switch">Local service</span>
+      <span class="role-switch">Bloom service</span>
     </header>
   `;
 }

@@ -67,7 +67,7 @@ export function LectureLibraryPage(model: LectureLibraryModel = FIXTURE_MODEL): 
     courses: model.courses,
     joinedSessions: model.joinedSessions,
     content: `
-      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.isLoading ? '<p class="empty-state">Loading from Bloom service…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">Library unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <div class="library-toolbar">
         <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search lectures</span><input type="search" placeholder="Search lecture titles" data-library-search /></label>

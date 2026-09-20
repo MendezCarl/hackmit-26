@@ -18,7 +18,7 @@ import {
 } from './backend_session_state.mjs';
 
 const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'The local service could not complete that request.';
+  error instanceof Error ? error.message : 'The Bloom service could not complete that request.';
 
 /** Loads the authenticated profile and account consent. */
 export async function loadAccountWorkspace(): Promise<void> {
