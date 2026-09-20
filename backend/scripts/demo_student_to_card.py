@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from app.auth.tokens import AuthenticatedActor, issue_access_token
 from app.config import DEMO_HEAD_AWAY_WINDOW_MS, Settings
+from app.local_ml.model_paths import MODELS_DIR, resolve_model_paths
 from app.local_ml.student_signals import StudentSignal
 from app.main import create_app
 from scripts.post_student_signals import load_signals, post_signals
@@ -112,6 +113,12 @@ def main() -> None:
     source.add_argument(
         "--signals-file", type=Path, help="JSON Lines from the student worker."
     )
+    parser.add_argument(
+        "--models-dir",
+        type=Path,
+        default=MODELS_DIR,
+        help="Directory with the exported person and face models (default: <repo>/models).",
+    )
     arguments = parser.parse_args()
     if arguments.clip:
         from app.local_ml.student_signals import (
@@ -121,10 +128,8 @@ def main() -> None:
         )
         from scripts.run_student_signals import analyze_clip
 
-        analyzer = OnnxStudentAnalyzer.from_files(
-            Path("models/person_detector.onnx"),
-            Path("models/face_detection_yunet_2023mar.onnx"),
-        )
+        person_model, face_model = resolve_model_paths(arguments.models_dir)
+        analyzer = OnnxStudentAnalyzer.from_files(person_model, face_model)
         policy = StudentSignalPolicy()
         summary = analyze_clip(
             StudentSignalWorker(analyzer, policy), arguments.clip, policy.sampling_ms

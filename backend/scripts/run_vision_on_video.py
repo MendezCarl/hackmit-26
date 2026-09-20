@@ -12,6 +12,7 @@ from typing import cast
 
 import cv2
 
+from app.local_ml.model_paths import PERSON_MODEL_PATH
 from app.local_ml.vision import (
     Detection,
     Frame,
@@ -155,9 +156,9 @@ def main() -> None:
     """Analyze one or more local videos and print one JSON summary per video."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("videos", nargs="+", type=Path)
-    parser.add_argument("--model", type=Path, default=Path("models/person_detector.onnx"))
+    parser.add_argument("--model", type=Path, default=PERSON_MODEL_PATH)
     parser.add_argument(
-        "--manifest", type=Path, default=Path("models/person_detector.manifest.json")
+        "--manifest", type=Path, default=PERSON_MODEL_PATH.with_suffix(".manifest.json")
     )
     parser.add_argument("--tile", nargs=4, type=float, default=DEFAULT_TILE)
     parser.add_argument("--max-minutes", type=float)

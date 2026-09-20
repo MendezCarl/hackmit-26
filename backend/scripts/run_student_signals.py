@@ -12,6 +12,7 @@ from typing import cast
 
 import cv2
 
+from app.local_ml.model_paths import FACE_MODEL_PATH, PERSON_MODEL_PATH
 from app.local_ml.student_signals import Frame, StudentSignalPolicy, StudentSignalWorker
 from scripts.evaluate_clip_signals import load_analyzer
 
@@ -60,12 +61,8 @@ def main() -> None:
     """Print one JSON summary per clip."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("clips", nargs="+", type=Path)
-    parser.add_argument(
-        "--person-model", type=Path, default=Path("models/person_detector.onnx")
-    )
-    parser.add_argument(
-        "--face-model", type=Path, default=Path("models/face_detection_yunet_2023mar.onnx")
-    )
+    parser.add_argument("--person-model", type=Path, default=PERSON_MODEL_PATH)
+    parser.add_argument("--face-model", type=Path, default=FACE_MODEL_PATH)
     arguments = parser.parse_args()
     analyzer = load_analyzer(arguments.person_model, arguments.face_model)
     policy = StudentSignalPolicy()
