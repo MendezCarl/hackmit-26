@@ -164,8 +164,31 @@ export async function leaveCourse(enrollmentId: string): Promise<void> {
 }
 
 /**
+ * Reports whether the locally active session is still running on the backend.
+ *
+ * The local copy of the active session never learns that the professor ended
+ * it, so auto-join re-reads its status before switching lectures. A failed read
+ * counts as live so a flaky network never yanks a student out of a lecture.
+ *
+ * @returns False when there is no active session or the backend reports it ended.
+ */
+async function isActiveSessionStillLive(): Promise<boolean> {
+  const active = getBackendSessionState().activeSession;
+  if (!active) return false;
+  try {
+    const refreshed = await window.backend.readSession(active.session_id);
+    if (refreshed.status === 'active') return true;
+    setActiveSession(refreshed);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Refreshes live sessions the student can join without a code and auto-joins
- * any whose enrollment opted into zero-click joining.
+ * any whose enrollment opted into zero-click joining. An active session that
+ * the professor has since ended does not block auto-joining the next lecture.
  *
  * @param zoomMeetingId - Locally detected Zoom meeting id, when the platform exposes one.
  * @returns The refreshed available sessions.
@@ -175,11 +198,8 @@ export async function refreshAvailableSessions(
 ): Promise<AvailableLectureSession[]> {
   const available = await window.backend.listAvailableSessions(zoomMeetingId);
   setAvailableSessions(available);
-  const state = getBackendSessionState();
-  const autoJoin = available.find(
-    (entry) => entry.is_auto_join_enabled && !entry.is_joined && !state.activeSession,
-  );
-  if (autoJoin) {
+  const autoJoin = available.find((entry) => entry.is_auto_join_enabled && !entry.is_joined);
+  if (autoJoin && !(await isActiveSessionStillLive())) {
     const participant = await window.backend.joinSession(autoJoin.session.session_id);
     addJoinedSession(autoJoin.session);
     setActiveSession(autoJoin.session);
