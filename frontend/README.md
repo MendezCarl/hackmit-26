@@ -45,6 +45,14 @@ npm run package:win    # NSIS installer + zip
 npm run package:linux  # AppImage + deb
 ```
 
+On Windows, if `npm run package:win` prompts for or fails on code signing,
+disable identity discovery before building:
+
+```powershell
+$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+npm run package:win
+```
+
 The repository release workflow builds platform installers on version tags and
 attaches them to a draft GitHub Release.
 

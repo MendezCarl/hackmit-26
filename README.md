@@ -121,6 +121,14 @@ macOS builds are unsigned: if Gatekeeper blocks the app, right-click Bloom and
 choose **Open**, or remove the quarantine attribute with
 `xattr -d com.apple.quarantine /Applications/Bloom.app`.
 
+Prerequisites: Python 3.14 and Node 24 (or a newer LTS release) on every
+platform. On macOS, install them with `brew install python@3.14 node`; on
+Windows, install Python with `choco install python314` and install Node 24 from
+<https://nodejs.org> (Chocolatey and winget may not carry Node 24). On Linux,
+use `uv` and `nvm` as already documented. Docker is optional:
+`docker compose up -d mongo redis` is not needed because demo mode runs fully
+in memory.
+
 ### Install the desktop app
 
 For published builds, open the repository's GitHub Releases page and download

@@ -67,6 +67,8 @@ $env:PROVIDER_MODE = "mock"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
+The full test suite requires `python -m pip install -e ".[dev,ai,vision,mongodb]"` (`pymongo` is imported by tests); `backend/feature_tests` additionally requires `pip install -r requirements-dropbox_integration.txt`.
+
 - `PROVIDER_MODE=mock` (default) generates deterministic synthetic recovery
   cards and labels all usage `synthetic`; `live` is not implemented yet.
 - `APP_ENV=demo` unlocks `POST /api/v1/demo/runs` and demo token minting;
