@@ -169,6 +169,8 @@ test('course and lecture pages render requested empty states', async () => {
       isDemo: false,
       course: null,
       lectures: [],
+      allCourses: [],
+      allLecturesByCourse: {},
       sessionsByLecture: {},
       activeSession: null,
     }),
@@ -192,11 +194,51 @@ test('course and lecture pages render requested empty states', async () => {
         created_at: '2026-01-01T00:00:00.000Z',
       },
       session: null,
+      allCourses: [],
+      allLecturesByCourse: {},
       summary: null,
       metrics: null,
     }),
     /No sessions yet for this lecture/,
   );
+});
+
+test('educator table rows keep navigation links separate from action buttons', async () => {
+  const { CoursePage } = await import('../../dist/renderer/features/courses/course_page.mjs');
+  const page = CoursePage({
+    isDemo: false,
+    course: {
+      course_id: 'course-1',
+      owner_id: 'owner-1',
+      title: 'Biology',
+      code: 'BIO 101',
+      created_at: '2026-01-01T00:00:00.000Z',
+    },
+    lectures: [
+      {
+        lecture_id: 'lecture-old',
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Cellular respiration',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        lecture_id: 'lecture-new',
+        course_id: 'course-1',
+        owner_id: 'owner-1',
+        title: 'Cell membranes',
+        created_at: '2026-01-03T00:00:00.000Z',
+      },
+    ],
+    allCourses: [],
+    allLecturesByCourse: {},
+    sessionsByLecture: {},
+    activeSession: null,
+  });
+  assert.match(page, /class="table-row lecture-log-row"/);
+  assert.match(page, /class="table-row__link"/);
+  assert.doesNotMatch(page, /<a class="table-row(?:[" >])/);
+  assert.ok(page.indexOf('Cell membranes') < page.indexOf('Cellular respiration'));
 });
 
 test('educator sidebar starts with Home and caps lecture links at five', async () => {

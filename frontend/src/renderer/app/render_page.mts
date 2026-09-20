@@ -88,6 +88,8 @@ export function renderPage(
         lectures: selectedCourse
           ? state?.lecturesByCourse?.[selectedCourse.course_id] ?? []
           : [],
+        allCourses: state?.courses ?? [],
+        allLecturesByCourse: state?.lecturesByCourse ?? {},
         sessionsByLecture: state?.sessionsByLecture ?? {},
         activeSession: state?.activeSession ?? null,
         routeError: state?.routeError,
@@ -103,9 +105,15 @@ export function renderPage(
               course.course_id ===
               selectedLecture?.course_id,
           ) ?? null,
-        session: state?.activeSession ?? null,
-        summary: state?.professorSummary ?? null,
-        metrics: state?.professorMetrics ?? null,
+        session: state?.selectedSession ?? null,
+        allCourses: state?.courses ?? [],
+        allLecturesByCourse: state?.lecturesByCourse ?? {},
+        summary: state?.selectedSession
+          ? state?.professorSummariesBySession[state.selectedSession.session_id] ?? null
+          : null,
+        metrics: state?.selectedSession
+          ? state?.professorMetricsBySession[state.selectedSession.session_id] ?? null
+          : null,
         routeError: state?.routeError,
       }),
     'educator-dashboard': () =>

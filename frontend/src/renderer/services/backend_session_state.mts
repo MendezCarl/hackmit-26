@@ -7,6 +7,7 @@ export type BackendSessionState = {
   sessions: LectureSession[];
   sessionsByLecture: Record<string, LectureSession[]>;
   activeSession: LectureSession | null;
+  selectedSession: LectureSession | null;
   joinedSessions: LectureSession[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
@@ -31,6 +32,7 @@ const state: BackendSessionState = {
   sessions: [],
   sessionsByLecture: {},
   activeSession: null,
+  selectedSession: null,
   joinedSessions: [],
   participantCount: null,
   submittedEvents: [],
@@ -83,6 +85,11 @@ export function setBackendSessions(sessions: LectureSession[]): void {
 /** Stores the current lecture session. */
 export function setActiveSession(session: LectureSession | null): void {
   state.activeSession = session;
+}
+
+/** Stores the session selected by an educator lecture route. */
+export function setSelectedSession(session: LectureSession | null): void {
+  state.selectedSession = session;
 }
 
 /** Adds a joined session to the current renderer run. */
@@ -164,6 +171,7 @@ export function clearBackendSessionState(): void {
   state.sessions = [];
   state.sessionsByLecture = {};
   state.activeSession = null;
+  state.selectedSession = null;
   state.joinedSessions = [];
   state.participantCount = null;
   state.submittedEvents = [];

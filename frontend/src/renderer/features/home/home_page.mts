@@ -119,11 +119,13 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
             ? `<div class="table-list">${recentSessions
                 .map(
                   (session) => `
-                    <a class="table-row" href="${buildRouteHash('lecture', { lecture_id: session.lecture_id })}">
-                      <span><strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(courseById.get(session.course_id)?.code ?? 'Course')}</small></span>
-                      <span>${escapeHtml(formatDate(session.started_at))}</span>
-                      <span class="status-badge">${escapeHtml(session.status)}</span>
-                    </a>`,
+                    <div class="table-row">
+                      <a class="table-row__link" href="${buildRouteHash('lecture', { lecture_id: session.lecture_id })}">
+                        <span><strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(courseById.get(session.course_id)?.code ?? 'Course')}</small></span>
+                        <span>${escapeHtml(formatDate(session.started_at))}</span>
+                        <span class="status-badge">${escapeHtml(session.status)}</span>
+                      </a>
+                    </div>`,
                 )
                 .join('')}</div>`
             : '<p class="empty-state">No lecture data yet</p>'
@@ -136,12 +138,14 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
             ? `<div class="table-list">${model.courses
                 .map(
                   (course) => `
-                    <a class="table-row" href="${buildRouteHash('course', { course_id: course.course_id })}">
-                      <span><strong>${escapeHtml(course.code)}</strong></span>
-                      <span>${escapeHtml(course.title)}</span>
-                      <span>${(model.lecturesByCourse[course.course_id] ?? []).length} lectures</span>
-                      <span>${escapeHtml(formatDate(course.created_at))}</span>
-                    </a>`,
+                    <div class="table-row">
+                      <a class="table-row__link" href="${buildRouteHash('course', { course_id: course.course_id })}">
+                        <span><strong>${escapeHtml(course.code)}</strong></span>
+                        <span>${escapeHtml(course.title)}</span>
+                        <span>${(model.lecturesByCourse[course.course_id] ?? []).length} lectures</span>
+                        <span>${escapeHtml(formatDate(course.created_at))}</span>
+                      </a>
+                    </div>`,
                 )
                 .join('')}</div>`
             : '<p class="empty-state">No courses yet</p>'

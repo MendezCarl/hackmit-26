@@ -64,8 +64,12 @@ let sessionClockTimer: number | undefined;
 const bindTimelineInteractions = (route: AppRoute): void => {
   const buttons = document.querySelectorAll<HTMLButtonElement>('[data-moment-id]');
   const state = getBackendSessionState();
-  const duration = state.activeSession ? sessionDurationMs(state.activeSession) : 1;
-  const selectedEducatorSession = route === 'lecture' ? state.activeSession : null;
+  const selectedEducatorSession = route === 'lecture' ? state.selectedSession : null;
+  const duration = selectedEducatorSession
+    ? sessionDurationMs(selectedEducatorSession)
+    : state.activeSession
+      ? sessionDurationMs(state.activeSession)
+      : 1;
   const moments =
     route === 'educator-summary' && state.professorMetrics
       ? buildMomentsFromMetrics(state.professorMetrics, duration)
@@ -328,7 +332,7 @@ const bindStudentActions = (): void => {
 /**
  * Binds educator course, lecture, session, and report actions.
  */
-const bindEducatorActions = (): void => {
+const bindEducatorActions = (route: AppRoute): void => {
   const courseForm = document.querySelector<HTMLFormElement>('[data-course-form]');
   courseForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -368,9 +372,7 @@ const bindEducatorActions = (): void => {
     }
   });
   document.querySelectorAll<HTMLButtonElement>('[data-start-session]').forEach((button) =>
-    button.addEventListener('click', async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
+    button.addEventListener('click', async () => {
       const courseId = button.dataset.courseId;
       const lectureId = button.dataset.startSession;
       const lectureTitle = button.dataset.lectureTitle;
@@ -399,13 +401,23 @@ const bindEducatorActions = (): void => {
   document.querySelector<HTMLDialogElement>('[data-course-modal]')?.addEventListener('click', (event) => {
     if (event.target === event.currentTarget) (event.currentTarget as HTMLDialogElement).close();
   });
+  document.querySelectorAll<HTMLAnchorElement>('.course-group summary a').forEach((anchor) => {
+    anchor.addEventListener('click', (event) => event.stopPropagation());
+  });
   document
     .querySelector<HTMLButtonElement>('[data-end-session]')
-    ?.addEventListener('click', async () => {
-      const session = getBackendSessionState().activeSession;
-      if (!session) return;
+    ?.addEventListener('click', async (event) => {
+      const button = event.currentTarget as HTMLButtonElement;
+      const state = getBackendSessionState();
+      const sessionId = button.dataset.endSession ?? state.activeSession?.session_id;
+      if (!sessionId) return;
       try {
-        setActiveSession(await window.backend.endSession(session.session_id));
+        await window.backend.endSession(sessionId);
+        if (state.activeSession?.session_id === sessionId) setActiveSession(null);
+        if (route === 'lecture') {
+          renderApplication();
+          return;
+        }
         window.location.hash = buildRouteHash('educator-summary');
       } catch (error) {
         const message = document.querySelector<HTMLElement>('[data-educator-message]');
@@ -511,7 +523,7 @@ const bindRenderedApplication = (route: AppRoute): void => {
   bindLibraryFilters();
   bindAuthentication();
   bindStudentActions();
-  bindEducatorActions();
+  bindEducatorActions(route);
   bindAccountActions();
   bindSessionClock();
   void updateBackendStatus();

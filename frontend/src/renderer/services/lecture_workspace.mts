@@ -13,6 +13,7 @@ import {
   setParticipantCount,
   setProfessorReport,
   setProfessorReportForSession,
+  setSelectedSession,
   setTranscriptChunks,
 } from './backend_session_state.mjs';
 
@@ -93,7 +94,7 @@ export async function loadLectureWorkspace(lectureId: string): Promise<void> {
     );
   }
   const latest = sessions[0] ?? null;
-  setActiveSession(latest);
+  setSelectedSession(latest);
   if (latest) await loadProfessorReport(latest.session_id);
 }
 

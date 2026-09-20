@@ -17,6 +17,8 @@ export type LectureSummaryPageModel = {
   lecture: Lecture | null;
   course: Course | null;
   session: LectureSession | null;
+  allCourses: Course[];
+  allLecturesByCourse: Record<string, Lecture[]>;
   summary: ProfessorSummary | null;
   metrics: ProfessorMetrics | null;
   routeError?: string | null;
@@ -27,6 +29,8 @@ const FIXTURE_MODEL: LectureSummaryPageModel = {
   lecture: null,
   course: null,
   session: null,
+  allCourses: [],
+  allLecturesByCourse: {},
   summary: null,
   metrics: null,
 };
@@ -70,8 +74,8 @@ export function LectureSummaryPage(model: LectureSummaryPageModel = FIXTURE_MODE
       eyebrow: model.course.code,
       title: model.lecture.title,
       demoMode: false,
-      courses: [model.course],
-      lecturesByCourse: { [model.course.course_id]: [model.lecture] },
+      courses: model.allCourses,
+      lecturesByCourse: model.allLecturesByCourse,
       currentCourseId: model.course.course_id,
       currentLectureId: model.lecture.lecture_id,
       content: `
@@ -103,14 +107,14 @@ export function LectureSummaryPage(model: LectureSummaryPageModel = FIXTURE_MODE
     eyebrow: model.course.code,
     title: model.lecture.title,
     demoMode: false,
-    courses: [model.course],
-    lecturesByCourse: { [model.course.course_id]: [model.lecture] },
+    courses: model.allCourses,
+    lecturesByCourse: model.allLecturesByCourse,
     currentCourseId: model.course.course_id,
     currentLectureId: model.lecture.lecture_id,
     content: `
       <section class="metrics-grid">${MetricCard('Lecture continuity', continuity, 'Mean across this lecture', 'teal')}${MetricCard('Recovery hotspots', String(hotspotCount), 'Anonymous intervals worth reviewing', 'gold')}${MetricCard('Delivery notes', String(findingCount), 'Possible delivery conditions to review', 'slate')}${MetricCard('Participants', participantValue, 'Aggregate consenting participant count', 'sage')}</section>
       ${model.summary?.is_suppressed ? `<p class="empty-state">Fewer than ${model.summary.minimum_group_size} consenting participants — summary withheld</p>` : ''}
-      ${model.session.status === 'active' ? `<section class="panel session-banner"><strong>Session is active</strong><span>Join code: ${escapeHtml(model.session.join_code)}</span><button class="danger-button" type="button" data-end-session>End session</button></section>` : ''}
+      ${model.session.status === 'active' ? `<section class="panel session-banner"><strong>Session is active</strong><span>Join code: ${escapeHtml(model.session.join_code)}</span><button class="danger-button" type="button" data-end-session="${escapeHtml(model.session.session_id)}">End session</button></section>` : ''}
       ${selected ? `${LectureTimeline(moments, selected.momentId, formatLectureTime(duration))}<section class="report-grid"><div>${MomentDetail(selected, 'educator')}</div></section>` : '<section class="panel"><p class="empty-state">No report intervals are available for this session.</p></section>'}
       ${actions ? `<section class="panel"><h2>Suggested actions</h2><ul>${actions}</ul></section>` : ''}
       ${(model.metrics?.delivery_findings ?? []).map((finding) => `<section class="panel delivery-section"><div><p class="eyebrow">Delivery note · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${escapeHtml(finding.signal_type)}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${escapeHtml(finding.suggested_action)}</div></section>`).join('')}

@@ -53,7 +53,7 @@ export function CourseSidebar(
             .slice(0, 5);
           const isCurrent = currentCourseId === course.course_id || recentLectures.some((lecture) => lecture.lecture_id === currentLectureId);
           return `<details class="course-group" ${isCurrent ? 'open' : ''}>
-            <summary><a href="${buildRouteHash('course', { course_id: course.course_id })}" onclick="event.stopPropagation()">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</a></summary>
+            <summary><a href="${buildRouteHash('course', { course_id: course.course_id })}">${escapeHtml(course.code)} · ${escapeHtml(course.title)}</a></summary>
             ${recentLectures.length ? recentLectures.map((lecture) => `<a href="${buildRouteHash('lecture', { lecture_id: lecture.lecture_id })}">${escapeHtml(lecture.title)}</a>`).join('') : '<span class="course-group__empty">No lectures yet</span>'}
           </details>`;
         })

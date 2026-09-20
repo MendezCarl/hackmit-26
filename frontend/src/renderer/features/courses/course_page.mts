@@ -7,6 +7,8 @@ export type CoursePageModel = {
   profileName?: string;
   course: Course | null;
   lectures: Lecture[];
+  allCourses: Course[];
+  allLecturesByCourse: Record<string, Lecture[]>;
   sessionsByLecture: Record<string, LectureSession[]>;
   activeSession: LectureSession | null;
   routeError?: string | null;
@@ -16,6 +18,8 @@ const FIXTURE_MODEL: CoursePageModel = {
   isDemo: true,
   course: null,
   lectures: [],
+  allCourses: [],
+  allLecturesByCourse: {},
   sessionsByLecture: {},
   activeSession: null,
 };
@@ -60,7 +64,10 @@ export function CoursePage(model: CoursePageModel = FIXTURE_MODEL): string {
           created_at: course.created_at,
         },
       ]
-    : model.lectures;
+    : [...model.lectures].sort((left, right) => right.created_at.localeCompare(left.created_at));
+  const allLecturesByCourse = model.isDemo
+    ? { [course.course_id]: lectures }
+    : model.allLecturesByCourse;
   return AppShell({
     route: 'course',
     role: 'educator',
@@ -68,8 +75,8 @@ export function CoursePage(model: CoursePageModel = FIXTURE_MODEL): string {
     eyebrow: course.code,
     title: course.title,
     demoMode: model.isDemo,
-    courses: [course],
-    lecturesByCourse: { [course.course_id]: lectures },
+    courses: model.isDemo ? [course] : model.allCourses,
+    lecturesByCourse: allLecturesByCourse,
     currentCourseId: course.course_id,
     content: `
       <section class="panel">
@@ -89,12 +96,14 @@ export function CoursePage(model: CoursePageModel = FIXTURE_MODEL): string {
             ? `<div class="table-list">${lectures
                 .map(
                   (lecture) => `
-                    <a class="table-row lecture-log-row" href="${buildRouteHash('lecture', { lecture_id: lecture.lecture_id })}">
-                      <span><strong>${escapeHtml(lecture.title)}</strong></span>
-                      <span>${escapeHtml(formatDate(lecture.created_at))}</span>
-                      <span>${(model.sessionsByLecture[lecture.lecture_id] ?? []).length} sessions</span>
+                    <div class="table-row lecture-log-row">
+                      <a class="table-row__link" href="${buildRouteHash('lecture', { lecture_id: lecture.lecture_id })}">
+                        <span><strong>${escapeHtml(lecture.title)}</strong></span>
+                        <span>${escapeHtml(formatDate(lecture.created_at))}</span>
+                        <span>${(model.sessionsByLecture[lecture.lecture_id] ?? []).length} sessions</span>
+                      </a>
                       <button class="secondary-button" type="button" data-start-session="${escapeHtml(lecture.lecture_id)}" data-course-id="${escapeHtml(course.course_id)}" data-lecture-title="${escapeHtml(lecture.title)}">Start session</button>
-                    </a>`,
+                    </div>`,
                 )
                 .join('')}</div>`
             : '<p class="empty-state">No lectures yet</p>'
