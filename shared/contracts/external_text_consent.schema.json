@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Separate, revocable permission for bounded text to the chosen AI provider.",
+  "properties": {
+    "is_allowed": {
+      "title": "Is Allowed",
+      "type": "boolean"
+    },
+    "provider": {
+      "const": "openai",
+      "default": "openai",
+      "title": "Provider",
+      "type": "string"
+    }
+  },
+  "required": [
+    "is_allowed"
+  ],
+  "title": "ExternalTextConsent",
+  "type": "object"
+}

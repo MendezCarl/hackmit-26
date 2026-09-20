@@ -33,10 +33,16 @@ jobs:
           cache-dependency-path: backend/pyproject.toml
 
       - name: Install backend development dependencies
-        run: python -m pip install -e "./backend[dev]"
+        run: |
+          python -m venv backend/venv
+          backend/venv/bin/python -m pip install -e "./backend[dev,ai,vision]"
+          backend/venv/bin/python -m pip check
 
       - name: Verify generated OpenAPI contract
-        run: python backend/scripts/generate_openapi_contract.py --check
+        run: backend/venv/bin/python backend/scripts/generate_openapi_contract.py --check
 
       - name: Run backend tests
-        run: pytest backend/tests
+        run: backend/venv/bin/python -m pytest backend/tests
+
+      - name: Verify additive shared contracts
+        run: backend/venv/bin/python backend/scripts/generate_learning_contracts.py --check

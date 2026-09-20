@@ -1,0 +1,95 @@
+{
+  "base": "88d7bbb",
+  "shared": [
+    "docs/implementation/backend_status.md",
+    "docs/professor_metrics_dashboard.md",
+    "docs/ai_provider_tool_calling_plan.md",
+    "docs/architecture/local_object_detection.md",
+    "backend/app/contracts/learning.py",
+    "backend/app/learning/__init__.py",
+    "backend/app/learning/state.py",
+    "backend/app/professor/ports.py",
+    "backend/scripts/generate_learning_contracts.py",
+    "backend/pyproject.toml",
+    "backend/NEW_PLAN_FEATURES.md",
+    "docs/decisions/adr_0002_learning_plan_contracts.md",
+    "docs/api/learning_plan_contracts.md",
+    "docs/implementation/new_plan_execution.md",
+    "shared/contracts/aggregation_consent.schema.json",
+    "shared/contracts/coverage_batch.schema.json",
+    "shared/contracts/delivery_batch.schema.json",
+    "shared/contracts/professor_metrics.schema.json",
+    "shared/contracts/external_text_consent.schema.json",
+    "shared/contracts/recovery_draft.schema.json",
+    "shared/contracts/recommendation_report.schema.json",
+    "shared/contracts/recommendation_review.schema.json",
+    "shared/contracts/generated/learning_types.ts"
+  ],
+  "features": {
+    "professor-metrics": [
+      "backend/app/professor/metrics.py",
+      "backend/app/professor/metrics_routes.py",
+      "backend/FEATURE_PROFESSOR_METRICS.md"
+    ],
+    "delivery-quality": [
+      "backend/app/delivery/__init__.py",
+      "backend/app/delivery/service.py",
+      "backend/app/delivery/routes.py",
+      "backend/FEATURE_DELIVERY_QUALITY.md"
+    ],
+    "local-lecture-vision": [
+      "backend/app/local_ml/__init__.py",
+      "backend/app/local_ml/vision.py",
+      "backend/app/local_ml/worker.py",
+      "backend/FEATURE_LOCAL_LECTURE_VISION.md"
+    ],
+    "recovery-cards": [
+      "backend/app/recovery/validated.py",
+      "backend/app/recovery/consent_routes.py",
+      "backend/app/recovery/service.py",
+      "backend/app/ws/publisher.py",
+      "backend/app/ws/routes.py",
+      "backend/tests/test_ws_events.py",
+      "backend/FEATURE_RECOVERY_CARDS.md"
+    ],
+    "openai-recovery": [
+      "backend/app/integrations/__init__.py",
+      "backend/app/integrations/openai/__init__.py",
+      "backend/app/integrations/openai/recovery.py",
+      "backend/scripts/check_openai_synthetic.py",
+      "backend/FEATURE_OPENAI_RECOVERY.md"
+    ],
+    "ai-read-tools": [
+      "backend/app/ai/__init__.py",
+      "backend/app/ai/tools.py",
+      "backend/app/ai/routes.py",
+      "backend/app/integrations/__init__.py",
+      "backend/app/integrations/openai/__init__.py",
+      "backend/app/integrations/openai/tools.py",
+      "backend/FEATURE_AI_READ_TOOLS.md"
+    ],
+    "professor-recommendations": [
+      "backend/app/professor/recommendations.py",
+      "backend/app/professor/recommendation_routes.py",
+      "backend/FEATURE_PROFESSOR_RECOMMENDATIONS.md"
+    ],
+    "recovery-export": [
+      "backend/app/artifacts/__init__.py",
+      "backend/app/artifacts/export.py",
+      "backend/FEATURE_RECOVERY_EXPORT.md"
+    ]
+  },
+  "feature_tests": {
+    "professor-metrics": "backend/tests/feature_professor_metrics",
+    "delivery-quality": "backend/tests/feature_delivery_quality",
+    "local-lecture-vision": "backend/tests/feature_local_lecture_vision",
+    "recovery-cards": "backend/tests/feature_recovery_cards",
+    "openai-recovery": "backend/tests/feature_openai_recovery",
+    "ai-read-tools": "backend/tests/feature_ai_read_tools",
+    "professor-recommendations": "backend/tests/feature_professor_recommendations",
+    "recovery-export": "backend/tests/feature_recovery_export"
+  },
+  "branch_ci_support": [
+    ".github/workflows/backend_contracts.yml"
+  ]
+}

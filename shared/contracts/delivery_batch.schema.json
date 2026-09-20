@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "DeliveryEvent": {
+      "additionalProperties": false,
+      "description": "Derived lecture-delivery issue, separate from student recovery observations.",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "detector_version": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_.-]+$",
+          "title": "Detector Version",
+          "type": "string"
+        },
+        "end_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/DeliveryEvidence"
+        },
+        "signal_type": {
+          "enum": [
+            "presenter_out_of_frame",
+            "board_or_screen_occluded",
+            "slide_text_low_legibility"
+          ],
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "start_ms": {
+          "maximum": 28800000,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms",
+        "event_id",
+        "signal_type",
+        "confidence",
+        "detector_version",
+        "evidence"
+      ],
+      "title": "DeliveryEvent",
+      "type": "object"
+    },
+    "DeliveryEvidence": {
+      "additionalProperties": false,
+      "description": "Bounded derived observations; boxes, frame paths and identities are forbidden.",
+      "properties": {
+        "performance_profile": {
+          "enum": [
+            "low_power",
+            "balanced",
+            "performance"
+          ],
+          "title": "Performance Profile",
+          "type": "string"
+        },
+        "positive_sample_count": {
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Positive Sample Count",
+          "type": "integer"
+        },
+        "sample_count": {
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Sample Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "positive_sample_count",
+        "performance_profile"
+      ],
+      "title": "DeliveryEvidence",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded delivery events; the URL and verified actor define session scope.",
+  "properties": {
+    "events": {
+      "items": {
+        "$ref": "#/$defs/DeliveryEvent"
+      },
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    }
+  },
+  "required": [
+    "events"
+  ],
+  "title": "DeliveryBatch",
+  "type": "object"
+}
