@@ -32,6 +32,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MUSE_API_KEY: ${{ secrets.MUSE_API_KEY }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
         run: |
           set -euo pipefail
           put_env_var() {
@@ -50,6 +51,7 @@ jobs:
           }
           put_env_var OPENAI_API_KEY "$OPENAI_API_KEY"
           put_env_var MUSE_API_KEY "$MUSE_API_KEY"
+          put_env_var MONGODB_URI "$MONGODB_URI"
 
       - name: Trigger Render deploy
         run: |

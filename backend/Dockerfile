@@ -7,7 +7,7 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY app ./app
 
-RUN pip install --no-cache-dir ".[ai]"
+RUN pip install --no-cache-dir ".[ai,mongodb]"
 
 EXPOSE 8000
 

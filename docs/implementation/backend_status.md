@@ -48,6 +48,9 @@ OpenAI-compatible live recovery generation is implemented under
 `app/integrations/meta_muse/` adapter. Tests use injected synthetic Responses
 clients; no provider calls or credits are used by the default suite.
 
+MongoDB persistence is optional through `MONGODB_URI`; the default remains an
+in-memory store for local development and tests.
+
 ### Meta Muse provider
 
 Meta Muse uses model `muse-spark-1.2` through the OpenAI-compatible Responses API
