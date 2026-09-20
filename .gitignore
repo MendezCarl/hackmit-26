@@ -34,3 +34,5 @@ release/
 data/local/
 models/
 *.onnx
+!frontend/models/
+!frontend/models/*.onnx
