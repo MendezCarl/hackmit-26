@@ -60,3 +60,11 @@ def test_demo_environment_defaults_a_short_head_away_minimum(monkeypatch):
     monkeypatch.setenv("APP_ENV", "development")
     monkeypatch.delenv("MIN_HEAD_AWAY_WINDOW_MS")
     assert config._settings_from_environment().min_head_away_window_ms is None
+
+
+def test_rule_cards_match_the_code_defaults():
+    from scripts.generate_rule_cards import OUTPUT_PATH, render_rule_cards
+
+    assert OUTPUT_PATH.read_text() == render_rule_cards(), (
+        "Rule cards are stale; run `python -m scripts.generate_rule_cards`."
+    )
