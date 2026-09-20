@@ -4,9 +4,17 @@ import { BackendClient } from './backend_client.js';
 type BackendOperationResult =
   { ok: true; value: unknown } | { ok: false; error: BackendRequestErrorShape };
 
-/** Returns the configured backend origin, falling back to BackendClient defaults. */
-function readBackendBaseUrl(): string | undefined {
-  return process.env.BLOOM_BACKEND_URL?.trim() || undefined;
+export const DEFAULT_HOSTED_BACKEND_URL = 'https://bloom-backend-srdd.onrender.com';
+
+/**
+ * Returns the configured backend origin.
+ *
+ * `BLOOM_BACKEND_URL` is an override for local backend development.
+ *
+ * @returns The `BLOOM_BACKEND_URL` override or the hosted Render backend URL.
+ */
+export function readBackendBaseUrl(): string {
+  return process.env.BLOOM_BACKEND_URL?.trim() || DEFAULT_HOSTED_BACKEND_URL;
 }
 
 /** Registers one serialized IPC handler for each backend operation. */

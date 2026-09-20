@@ -1,7 +1,8 @@
 # Bloom frontend
 
-The Electron renderer talks to the local FastAPI service through the
-main-process IPC bridge. Start the backend first:
+The Electron app defaults to the hosted Render backend at
+`https://bloom-backend-srdd.onrender.com`. To use a local FastAPI backend,
+start it first:
 
 **macOS/Linux**
 
@@ -29,8 +30,17 @@ npm install
 npm run dev
 ```
 
-Set `BLOOM_BACKEND_URL` when the backend does not run at
-`http://127.0.0.1:8000`.
+For macOS/Linux local development:
+
+```sh
+BLOOM_BACKEND_URL=http://127.0.0.1:8000 npm run dev
+```
+
+For PowerShell:
+
+```powershell
+$env:BLOOM_BACKEND_URL="http://127.0.0.1:8000"; npm run dev
+```
 
 Bloom's optional Zoom cue detects desktop process names locally; it does not
 use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is

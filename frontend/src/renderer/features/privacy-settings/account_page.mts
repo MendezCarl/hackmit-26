@@ -43,7 +43,7 @@ export function AccountPage(model: AccountModel = FIXTURE_MODEL): string {
     courses: model.courses,
     joinedSessions: model.joinedSessions,
     content: `
-      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.isLoading ? '<p class="empty-state">Loading from Bloom service…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">Account unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <section class="settings-layout">
         <section class="panel profile-panel">

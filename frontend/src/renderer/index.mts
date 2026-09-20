@@ -53,7 +53,7 @@ const appRoot = document.querySelector<HTMLElement>('#app');
 if (!appRoot) throw new Error('Bloom requires an #app mount element.');
 
 const formErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'The local service could not complete that request.';
+  error instanceof Error ? error.message : 'The Bloom service could not complete that request.';
 
 const readFormValues = (form: HTMLFormElement): Record<string, string> =>
   Object.fromEntries(
@@ -634,11 +634,11 @@ const updateBackendStatus = async (): Promise<void> => {
   const label = document.querySelector<HTMLElement>('[data-backend-label]');
   if (!pill || !label) return;
   pill.dataset.backendState = 'checking';
-  label.textContent = 'Checking local service';
+  label.textContent = 'Checking Bloom service';
   await checkBackendHealth();
   const connected = getBackendSessionState().backendState === 'connected';
   pill.dataset.backendState = connected ? 'connected' : 'offline';
-  label.textContent = connected ? 'Local service ready' : 'Local service offline · demo mode';
+  label.textContent = connected ? 'Bloom service ready' : 'Bloom service offline · demo mode';
 };
 
 /**

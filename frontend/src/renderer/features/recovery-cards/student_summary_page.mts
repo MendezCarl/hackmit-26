@@ -102,7 +102,7 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
     courses: model.courses,
     joinedSessions: model.joinedSessions,
     content: `
-      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.isLoading ? '<p class="empty-state">Loading from Bloom service…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">Summary unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       <div class="summary-meta"><span>${session ? formatLectureTime(sessionDurationMs(session)) : 'No session clock'}</span><span>${moments.length} recovery moments</span><span>Processed locally</span></div>
       ${moments.length && firstMoment ? LectureTimeline(moments, firstMoment.momentId) : '<p class="empty-state">Mark a moment with “I missed that” during a lecture</p>'}

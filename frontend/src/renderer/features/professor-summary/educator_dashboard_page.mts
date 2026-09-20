@@ -93,7 +93,7 @@ function buildRealEducatorDashboard(model: EducatorDashboardModel): string {
     demoMode: false,
     courses: model.courses,
     content: `
-      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.isLoading ? '<p class="empty-state">Loading from Bloom service…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">Workspace unavailable: ${escapeHtml(model.routeError)}</p>` : ''}
       ${model.activeSession ? `<article class="feature-card feature-card--primary"><p class="eyebrow">Active session</p><h2>${escapeHtml(model.activeSession.title)}</h2><p>Join code: <strong>${escapeHtml(model.activeSession.join_code)}</strong></p><button class="danger-button" type="button" data-end-session>End session</button></article>` : ''}
       <section class="section-block">
