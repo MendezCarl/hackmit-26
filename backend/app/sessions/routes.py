@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Request, Response, status
 
 from app.auth.dependencies import get_current_actor
 from app.auth.tokens import AuthenticatedActor
-from app.contracts.models import CreateSessionRequest, LectureSession
+from app.contracts.models import (
+    AvailableLectureSession,
+    CreateSessionRequest,
+    LectureSession,
+)
+from app.enrollments.service import EnrollmentService
 from app.sessions.service import SessionService
 
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -18,6 +23,12 @@ def get_session_service(request: Request) -> SessionService:
     """Resolve the session service from application state."""
 
     return request.app.state.session_service
+
+
+def get_enrollment_service(request: Request) -> EnrollmentService:
+    """Resolve the enrollment service from application state."""
+
+    return request.app.state.enrollment_service
 
 
 @router.post(
@@ -59,6 +70,29 @@ def list_sessions(
     """
 
     return service.list_owned_sessions(actor, lecture_id, course_id)
+
+
+@router.get(
+    "/available",
+    response_model=list[AvailableLectureSession],
+    summary="List live sessions I can join without a code",
+)
+def list_available_sessions(
+    response: Response,
+    actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
+    service: Annotated[EnrollmentService, Depends(get_enrollment_service)],
+    zoom_meeting_id: str | None = None,
+) -> list[AvailableLectureSession]:
+    """List active sessions matched to the student by enrollment or Zoom meeting.
+
+    A session is included when its course is one of the caller's enrollments
+    or when ``zoom_meeting_id`` equals the session's Zoom meeting id. Each
+    match reports whether the caller already joined and whether the enrollment
+    allows joining without a prompt. Results are newest first.
+    """
+
+    response.headers["Cache-Control"] = "no-store"
+    return service.list_available_sessions(actor, zoom_meeting_id)
 
 
 @router.get(

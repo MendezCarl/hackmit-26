@@ -4,12 +4,14 @@ import {
   addSubmittedEvent,
   getBackendSessionState,
   setActiveSession,
+  setAvailableSessions,
   setBackendCourses,
   setBackendLectures,
   setBackendSessions,
   setBackendState,
   setBackendUser,
   setConsent,
+  setEnrollments,
   setParticipantCount,
   setProfessorReport,
   setProfessorReportForSession,
@@ -111,10 +113,111 @@ export async function loadTranscriptWorkspace(sessionId: string, endMs: number):
  */
 export async function joinLectureSession(joinCode: string): Promise<void> {
   const session = await window.backend.resolveJoinCode(joinCode);
+  await joinResolvedSession(session);
+}
+
+/**
+ * Registers the student in an already-resolved live session (one-click join).
+ *
+ * Side effects: marks the session active, records the participant count, and
+ * refreshes enrollments because the backend auto-enrolls on first join.
+ *
+ * @param session - Active session matched by enrollment or Zoom meeting.
+ */
+export async function joinResolvedSession(session: LectureSession): Promise<void> {
   const participant = await window.backend.joinSession(session.session_id);
   addJoinedSession(session);
   setActiveSession(session);
   setParticipantCount(participant.participant_count);
+  await Promise.allSettled([loadEnrollments(), refreshAvailableSessions()]);
+}
+
+/** Loads the student's course enrollments. */
+export async function loadEnrollments(): Promise<void> {
+  setEnrollments(await window.backend.listEnrollments());
+}
+
+/**
+ * Enrolls the student in a course by its code so future lectures are detected.
+ *
+ * @param courseCode - Raw course code entered by the student.
+ * @throws BackendRequestError when the code is unknown or the actor is not a student.
+ */
+export async function enrollInCourse(courseCode: string): Promise<void> {
+  await window.backend.enrollInCourse({ course_code: courseCode.trim() });
+  await Promise.all([loadEnrollments(), refreshAvailableSessions()]);
+}
+
+/** Sets whether a course's live lectures are joined without a prompt. */
+export async function setEnrollmentAutoJoin(
+  enrollmentId: string,
+  isAutoJoinEnabled: boolean,
+): Promise<void> {
+  await window.backend.updateEnrollment(enrollmentId, { is_auto_join_enabled: isAutoJoinEnabled });
+  await loadEnrollments();
+}
+
+/** Removes a course enrollment so its lectures stop being detected. */
+export async function leaveCourse(enrollmentId: string): Promise<void> {
+  await window.backend.leaveCourse(enrollmentId);
+  await Promise.all([loadEnrollments(), refreshAvailableSessions()]);
+}
+
+/**
+ * Reports whether the locally active session is still running on the backend.
+ *
+ * The local copy of the active session never learns that the professor ended
+ * it, so auto-join re-reads its status before switching lectures. A failed read
+ * counts as live so a flaky network never yanks a student out of a lecture.
+ *
+ * @returns False when there is no active session or the backend reports it ended.
+ */
+async function isActiveSessionStillLive(): Promise<boolean> {
+  const active = getBackendSessionState().activeSession;
+  if (!active) return false;
+  try {
+    const refreshed = await window.backend.readSession(active.session_id);
+    if (refreshed.status === 'active') return true;
+    setActiveSession(refreshed);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Refreshes live sessions the student can join without a code and auto-joins
+ * any whose enrollment opted into zero-click joining. An active session that
+ * the professor has since ended does not block auto-joining the next lecture.
+ *
+ * @param zoomMeetingId - Locally detected Zoom meeting id, when the platform exposes one.
+ * @returns The refreshed available sessions.
+ */
+export async function refreshAvailableSessions(
+  zoomMeetingId: string | null = null,
+): Promise<AvailableLectureSession[]> {
+  const available = await window.backend.listAvailableSessions(zoomMeetingId);
+  setAvailableSessions(available);
+  const autoJoin = available.find((entry) => entry.is_auto_join_enabled && !entry.is_joined);
+  if (autoJoin && !(await isActiveSessionStillLive())) {
+    const participant = await window.backend.joinSession(autoJoin.session.session_id);
+    addJoinedSession(autoJoin.session);
+    setActiveSession(autoJoin.session);
+    setParticipantCount(participant.participant_count);
+    setAvailableSessions(
+      available.map((entry) =>
+        entry.session.session_id === autoJoin.session.session_id
+          ? { ...entry, is_joined: true }
+          : entry,
+      ),
+    );
+  }
+  return getBackendSessionState().availableSessions;
+}
+
+/** Loads enrollments and live sessions for the student dashboard. */
+export async function loadStudentWorkspace(): Promise<void> {
+  await Promise.all([loadEnrollments(), refreshAvailableSessions()]);
 }
 
 /** Checks backend availability without replacing fixture content. */

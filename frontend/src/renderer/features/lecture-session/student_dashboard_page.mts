@@ -12,6 +12,9 @@ export type StudentDashboardModel = {
   courses: Course[];
   activeSession: LectureSession | null;
   joinedSessions: LectureSession[];
+  enrollments: CourseEnrollment[];
+  availableSessions: AvailableLectureSession[];
+  dismissedAvailableSessionIds: string[];
   participantCount: number | null;
   submittedEvents: SignalEvent[];
   zoomRunning: boolean;
@@ -30,6 +33,9 @@ const FIXTURE_MODEL: StudentDashboardModel = {
   courses: [],
   activeSession: null,
   joinedSessions: [],
+  enrollments: [],
+  availableSessions: [],
+  dismissedAvailableSessionIds: [],
   participantCount: null,
   submittedEvents: [],
   zoomRunning: false,
@@ -100,9 +106,30 @@ export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODE
   });
 }
 
+/**
+ * Selects live sessions that still deserve a one-click prompt.
+ *
+ * @param model - Student dashboard data.
+ * @returns Available sessions not yet joined, dismissed, or currently active.
+ */
+export function selectPromptableSessions(
+  model: Pick<StudentDashboardModel, 'availableSessions' | 'dismissedAvailableSessionIds' | 'activeSession'>,
+): AvailableLectureSession[] {
+  const dismissed = new Set(model.dismissedAvailableSessionIds ?? []);
+  return (model.availableSessions ?? []).filter(
+    (entry) =>
+      !entry.is_joined &&
+      !dismissed.has(entry.session.session_id) &&
+      entry.session.session_id !== model.activeSession?.session_id,
+  );
+}
+
 function buildRealStudentDashboard(model: StudentDashboardModel): string {
   const session = model.activeSession;
   const joinedSessions = model.joinedSessions;
+  const enrollments = model.enrollments ?? [];
+  const promptable = selectPromptableSessions(model);
+  const courseCodeById = new Map(enrollments.map((entry) => [entry.course_id, entry.course_code]));
   const latestPossibleMissedEvent = session
     ? (model.submittedEvents
         .filter(
@@ -121,8 +148,18 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
     courses: model.courses,
     joinedSessions,
     content: `
-      ${model.zoomRunning && !model.zoomBannerDismissed ? '<section class="panel zoom-banner" role="status"><p>Zoom detected — enter your join code</p><button class="icon-button zoom-banner__dismiss" type="button" data-dismiss-zoom-banner aria-label="Dismiss Zoom reminder">×</button></section>' : ''}
+      ${promptable.map((entry) => buildLiveLecturePrompt(entry, courseCodeById)).join('')}
+      ${
+        model.zoomRunning && !model.zoomBannerDismissed && !promptable.length && !session
+          ? `<section class="panel zoom-banner" role="status"><p>${
+              enrollments.length
+                ? 'Zoom detected — none of your courses is live yet. Enter a join code if your professor shared one.'
+                : 'Zoom detected — enter your join code, or enroll in a course below so Bloom can find lectures for you'
+            }</p><button class="icon-button zoom-banner__dismiss" type="button" data-dismiss-zoom-banner aria-label="Dismiss Zoom reminder">×</button></section>`
+          : ''
+      }
       ${buildJoinForm()}
+      ${buildEnrollmentPanel(enrollments)}
       ${
         session
           ? `
@@ -197,5 +234,51 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
 }
 
 function buildJoinForm(): string {
-  return `<form class="feature-card login-card form-card student-form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Join code<input type="text" name="join_code" maxlength="6" autocapitalize="characters" required placeholder="e.g. K7PQ2M" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
+  return `<form class="feature-card login-card form-card student-form-card" data-join-session-form><p class="eyebrow">Have a code?</p><label>Join code<input type="text" name="join_code" maxlength="6" autocapitalize="characters" required placeholder="e.g. K7PQ2M" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
+}
+
+function buildLiveLecturePrompt(
+  entry: AvailableLectureSession,
+  courseCodeById: Map<string, string>,
+): string {
+  const { session } = entry;
+  const courseCode = courseCodeById.get(session.course_id);
+  const headline = courseCode
+    ? `${escapeHtml(courseCode)} lecture just started`
+    : 'Your lecture just started';
+  const matchNote =
+    entry.matched_by === 'zoom_meeting'
+      ? 'Matched to the Zoom meeting open on this device.'
+      : 'Detected from a course you enrolled in.';
+  return `<section class="panel live-lecture-prompt" role="status" data-live-lecture-prompt="${escapeHtml(session.session_id)}">
+    <div>
+      <p class="eyebrow">${headline}</p>
+      <h2>${escapeHtml(session.title)}</h2>
+      <p>${matchNote} Starting recovery keeps camera frames and audio on this device and counts you in anonymous class aggregates.</p>
+    </div>
+    <div class="zoom-banner__actions">
+      <button class="primary-button" type="button" data-join-available-session="${escapeHtml(session.session_id)}">Start recovery</button>
+      <button class="secondary-button" type="button" data-dismiss-available-session="${escapeHtml(session.session_id)}">Not now</button>
+    </div>
+    <p class="form-message" data-live-lecture-message aria-live="polite"></p>
+  </section>`;
+}
+
+function buildEnrollmentPanel(enrollments: CourseEnrollment[]): string {
+  const rows = enrollments.length
+    ? `<ul class="enrollment-list">${enrollments
+        .map(
+          (entry) => `<li class="enrollment-row" data-enrollment="${escapeHtml(entry.enrollment_id)}">
+        <span class="enrollment-row__content"><strong>${escapeHtml(entry.course_code)}</strong><small>${escapeHtml(entry.course_title)}</small></span>
+        <label class="enrollment-row__toggle"><input type="checkbox" data-enrollment-auto-join="${escapeHtml(entry.enrollment_id)}" ${entry.is_auto_join_enabled ? 'checked' : ''} /> Join lectures automatically</label>
+        <button class="icon-button" type="button" data-leave-course="${escapeHtml(entry.enrollment_id)}" aria-label="Leave ${escapeHtml(entry.course_code)}">×</button>
+      </li>`,
+        )
+        .join('')}</ul>`
+    : '<p class="empty-state">No courses yet — enroll once and Bloom will prompt you when a lecture goes live.</p>';
+  return `<section class="section-block enrollment-panel">
+    <div class="section-heading-row"><div><p class="eyebrow">Your courses</p><h2>Lectures Bloom watches for</h2></div></div>
+    ${rows}
+    <form class="form-card student-form-card" data-enroll-course-form><label>Course code<input type="text" name="course_code" maxlength="16" autocapitalize="characters" required placeholder="e.g. CS101" /></label><button class="secondary-button" type="submit">Enroll</button><p class="form-message" data-enroll-message aria-live="polite"></p></form>
+  </section>`;
 }

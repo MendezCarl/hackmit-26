@@ -35,8 +35,16 @@ test(
       password: 'password-123',
       role: 'student',
     });
+    const enrollment = await student.enrollInCourse({ course_code: course.code.toLowerCase() });
+    assert.equal(enrollment.course_id, course.course_id);
+    assert.equal(enrollment.is_auto_join_enabled, false);
+    const [available] = await student.listAvailableSessions();
+    assert.equal(available.session.session_id, session.session_id);
+    assert.equal(available.matched_by, 'enrollment');
+    assert.equal(available.is_joined, false);
     const participant = await student.joinSession(session.session_id);
     assert.equal(participant.session_id, session.session_id);
+    assert.equal((await student.listAvailableSessions())[0].is_joined, true);
     await student.updateAggregationConsent(session.session_id, { is_allowed: true });
     const event = {
       event_id: crypto.randomUUID(),

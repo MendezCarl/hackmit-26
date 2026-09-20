@@ -14,6 +14,7 @@ from app.contracts.models import (
     RegisterParticipantRequest,
     SignalEvent,
 )
+from app.enrollments.service import EnrollmentService
 from app.signals.service import EventBatchResponse, ParticipantResponse, SignalService
 
 router = APIRouter(prefix="/api/v1/sessions/{session_id}", tags=["signals"])
@@ -23,6 +24,12 @@ def get_signal_service(request: Request) -> SignalService:
     """Resolve the signal service from application state."""
 
     return request.app.state.signal_service
+
+
+def get_enrollment_service(request: Request) -> EnrollmentService:
+    """Resolve the enrollment service from application state."""
+
+    return request.app.state.enrollment_service
 
 
 @router.post(
@@ -56,11 +63,18 @@ def register_participant(
     session_id: str,
     actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
     service: Annotated[SignalService, Depends(get_signal_service)],
+    enrollment_service: Annotated[EnrollmentService, Depends(get_enrollment_service)],
     request_body: RegisterParticipantRequest | None = None,
 ) -> ParticipantResponse:
-    """Opt the authenticated user into anonymous, aggregated participation."""
+    """Opt the authenticated user into anonymous, aggregated participation.
 
-    return service.register_participant(actor, session_id)
+    Students are also enrolled in the session's course so future lectures of
+    that course can be detected and offered as a one-click join.
+    """
+
+    participant = service.register_participant(actor, session_id)
+    enrollment_service.enroll_from_session(actor, session_id)
+    return participant
 
 
 @router.post(

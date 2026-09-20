@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One student's membership in a course, used to detect live lectures.",
+  "properties": {
+    "course_code": {
+      "description": "Course catalog code at enrollment time.",
+      "title": "Course Code",
+      "type": "string"
+    },
+    "course_id": {
+      "description": "Enrolled course identifier.",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "course_title": {
+      "description": "Course title at enrollment time.",
+      "title": "Course Title",
+      "type": "string"
+    },
+    "enrolled_at": {
+      "description": "UTC ISO 8601 enrollment time ending in Z.",
+      "title": "Enrolled At",
+      "type": "string"
+    },
+    "enrollment_id": {
+      "description": "Unique enrollment identifier.",
+      "title": "Enrollment Id",
+      "type": "string"
+    },
+    "is_auto_join_enabled": {
+      "default": false,
+      "description": "Whether live lectures for this course are joined without a prompt.",
+      "title": "Is Auto Join Enabled",
+      "type": "boolean"
+    },
+    "user_id": {
+      "description": "Enrolled student user identifier.",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "enrollment_id",
+    "course_id",
+    "user_id",
+    "course_title",
+    "course_code",
+    "enrolled_at"
+  ],
+  "title": "CourseEnrollment",
+  "type": "object"
+}

@@ -33,6 +33,8 @@ CONTRACT_MODEL_NAMES: dict[str, str] = {
     "auth_session": "AuthSession",
     "consent_settings": "ConsentSettings",
     "course": "Course",
+    "course_enrollment": "CourseEnrollment",
+    "available_lecture_session": "AvailableLectureSession",
     "lecture": "Lecture",
 }
 

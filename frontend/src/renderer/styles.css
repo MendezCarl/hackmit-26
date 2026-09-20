@@ -2206,6 +2206,60 @@ body {
   flex: 0 0 auto;
 }
 
+.live-lecture-prompt {
+  display: grid;
+  gap: var(--space-3);
+  background: var(--cream);
+  border-left: 4px solid var(--teal-dark);
+}
+
+.live-lecture-prompt h2,
+.live-lecture-prompt p {
+  margin: 0;
+}
+
+.live-lecture-prompt .zoom-banner__actions {
+  justify-content: flex-start;
+}
+
+.enrollment-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.enrollment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.enrollment-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.enrollment-row__content {
+  display: grid;
+  flex: 1 1 auto;
+}
+
+.enrollment-row__content small {
+  color: var(--slate);
+}
+
+.enrollment-row__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 760px) {
   .table-row,
   .lecture-log-row {
