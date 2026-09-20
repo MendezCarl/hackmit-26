@@ -134,7 +134,7 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
                 .map(
                   (session) => `
                     <div class="table-row">
-                      <a class="table-row__link" href="${buildRouteHash('lecture', { lecture_id: session.lecture_id })}">
+                      <a class="table-row__link" href="${buildRouteHash('lecture', { lecture_id: session.lecture_id, session_id: session.session_id })}">
                         <span><strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(courseById.get(session.course_id)?.code ?? 'Course')}</small></span>
                         <span>${escapeHtml(formatDate(session.started_at))}</span>
                         <span class="status-badge">${escapeHtml(session.status)}</span>

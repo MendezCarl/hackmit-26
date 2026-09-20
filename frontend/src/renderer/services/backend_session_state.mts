@@ -80,6 +80,7 @@ export function setBackendLectures(courseId: string, lectures: Lecture[]): void 
 
 /** Stores owned sessions and indexes them by lecture identifier. */
 export function setBackendSessions(sessions: LectureSession[]): void {
+  sessions.forEach(updateCachedSession);
   state.sessions = sessions;
   state.sessionsByLecture = sessions.reduce<Record<string, LectureSession[]>>(
     (byLecture, session) => {
@@ -88,6 +89,25 @@ export function setBackendSessions(sessions: LectureSession[]): void {
     },
     {},
   );
+}
+
+/**
+ * Reconciles cached copies with an authoritative backend session response.
+ * @param session - Updated session returned by a read or mutation.
+ * @returns Nothing; ended sessions also clear the live-session pointer.
+ */
+export function updateCachedSession(session: LectureSession): void {
+  const replace = (cached: LectureSession): LectureSession =>
+    cached.session_id === session.session_id ? session : cached;
+  state.sessions = state.sessions.map(replace);
+  for (const lectureId of Object.keys(state.sessionsByLecture)) {
+    state.sessionsByLecture[lectureId] = state.sessionsByLecture[lectureId].map(replace);
+  }
+  state.joinedSessions = state.joinedSessions.map(replace);
+  if (state.selectedSession?.session_id === session.session_id) state.selectedSession = session;
+  if (state.activeSession?.session_id === session.session_id) {
+    state.activeSession = session.status === 'active' ? session : null;
+  }
 }
 
 /** Stores the current lecture session. */

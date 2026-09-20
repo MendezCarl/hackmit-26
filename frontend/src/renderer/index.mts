@@ -10,6 +10,7 @@ import {
   clearBackendSessionState,
   getBackendSessionState,
   setActiveSession,
+  updateCachedSession,
   setBackendCourses,
   setBackendLectures,
   setBackendState,
@@ -470,16 +471,19 @@ const bindEducatorActions = (route: AppRoute): void => {
     ?.addEventListener('click', async (event) => {
       const button = event.currentTarget as HTMLButtonElement;
       const state = getBackendSessionState();
-      const sessionId = button.dataset.endSession ?? state.activeSession?.session_id;
+      const sessionId = button.dataset.endSession || state.activeSession?.session_id;
       if (!sessionId) return;
       try {
-        await window.backend.endSession(sessionId);
-        if (state.activeSession?.session_id === sessionId) setActiveSession(null);
+        const endedSession = await window.backend.endSession(sessionId);
+        updateCachedSession(endedSession);
         if (route === 'lecture') {
           renderApplication();
           return;
         }
-        window.location.hash = buildRouteHash('educator-summary');
+        window.location.hash = buildRouteHash('lecture', {
+          lecture_id: endedSession.lecture_id,
+          session_id: endedSession.session_id,
+        });
       } catch (error) {
         const message = document.querySelector<HTMLElement>('[data-educator-message]');
         if (message) message.textContent = formErrorMessage(error);
@@ -531,7 +535,7 @@ const loadRouteData = async (route: AppRoute, params: URLSearchParams): Promise<
   }
   if (route === 'lecture') {
     const lectureId = params.get('lecture_id');
-    if (lectureId) await loadLectureWorkspace(lectureId);
+    if (lectureId) await loadLectureWorkspace(lectureId, params.get('session_id'));
   }
   if (route === 'account') await loadAccountWorkspace();
   const activeSession = getBackendSessionState().activeSession;

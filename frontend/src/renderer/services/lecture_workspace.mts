@@ -78,8 +78,13 @@ export async function loadCourseWorkspace(courseId: string): Promise<void> {
   setBackendSessions(sessions);
 }
 
-/** Loads one lecture's sessions and latest available professor report. */
-export async function loadLectureWorkspace(lectureId: string): Promise<void> {
+/**
+ * Loads a lecture report for the requested session, or its latest session.
+ * @param lectureId - Lecture whose sessions should be loaded.
+ * @param sessionId - Optional exact session selected from recent history.
+ * @throws Error When the requested session is not in this lecture.
+ */
+export async function loadLectureWorkspace(lectureId: string, sessionId?: string | null): Promise<void> {
   const sessions = await window.backend.listSessions({ lecture_id: lectureId });
   setBackendSessions(sessions);
   let courses = getBackendSessionState().courses;
@@ -94,8 +99,11 @@ export async function loadLectureWorkspace(lectureId: string): Promise<void> {
       }),
     );
   }
-  const latest = sessions[0] ?? null;
+  const latest = sessionId
+    ? sessions.find((session) => session.session_id === sessionId) ?? null
+    : sessions[0] ?? null;
   setSelectedSession(latest);
+  if (sessionId && !latest) throw new Error("That session could not be found for this lecture.");
   if (latest) await loadProfessorReport(latest.session_id);
 }
 
