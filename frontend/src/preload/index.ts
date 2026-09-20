@@ -78,6 +78,8 @@ const bloomDesktop: BloomDesktopApi = {
   onSessionEventsConnection: (callback) => subscribe('session:events-connection', callback),
   overlayAction: (action) => ipcRenderer.send('overlay:action', { action }),
   showDriftPrompt: () => ipcRenderer.send('overlay:show-drift'),
+  openZoomJoinLink: (joinUrl) =>
+    ipcRenderer.invoke('zoom:open-join', joinUrl) as Promise<ZoomJoinOutcome>,
   getOverlayRole: () => {
     const role = new URLSearchParams(window.location.search).get('role');
     return role === 'professor' || role === 'student' ? role : null;

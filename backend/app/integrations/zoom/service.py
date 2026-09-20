@@ -17,7 +17,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.auth.access import SESSION_ROLE_OWNER, SessionAccess
 from app.auth.tokens import ROLE_PROFESSOR, AuthenticatedActor
@@ -25,6 +25,7 @@ from app.config import Settings
 from app.contracts.models import IngestTranscriptRequest, LectureSession, SessionStatus
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
+from app.integrations.zoom.join_link import MAX_JOIN_URL_LENGTH, bind_zoom_meeting
 from app.integrations.zoom.protocol import (
     RTMS_STARTED_EVENT,
     RTMS_STOPPED_EVENT,
@@ -90,15 +91,48 @@ class ZoomRtmsStatus(BaseModel):
 
 
 class StartZoomRtmsRequest(BaseModel):
-    """Bind a lecture session to the Zoom meeting whose RTMS stream feeds it."""
+    """Bind a lecture session to the Zoom meeting whose RTMS stream feeds it.
+
+    At least one of ``zoom_meeting_id`` or ``zoom_join_url`` is required. A join
+    link alone supplies the meeting number; giving both lets the owner bind a
+    meeting UUID while still sharing a clickable link.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    zoom_meeting_id: str = Field(
+    zoom_meeting_id: str | None = Field(
+        default=None,
         min_length=1,
         max_length=128,
         description="Zoom meeting number or UUID reported in RTMS webhooks.",
     )
+    zoom_join_url: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=MAX_JOIN_URL_LENGTH,
+        description=(
+            "https Zoom join link on a zoom.us/zoom.com host, shared with session "
+            "members as a Join meeting button."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def require_meeting_reference(self) -> StartZoomRtmsRequest:
+        """Reject a request that names neither a meeting id nor a join link.
+
+        Returns:
+            The validated request.
+
+        Raises:
+            ValueError: When both fields are missing or blank.
+        """
+
+        if (
+            not (self.zoom_meeting_id or "").strip()
+            and not (self.zoom_join_url or "").strip()
+        ):
+            raise ValueError("Provide zoom_meeting_id or zoom_join_url.")
+        return self
 
 
 class ZoomWebhookAck(BaseModel):
@@ -212,7 +246,16 @@ class ZoomRtmsService:
                 ErrorCode.VALIDATION_FAILED,
                 "Cannot link a Zoom meeting to an ended session.",
             )
-        session.zoom_meeting_id = request.zoom_meeting_id.strip()
+        zoom = bind_zoom_meeting(request.zoom_meeting_id, request.zoom_join_url)
+        if zoom.zoom_meeting_id is None:
+            raise AppError(
+                ErrorCode.VALIDATION_FAILED,
+                "Personal-room links carry no meeting number; provide zoom_meeting_id too.",
+            )
+        is_same_meeting = session.zoom_meeting_id == zoom.zoom_meeting_id
+        if zoom.zoom_join_url is not None or not is_same_meeting:
+            session.zoom_join_url = zoom.zoom_join_url
+        session.zoom_meeting_id = zoom.zoom_meeting_id
         self._store.sessions[session_id] = session
         state = self._states.setdefault(session_id, _SessionStreamState())
         if state.stream is None:

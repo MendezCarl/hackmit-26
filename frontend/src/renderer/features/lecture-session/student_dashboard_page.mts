@@ -2,6 +2,7 @@ import { buildRouteHash } from '../../app/router.mjs';
 import { AppShell } from '../../components/app_shell.mjs';
 import { ConsentDialog } from '../../components/consent_dialog.mjs';
 import { escapeHtml } from '../../components/html_text.mjs';
+import { ZoomJoinButton } from '../../components/zoom_join_button.mjs';
 import { ZoomRecoveryCue } from '../../components/zoom_recovery_cue.mjs';
 import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs';
 import { formatLectureTime } from '../../services/lecture_view_models.mjs';
@@ -169,7 +170,11 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
           <p>Join code: <strong>${escapeHtml(session.join_code)}</strong></p>
           <p data-session-clock>Elapsed time unavailable until the session clock loads.</p>
           <p>${model.participantCount ?? 0} participant(s) joined.</p>
-          <button class="primary-button" type="button" data-missed-that>I missed that</button>
+          <div class="zoom-banner__actions">
+            <button class="primary-button" type="button" data-missed-that>I missed that</button>
+            ${ZoomJoinButton({ session, variant: 'secondary' })}
+          </div>
+          <p class="form-message" aria-live="polite"></p>
         </article>
         <section class="panel recovery-consent">
           <label>
@@ -258,6 +263,7 @@ function buildLiveLecturePrompt(
     </div>
     <div class="zoom-banner__actions">
       <button class="primary-button" type="button" data-join-available-session="${escapeHtml(session.session_id)}">Start recovery</button>
+      ${ZoomJoinButton({ session, variant: 'secondary' })}
       <button class="secondary-button" type="button" data-dismiss-available-session="${escapeHtml(session.session_id)}">Not now</button>
     </div>
     <p class="form-message" data-live-lecture-message aria-live="polite"></p>

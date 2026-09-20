@@ -15,6 +15,7 @@ from app.config import Settings
 from app.contracts.models import CreateSessionRequest, LectureSession, SessionStatus
 from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
+from app.integrations.zoom.join_link import bind_zoom_meeting
 from app.sessions.join_codes import generate_join_code, normalize_join_code
 from app.storage.in_memory import InMemoryStore
 from app.ws.publisher import EventPublisher
@@ -58,8 +59,13 @@ class SessionService:
 
         Returns:
             The created, active lecture session.
+
+        Raises:
+            AppError: ``validation_failed`` when ``zoom_join_url`` is not an
+                https Zoom link or disagrees with ``zoom_meeting_id``.
         """
 
+        zoom = bind_zoom_meeting(request.zoom_meeting_id, request.zoom_join_url)
         session_id = f"session_{uuid4().hex}"
         join_code = generate_join_code(lambda code: code in self._store.session_join_codes)
         clock_origin = utc_now_iso()
@@ -74,7 +80,8 @@ class SessionService:
             status=SessionStatus.ACTIVE,
             started_at=clock_origin,
             session_clock_origin=clock_origin,
-            zoom_meeting_id=request.zoom_meeting_id,
+            zoom_meeting_id=zoom.zoom_meeting_id,
+            zoom_join_url=zoom.zoom_join_url,
         )
         self._store.sessions[session_id] = session
         self._store.session_join_codes[join_code] = session_id

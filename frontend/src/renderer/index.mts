@@ -6,7 +6,10 @@ import {
 } from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
-import { describeZoomRtmsStatus } from './components/zoom_live_transcript_panel.mjs';
+import {
+  buildZoomMeetingLinkRequest,
+  describeZoomRtmsStatus,
+} from './components/zoom_live_transcript_panel.mjs';
 import { StudentTranscriptPanel } from './features/recovery-cards/student_summary_page.mjs';
 import {
   clearBackendSessionState,
@@ -43,6 +46,7 @@ import {
   loadTranscriptWorkspace,
   loadZoomRtmsStatus,
   linkZoomMeeting,
+  openZoomMeeting,
   recordRecoveryCard,
   recordSubmittedEvent,
   refreshAvailableSessions,
@@ -97,7 +101,9 @@ const availableSessionsFingerprint = (): string => {
   const state = getBackendSessionState();
   return [
     state.activeSession?.session_id ?? '',
-    ...state.availableSessions.map((entry) => `${entry.session.session_id}:${entry.is_joined}`),
+    ...state.availableSessions.map(
+      (entry) => `${entry.session.session_id}:${entry.is_joined}:${entry.session.zoom_join_url ?? ''}`,
+    ),
   ].join('|');
 };
 
@@ -754,7 +760,10 @@ const bindEducatorActions = (route: AppRoute): void => {
     const button = zoomRtmsForm.querySelector<HTMLButtonElement>('button[type="submit"]');
     if (button) button.disabled = true;
     try {
-      await linkZoomMeeting(sessionId, String(values.zoom_meeting_id));
+      await linkZoomMeeting(
+        sessionId,
+        buildZoomMeetingLinkRequest(String(values.zoom_meeting_reference)),
+      );
       renderApplication();
     } catch (error) {
       if (message) message.textContent = formErrorMessage(error);
@@ -883,8 +892,31 @@ const bindSessionClock = (): void => {
  *
  * @param route - Current application route.
  */
+/** Message shown under a Join button when the main process refuses the stored link. */
+const ZOOM_JOIN_REJECTED_MESSAGE = 'This Zoom link could not be opened. Ask your professor to relink the meeting.';
+
+const bindZoomJoinButtons = (): void => {
+  document.querySelectorAll<HTMLButtonElement>('[data-zoom-join]').forEach((button) =>
+    button.addEventListener('click', async () => {
+      const sessionId = button.dataset.zoomJoin;
+      if (!sessionId) return;
+      button.disabled = true;
+      try {
+        const outcome = await openZoomMeeting(sessionId);
+        if (outcome === 'rejected') {
+          const message = button.parentElement?.querySelector<HTMLElement>('.form-message');
+          if (message) message.textContent = ZOOM_JOIN_REJECTED_MESSAGE;
+        }
+      } finally {
+        button.disabled = false;
+      }
+    }),
+  );
+};
+
 const bindRenderedApplication = (route: AppRoute): void => {
   bindTimelineInteractions(route);
+  bindZoomJoinButtons();
   bindSummaryTabs();
   bindLibraryFilters();
   bindAuthentication();
