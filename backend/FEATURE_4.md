@@ -14,7 +14,8 @@ Only this feature's service/router implementations are included. Shared DTOs,
 authorization interfaces, bounded request/error handling, repository support and
 composition infrastructure are identical across all three worktrees. Having a
 sibling's shared payload model does not install its routes or implementation.
-No frontend or Person A implementation files are changed.
+The baseline app and frontend are unchanged. Host authentication and recovery
+generation remain separate integration work.
 
 ## Run in this worktree
 
@@ -71,3 +72,15 @@ not an application runtime dependency; no runtime packages were added.
 The CI dependency-install step runs in a fresh virtual environment and is the
 regression check for this failure. Feature tests remain in the checkout and run
 through the documented Pytest command; they are not installed as application code.
+
+## Implementation record and handoff
+
+Read the [shared implementation report](../docs/implementation/backend_status.md)
+for verified work, test results, and remaining integrations. The
+[API handoff](../docs/api/lecture_features.md#professor-privacy) describes this feature
+and its host requirements; it also covers sibling features that are not installed
+on this branch. See the [branch guide](FEATURE_BRANCHES.md) for their locations.
+
+This branch implements the aggregation-side phone exclusions. Signal ingestion
+and phone-window generation belong to the signal/timeline branch; tests here
+seed typed upstream records directly.
