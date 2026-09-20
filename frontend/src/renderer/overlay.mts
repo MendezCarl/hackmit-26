@@ -1,18 +1,28 @@
 import { escapeHtml } from './components/html_text.mjs';
 
 const role = window.bloomDesktop.getOverlayRole();
+const variant = new URLSearchParams(window.location.search).get('variant');
 const copy =
-  role === 'professor'
+  variant === 'drift'
     ? {
+        title: 'Drifted?',
+        message: 'Bloom noticed you may have missed part of the lecture. Open Bloom for a recovery card.',
+        action: 'Open Bloom',
+      }
+    : role === 'professor'
+    ? {
+        title: 'Zoom detected',
         message: 'Zoom is open. Start your Bloom lecture session so students can follow along.',
         action: 'Start session',
       }
     : role === 'student'
       ? {
+          title: 'Zoom detected',
           message: 'Zoom is open. Join your lecture in Bloom to get recovery cards.',
           action: 'Join lecture',
         }
       : {
+          title: 'Zoom detected',
           message: 'Open Bloom to sign in.',
           action: 'Open Bloom',
         };
@@ -26,7 +36,7 @@ app.innerHTML = `
       <p class="eyebrow">Bloom</p>
       <button class="overlay-card__dismiss" type="button" data-overlay-dismiss aria-label="Dismiss">×</button>
     </div>
-    <h1 id="overlay-title">Zoom detected</h1>
+    <h1 id="overlay-title">${escapeHtml(copy.title)}</h1>
     <p>${escapeHtml(copy.message)}</p>
     <div class="overlay-card__actions">
       <button class="primary-button" type="button" data-overlay-open>${escapeHtml(copy.action)}</button>

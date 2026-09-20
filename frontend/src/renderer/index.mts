@@ -15,8 +15,11 @@ import {
   setBackendState,
   setBackendUser,
   setConsent,
+  setCameraSignalsEnabled,
+  setCameraSignalsStatus,
   setExternalTextConsentGranted,
   setExternalTextConsentNote,
+  setPendingDriftPrompt,
   setRouteError,
   setRouteLoading,
   setZoomBannerDismissed,
@@ -41,6 +44,10 @@ import {
   formatLectureTime,
   sessionDurationMs,
 } from './services/lecture_view_models.mjs';
+import {
+  startStudentCameraMonitor,
+  stopStudentCameraMonitor,
+} from './services/student_camera_monitor.mjs';
 
 const appRoot = document.querySelector<HTMLElement>('#app');
 if (!appRoot) throw new Error('Bloom requires an #app mount element.');
@@ -60,6 +67,25 @@ const readFormValues = (form: HTMLFormElement): Record<string, string> =>
 
 let sessionClockTimer: number | undefined;
 let zoomDesktopBound = false;
+let cameraMonitorSessionId: string | null = null;
+
+const resetCameraSignalState = (): void => {
+  setCameraSignalsEnabled(false);
+  setCameraSignalsStatus('off');
+  setPendingDriftPrompt(null);
+};
+
+const stopCameraForSessionChange = (session: LectureSession | null): void => {
+  const sessionId = session?.session_id ?? null;
+  if (
+    cameraMonitorSessionId &&
+    (cameraMonitorSessionId !== sessionId || session?.status !== 'active')
+  ) {
+    cameraMonitorSessionId = null;
+    resetCameraSignalState();
+    void stopStudentCameraMonitor();
+  }
+};
 
 /**
  * Binds timeline marker selection to the current route's live moments.
@@ -239,7 +265,12 @@ const bindStudentActions = (): void => {
     const joinCode = String(new FormData(joinForm).get('join_code') ?? '').trim();
     const message = joinForm.querySelector<HTMLElement>('[data-join-message]');
     try {
+      const previousSessionId = getBackendSessionState().activeSession?.session_id;
       await joinLectureSession(joinCode);
+      const joinedSession = getBackendSessionState().activeSession;
+      if (previousSessionId !== joinedSession?.session_id) {
+        stopCameraForSessionChange(joinedSession);
+      }
       renderApplication();
     } catch (error) {
       if (message) message.textContent = formErrorMessage(error);
@@ -274,6 +305,48 @@ const bindStudentActions = (): void => {
         setExternalTextConsentNote(formErrorMessage(error));
         renderApplication();
       }
+    });
+  document
+    .querySelector<HTMLInputElement>('[data-camera-signals]')
+    ?.addEventListener('change', (event) => {
+      const checkbox = event.currentTarget as HTMLInputElement;
+      if (!session) return;
+      if (!checkbox.checked) {
+        cameraMonitorSessionId = null;
+        setCameraSignalsEnabled(false);
+        setCameraSignalsStatus('off');
+        void stopStudentCameraMonitor().finally(renderApplication);
+        return;
+      }
+      setCameraSignalsEnabled(true);
+      setCameraSignalsStatus('watching');
+      cameraMonitorSessionId = session.session_id;
+      renderApplication();
+      void startStudentCameraMonitor({
+        session,
+        onEvents: (events) => {
+          const event = events.at(-1);
+          if (!event) return;
+          setPendingDriftPrompt(event);
+          renderApplication();
+          window.bloomDesktop.showDriftPrompt();
+        },
+        onError: (message) => {
+          cameraMonitorSessionId = null;
+          setCameraSignalsEnabled(false);
+          setCameraSignalsStatus('error', message);
+          renderApplication();
+        },
+      }).catch(() => {
+        cameraMonitorSessionId = null;
+        setCameraSignalsEnabled(false);
+      });
+    });
+  document
+    .querySelector<HTMLButtonElement>('[data-dismiss-drift-prompt]')
+    ?.addEventListener('click', () => {
+      setPendingDriftPrompt(null);
+      renderApplication();
     });
   document
     .querySelector<HTMLButtonElement>('[data-missed-that]')
@@ -354,7 +427,12 @@ const bindStudentActions = (): void => {
         }
         if (!job.card_id) throw new Error('Recovery card is not available yet.');
         recordRecoveryCard(await window.backend.readRecoveryCard(session.session_id, job.card_id));
-        renderApplication();
+        setPendingDriftPrompt(null);
+        if (resolveRoute(window.location.hash) === 'student-dashboard') {
+          window.location.hash = buildRouteHash('student-summary');
+        } else {
+          renderApplication();
+        }
       } catch (error) {
         if (message) message.textContent = formErrorMessage(error);
       } finally {
@@ -474,7 +552,11 @@ const bindEducatorActions = (route: AppRoute): void => {
       if (!sessionId) return;
       try {
         await window.backend.endSession(sessionId);
-        if (state.activeSession?.session_id === sessionId) setActiveSession(null);
+        if (state.activeSession?.session_id === sessionId) {
+          cameraMonitorSessionId = null;
+          await stopStudentCameraMonitor();
+          setActiveSession(null);
+        }
         if (route === 'lecture') {
           renderApplication();
           return;
@@ -505,6 +587,7 @@ const bindAccountActions = (): void => {
   document
     .querySelector<HTMLButtonElement>('[data-logout]')
     ?.addEventListener('click', async () => {
+      await stopStudentCameraMonitor();
       await window.backend.logout();
       clearBackendSessionState();
       window.bloomDesktop.setRole(null);
@@ -599,6 +682,7 @@ const renderApplication = (): void => {
   const state = getBackendSessionState();
   const route = resolveRoute(window.location.hash);
   const params = resolveRouteParams(window.location.hash);
+  stopCameraForSessionChange(state.activeSession);
   if (route !== 'login' && !state.user) {
     window.location.hash = buildRouteHash('login');
     return;
@@ -630,5 +714,6 @@ const renderApplication = (): void => {
 };
 
 window.addEventListener('hashchange', renderApplication);
+window.addEventListener('beforeunload', () => void stopStudentCameraMonitor());
 if (!window.location.hash) window.location.hash = buildRouteHash('login');
 else renderApplication();

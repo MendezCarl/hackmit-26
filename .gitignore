@@ -29,3 +29,10 @@ venv/
 
 # Build outputs
 release/
+
+# Private local media and operator-supplied models (never commit)
+data/local/
+models/
+*.onnx
+!frontend/models/
+!frontend/models/*.onnx

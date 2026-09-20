@@ -10,9 +10,12 @@ let closeTimer: NodeJS.Timeout | undefined;
  * @param role - Authenticated role, or null when the user is signed out.
  * @returns Nothing; the singleton overlay is managed by this module.
  */
-export function showZoomOverlay(role: 'professor' | 'student' | null): void {
+export function showZoomOverlay(
+  role: 'professor' | 'student' | null,
+  variant: 'zoom' | 'drift' = 'zoom',
+): void {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    void loadOverlay(role);
+    void loadOverlay(role, variant);
     overlayWindow.showInactive();
     resetCloseTimer();
     return;
@@ -40,7 +43,7 @@ export function showZoomOverlay(role: 'professor' | 'student' | null): void {
     clearCloseTimer();
     overlayWindow = null;
   });
-  void loadOverlay(role);
+  void loadOverlay(role, variant);
   overlayWindow.once('ready-to-show', () => overlayWindow?.showInactive());
   resetCloseTimer();
 }
@@ -56,10 +59,13 @@ export function hideZoomOverlay(): void {
   overlayWindow = null;
 }
 
-async function loadOverlay(role: 'professor' | 'student' | null): Promise<void> {
+async function loadOverlay(
+  role: 'professor' | 'student' | null,
+  variant: 'zoom' | 'drift',
+): Promise<void> {
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   await overlayWindow.loadFile(join(__dirname, '..', 'overlay.html'), {
-    search: `?role=${encodeURIComponent(role ?? '')}`,
+    search: `?role=${encodeURIComponent(role ?? '')}&variant=${variant}`,
   });
 }
 

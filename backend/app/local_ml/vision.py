@@ -185,6 +185,56 @@ class VisionWorker:
         self.last_latency_ms = 0
         self.is_available = True
 
+    def _close_interval(
+        self, kind: DeliveryKind, begin_ms: int, positive_count: int, end_ms: int
+    ) -> DeliveryEvent | None:
+        """Build an event for a finished candidate, or None if it was too short.
+
+        Args:
+            kind: Delivery condition that was active.
+            begin_ms: Lecture time of the first positive sample.
+            positive_count: Positive samples observed so far.
+            end_ms: Lecture time at which the condition ended.
+
+        Returns:
+            A derived event when the interval meets the minimum duration.
+        """
+        if end_ms - begin_ms < self.policy.minimum_duration_ms:
+            return None
+        return DeliveryEvent(
+            event_id=f"delivery_{uuid4().hex}",
+            signal_type=kind,
+            start_ms=begin_ms,
+            end_ms=end_ms,
+            confidence=0.5,
+            detector_version=self.policy.detector_version,
+            evidence=DeliveryEvidence(
+                sample_count=positive_count + 1,
+                positive_sample_count=positive_count,
+                performance_profile=self.policy.profile,
+            ),
+        )
+
+    def flush(self, lecture_time_ms: int) -> list[DeliveryEvent]:
+        """Close conditions still open when observation stops, e.g. at end of lecture.
+
+        Without this, an interval that is still true at the last sample is lost
+        because events are otherwise emitted only when a condition ends.
+
+        Args:
+            lecture_time_ms: Lecture time at which observation stopped.
+
+        Returns:
+            Events for open conditions that already meet the minimum duration.
+        """
+        events = []
+        for kind, (begin, count) in self.active.items():
+            event = self._close_interval(kind, begin, count, lecture_time_ms)
+            if event is not None:
+                events.append(event)
+        self.active.clear()
+        return events
+
     def unavailable(self) -> None:
         """Discard incomplete candidates after camera loss; no cloud fallback or evidence."""
         self.active.clear()
@@ -259,22 +309,9 @@ class VisionWorker:
                     self.active[kind] = (begin, count + 1)
                 elif not positive and kind in self.active:
                     begin, count = self.active.pop(kind)
-                    if lecture_time_ms - begin >= self.policy.minimum_duration_ms:
-                        events.append(
-                            DeliveryEvent(
-                                event_id=f"delivery_{uuid4().hex}",
-                                signal_type=kind,
-                                start_ms=begin,
-                                end_ms=lecture_time_ms,
-                                confidence=0.5,
-                                detector_version=self.policy.detector_version,
-                                evidence=DeliveryEvidence(
-                                    sample_count=count + 1,
-                                    positive_sample_count=count,
-                                    performance_profile=self.policy.profile,
-                                ),
-                            )
-                        )
+                    event = self._close_interval(kind, begin, count, lecture_time_ms)
+                    if event is not None:
+                        events.append(event)
                         self.cooldowns[kind] = lecture_time_ms + self.policy.cooldown_ms
             self.is_available = True
             return events
