@@ -1930,13 +1930,38 @@
       },
       "Recommendation": {
         "additionalProperties": false,
-        "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.",
+        "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.\n\n``topic``, ``medium`` and ``evidence`` are present only when the lecture\ntranscript for the interval was analyzed; every evidence quote must occur in\na supplied transcript chunk, so the professor can verify the observation.",
         "properties": {
           "end_ms": {
             "maximum": 28800000.0,
             "minimum": 0.0,
             "title": "End Ms",
             "type": "integer"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/GroundedFact"
+            },
+            "maxItems": 3,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "medium": {
+            "anyOf": [
+              {
+                "enum": [
+                  "explanation",
+                  "pace",
+                  "example",
+                  "terminology"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medium"
           },
           "observation": {
             "maxLength": 600,
@@ -1955,6 +1980,19 @@
             "minLength": 1,
             "title": "Suggested Action",
             "type": "string"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
           }
         },
         "required": [
@@ -1970,6 +2008,27 @@
         "additionalProperties": false,
         "description": "Recommendations retain report revision, provider provenance and uncertainty.",
         "properties": {
+          "evidence_note": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Note"
+          },
+          "evidence_scope": {
+            "default": "intervals_only",
+            "enum": [
+              "intervals_only",
+              "lecture_transcript"
+            ],
+            "title": "Evidence Scope",
+            "type": "string"
+          },
           "provider_mode": {
             "enum": [
               "mock",
@@ -5142,7 +5201,7 @@
     },
     "/api/v1/sessions/{session_id}/professor-recommendations": {
       "post": {
-        "description": "Course-professor JWT and released evidence required. Mock by default; live mode additionally requires external-text consent. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider.",
+        "description": "Course-professor JWT and released evidence required; generated only on request, never automatically. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider. Bounded lecture-transcript excerpts for hotspot intervals are analyzed when `evidence_scope` is `lecture_transcript`: in mock mode locally, in live mode only after this professor's external-text consent for the provider. Without that consent the response stays `intervals_only` with an `evidence_note` and no text leaves the service. Evidence quotes are verified against the cited chunk before release.",
         "operationId": "generate_recommendations_api_v1_sessions__session_id__professor_recommendations_post",
         "parameters": [
           {

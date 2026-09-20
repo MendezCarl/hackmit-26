@@ -174,17 +174,29 @@ class RecoveryDraft(StrictPayload):
     follow_up_question: str = Field(min_length=1, max_length=400)
 
 
+RecommendationMedium = Literal["explanation", "pace", "example", "terminology"]
+RecommendationEvidenceScope = Literal["intervals_only", "lecture_transcript"]
+
+
 class Recommendation(StrictPayload):
-    """Teaching suggestion tied to a released report bucket; never a student diagnosis."""
+    """Teaching suggestion tied to a released report bucket; never a student diagnosis.
+
+    ``topic``, ``medium`` and ``evidence`` are present only when the lecture
+    transcript for the interval was analyzed; every evidence quote must occur in
+    a supplied transcript chunk, so the professor can verify the observation.
+    """
 
     start_ms: Millis
     end_ms: Millis
     observation: str = Field(min_length=1, max_length=600)
     suggested_action: str = Field(min_length=1, max_length=600)
+    topic: str | None = Field(default=None, min_length=1, max_length=160)
+    medium: RecommendationMedium | None = None
+    evidence: list[GroundedFact] = Field(default_factory=list, max_length=3)
 
 
 class RecommendationDraft(StrictPayload):
-    """Bounded AI suggestions from approved aggregate context only."""
+    """Bounded AI suggestions from approved aggregate and lecture-transcript context."""
 
     recommendations: list[Recommendation] = Field(max_length=5)
 
@@ -204,6 +216,8 @@ class RecommendationReport(StrictPayload):
     report_revision: str
     status: Literal["available", "insufficient_evidence"]
     provider_mode: Literal["mock", "live"]
+    evidence_scope: RecommendationEvidenceScope = "intervals_only"
+    evidence_note: str | None = Field(default=None, max_length=400)
     recommendations: list[Recommendation]
     reviews: list[RecommendationReview] = Field(default_factory=list, max_length=5)
 

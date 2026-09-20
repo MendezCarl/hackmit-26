@@ -25,12 +25,12 @@ router = APIRouter(
 @router.post(
     "/professor-recommendations",
     response_model=RecommendationReport,
-    description="Course-professor JWT and released evidence required. Mock by default; live mode additionally requires external-text consent. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider.",
+    description="Course-professor JWT and released evidence required; generated only on request, never automatically. Recommendations cite approved aggregate intervals; raw and individual signals never reach the provider. Bounded lecture-transcript excerpts for hotspot intervals are analyzed when `evidence_scope` is `lecture_transcript`: in mock mode locally, in live mode only after this professor's external-text consent for the provider. Without that consent the response stays `intervals_only` with an `evidence_note` and no text leaves the service. Evidence quotes are verified against the cited chunk before release.",
 )
 def generate_recommendations(
     session_id: str, actor: Actor, request: Request, response: Response
 ) -> RecommendationReport:
-    """Generate bounded suggestions from the current privacy-filtered report."""
+    """Generate bounded suggestions from the current report and consented excerpts."""
     response.headers["Cache-Control"] = "no-store"
     return request.app.state.recommendation_service.generate(actor, session_id)
 
