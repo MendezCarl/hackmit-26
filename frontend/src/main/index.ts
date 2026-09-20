@@ -64,10 +64,10 @@ const createWindow = (): BrowserWindow => {
 
 const registerDesktopIpc = (): void => {
   ipcMain.on('app:set-role', (_event, role: BloomRole) => {
-    if (role === null || role === 'professor' || role === 'student') {
-      currentRole = role;
-      if (zoomRunning) showZoomOverlay(currentRole);
-    }
+    if (role !== null && role !== 'professor' && role !== 'student') return;
+    const roleChanged = role !== currentRole;
+    currentRole = role;
+    if (zoomRunning && roleChanged && role !== null) showZoomOverlay(currentRole);
   });
   ipcMain.on('overlay:action', (_event, action: { action?: string }) => {
     if (action?.action === 'open') {
