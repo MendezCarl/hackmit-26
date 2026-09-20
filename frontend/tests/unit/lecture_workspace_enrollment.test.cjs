@@ -14,13 +14,17 @@ const SESSION = {
   session_clock_origin: '2026-01-01T00:00:00.000Z',
 };
 
-const installFakeBackend = (available) => {
+const installFakeBackend = (available, { activeSessionStatus = 'active' } = {}) => {
   const calls = [];
   globalThis.window = {
     backend: {
       listAvailableSessions: async (zoomMeetingId) => {
         calls.push(['listAvailableSessions', zoomMeetingId]);
         return available;
+      },
+      readSession: async (sessionId) => {
+        calls.push(['readSession', sessionId]);
+        return { ...SESSION, session_id: sessionId, status: activeSessionStatus };
       },
       joinSession: async (sessionId) => {
         calls.push(['joinSession', sessionId]);
@@ -80,7 +84,61 @@ test('refreshAvailableSessions never auto-joins over an active session', async (
   state.setActiveSession(SESSION);
   await workspace.refreshAvailableSessions();
   assert.equal(state.getBackendSessionState().activeSession?.session_id, 'session-1');
-  assert.deepEqual(calls, [['listAvailableSessions', null]]);
+  assert.deepEqual(calls, [
+    ['listAvailableSessions', null],
+    ['readSession', 'session-1'],
+  ]);
+});
+
+test('refreshAvailableSessions auto-joins the next lecture once the active one has ended', async () => {
+  const calls = installFakeBackend(
+    [
+      {
+        session: { ...SESSION, session_id: 'session-2', title: 'Evolution' },
+        matched_by: 'enrollment',
+        is_joined: false,
+        is_auto_join_enabled: true,
+      },
+    ],
+    { activeSessionStatus: 'ended' },
+  );
+  const workspace = await import('../../dist/renderer/services/lecture_workspace.mjs');
+  const state = await import('../../dist/renderer/services/backend_session_state.mjs');
+  state.clearBackendSessionState();
+  state.setActiveSession(SESSION);
+  const available = await workspace.refreshAvailableSessions();
+  assert.equal(state.getBackendSessionState().activeSession?.session_id, 'session-2');
+  assert.equal(available[0].is_joined, true);
+  assert.deepEqual(calls, [
+    ['listAvailableSessions', null],
+    ['readSession', 'session-1'],
+    ['joinSession', 'session-2'],
+  ]);
+});
+
+test('refreshAvailableSessions keeps the active session when its status cannot be read', async () => {
+  const calls = installFakeBackend([
+    {
+      session: { ...SESSION, session_id: 'session-2' },
+      matched_by: 'enrollment',
+      is_joined: false,
+      is_auto_join_enabled: true,
+    },
+  ]);
+  globalThis.window.backend.readSession = async (sessionId) => {
+    calls.push(['readSession', sessionId]);
+    throw new Error('offline');
+  };
+  const workspace = await import('../../dist/renderer/services/lecture_workspace.mjs');
+  const state = await import('../../dist/renderer/services/backend_session_state.mjs');
+  state.clearBackendSessionState();
+  state.setActiveSession(SESSION);
+  await workspace.refreshAvailableSessions();
+  assert.equal(state.getBackendSessionState().activeSession?.session_id, 'session-1');
+  assert.deepEqual(calls, [
+    ['listAvailableSessions', null],
+    ['readSession', 'session-1'],
+  ]);
 });
 
 test('dismissed prompts are forgotten once the session stops being live', async () => {
