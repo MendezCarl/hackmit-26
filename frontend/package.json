@@ -1,11 +1,11 @@
 {
-  "name": "hackmit-26-frontend",
+  "name": "bloom-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Electron frontend skeleton for hackmit-26.",
+  "description": "Bloom Electron desktop app with a Python FastAPI backend.",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && cp src/index.html src/styles.css dist/",
+    "build": "tsc && cp src/index.html src/styles.css dist/ && cp -R src/assets dist/",
     "dev": "npm run build && electron .",
     "start": "npm run build && electron .",
     "typecheck": "tsc --noEmit"
@@ -14,5 +14,30 @@
     "@types/node": "^24.5.2",
     "electron": "^38.1.0",
     "typescript": "^5.9.2"
+  },
+  "build": {
+    "appId": "com.mendezcarl.bloom",
+    "productName": "Bloom",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "extraResources": [
+      {
+        "from": "build/icons",
+        "to": "icons"
+      }
+    ],
+    "mac": {
+      "icon": "build/bloom-icon.icns",
+      "category": "public.app-category.education"
+    },
+    "win": {
+      "icon": "build/bloom-icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons",
+      "category": "Education"
+    }
   }
 }
