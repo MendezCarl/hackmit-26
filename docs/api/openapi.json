@@ -98,6 +98,37 @@
         "title": "AuthSession",
         "type": "object"
       },
+      "AvailableLectureSession": {
+        "description": "An active session the student can join with one click.",
+        "properties": {
+          "is_auto_join_enabled": {
+            "description": "True when the matching enrollment allows joining without a prompt.",
+            "title": "Is Auto Join Enabled",
+            "type": "boolean"
+          },
+          "is_joined": {
+            "description": "True when the student is already a registered participant.",
+            "title": "Is Joined",
+            "type": "boolean"
+          },
+          "matched_by": {
+            "$ref": "#/components/schemas/SessionMatchSource",
+            "description": "Whether the match came from course enrollment or a Zoom meeting id."
+          },
+          "session": {
+            "$ref": "#/components/schemas/LectureSession",
+            "description": "The active lecture session."
+          }
+        },
+        "required": [
+          "session",
+          "matched_by",
+          "is_joined",
+          "is_auto_join_enabled"
+        ],
+        "title": "AvailableLectureSession",
+        "type": "object"
+      },
       "BatchReceipt": {
         "additionalProperties": false,
         "description": "Accepted records and exact retries; conflicting identifiers fail atomically.",
@@ -274,6 +305,57 @@
           "created_at"
         ],
         "title": "Course",
+        "type": "object"
+      },
+      "CourseEnrollment": {
+        "description": "One student's membership in a course, used to detect live lectures.",
+        "properties": {
+          "course_code": {
+            "description": "Course catalog code at enrollment time.",
+            "title": "Course Code",
+            "type": "string"
+          },
+          "course_id": {
+            "description": "Enrolled course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "course_title": {
+            "description": "Course title at enrollment time.",
+            "title": "Course Title",
+            "type": "string"
+          },
+          "enrolled_at": {
+            "description": "UTC ISO 8601 enrollment time ending in Z.",
+            "title": "Enrolled At",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "description": "Unique enrollment identifier.",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "is_auto_join_enabled": {
+            "default": false,
+            "description": "Whether live lectures for this course are joined without a prompt.",
+            "title": "Is Auto Join Enabled",
+            "type": "boolean"
+          },
+          "user_id": {
+            "description": "Enrolled student user identifier.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "course_id",
+          "user_id",
+          "course_title",
+          "course_code",
+          "enrolled_at"
+        ],
+        "title": "CourseEnrollment",
         "type": "object"
       },
       "CoverageBatch": {
@@ -876,6 +958,24 @@
           "role"
         ],
         "title": "DemoTokenResponse",
+        "type": "object"
+      },
+      "EnrollCourseRequest": {
+        "additionalProperties": false,
+        "description": "Request enrolling the authenticated student in a course by its code.",
+        "properties": {
+          "course_code": {
+            "description": "Course catalog code shared by the professor; case-insensitive.",
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Course Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_code"
+        ],
+        "title": "EnrollCourseRequest",
         "type": "object"
       },
       "ErrorBody": {
@@ -2238,6 +2338,15 @@
         "title": "ReleasedRatio",
         "type": "object"
       },
+      "SessionMatchSource": {
+        "description": "How an active session was matched to the requesting student.",
+        "enum": [
+          "enrollment",
+          "zoom_meeting"
+        ],
+        "title": "SessionMatchSource",
+        "type": "string"
+      },
       "SessionMode": {
         "description": "How a lecture session is held.",
         "enum": [
@@ -2691,6 +2800,22 @@
           "analytics_opt_in"
         ],
         "title": "UpdateConsentRequest",
+        "type": "object"
+      },
+      "UpdateEnrollmentRequest": {
+        "additionalProperties": false,
+        "description": "Request changing how Bloom reacts when an enrolled course goes live.",
+        "properties": {
+          "is_auto_join_enabled": {
+            "description": "True to join new lectures for this course without a prompt; false to show a one-click prompt instead.",
+            "title": "Is Auto Join Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_auto_join_enabled"
+        ],
+        "title": "UpdateEnrollmentRequest",
         "type": "object"
       },
       "UserProfile": {
@@ -3172,6 +3297,159 @@
         ]
       }
     },
+    "/api/v1/enrollments": {
+      "get": {
+        "description": "List the authenticated user's course enrollments, newest first.",
+        "operationId": "list_enrollments_api_v1_enrollments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseEnrollment"
+                  },
+                  "title": "Response List Enrollments Api V1 Enrollments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List my enrollments",
+        "tags": [
+          "enrollments"
+        ]
+      },
+      "post": {
+        "description": "Enroll the authenticated student in the course using the shared code.\n\nEnrollment lets the desktop app detect the course's future live lectures\nand offer a one-click join. Students only; re-enrolling is idempotent.\nReturns ``not_found`` for unknown codes and ``duplicate`` when the code is\nambiguous across professors.",
+        "operationId": "enroll_in_course_api_v1_enrollments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollCourseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseEnrollment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enroll in a course by course code",
+        "tags": [
+          "enrollments"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}": {
+      "delete": {
+        "description": "Remove one owned enrollment so its lectures are no longer detected.",
+        "operationId": "delete_enrollment_api_v1_enrollments__enrollment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Leave a course",
+        "tags": [
+          "enrollments"
+        ]
+      },
+      "patch": {
+        "description": "Toggle whether live lectures for the course join without a prompt.\n\nAuto-join is off by default because joining also opts the student into\nanonymous aggregation; the student must enable it explicitly.",
+        "operationId": "update_enrollment_api_v1_enrollments__enrollment_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEnrollmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseEnrollment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update an enrollment's auto-join preference",
+        "tags": [
+          "enrollments"
+        ]
+      }
+    },
     "/api/v1/lectures": {
       "get": {
         "description": "List lecture records for one course the professor owns.",
@@ -3443,6 +3721,60 @@
           }
         },
         "summary": "Create a lecture session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/available": {
+      "get": {
+        "description": "List active sessions matched to the student by enrollment or Zoom meeting.\n\nA session is included when its course is one of the caller's enrollments\nor when ``zoom_meeting_id`` equals the session's Zoom meeting id. Each\nmatch reports whether the caller already joined and whether the enrollment\nallows joining without a prompt. Results are newest first.",
+        "operationId": "list_available_sessions_api_v1_sessions_available_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "zoom_meeting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zoom Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableLectureSession"
+                  },
+                  "title": "Response List Available Sessions Api V1 Sessions Available Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List live sessions I can join without a code",
         "tags": [
           "sessions"
         ]
@@ -4419,7 +4751,7 @@
     },
     "/api/v1/sessions/{session_id}/participants": {
       "post": {
-        "description": "Opt the authenticated user into anonymous, aggregated participation.",
+        "description": "Opt the authenticated user into anonymous, aggregated participation.\n\nStudents are also enrolled in the session's course so future lectures of\nthat course can be detected and offered as a one-click join.",
         "operationId": "register_participant_api_v1_sessions__session_id__participants_post",
         "parameters": [
           {
@@ -5528,6 +5860,10 @@
     {
       "description": "Lecture-session lifecycle.",
       "name": "sessions"
+    },
+    {
+      "description": "Student course enrollment used to detect live lectures.",
+      "name": "enrollments"
     },
     {
       "description": "Coarse signal events and participants.",

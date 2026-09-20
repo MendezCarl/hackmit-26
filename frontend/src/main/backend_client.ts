@@ -124,6 +124,35 @@ export class BackendClient {
   async joinSession(sessionId: string): Promise<ParticipantResponse> {
     return this.request('POST', `/api/v1/sessions/${encodeURIComponent(sessionId)}/participants`);
   }
+  async listEnrollments(): Promise<CourseEnrollment[]> {
+    return this.request('GET', '/api/v1/enrollments');
+  }
+  async enrollInCourse(request: EnrollCourseRequest): Promise<CourseEnrollment> {
+    return this.request('POST', '/api/v1/enrollments', { body: request });
+  }
+  async updateEnrollment(
+    enrollmentId: string,
+    request: UpdateEnrollmentRequest,
+  ): Promise<CourseEnrollment> {
+    return this.request('PATCH', `/api/v1/enrollments/${encodeURIComponent(enrollmentId)}`, {
+      body: request,
+    });
+  }
+  async leaveCourse(enrollmentId: string): Promise<void> {
+    await this.request('DELETE', `/api/v1/enrollments/${encodeURIComponent(enrollmentId)}`);
+  }
+  /**
+   * Lists live sessions the student can join without a code.
+   * @param zoomMeetingId - Zoom meeting id detected on this device, when known.
+   * @returns Active sessions matched by enrollment or Zoom meeting, newest first.
+   */
+  async listAvailableSessions(
+    zoomMeetingId: string | null = null,
+  ): Promise<AvailableLectureSession[]> {
+    const query: Record<string, string> = {};
+    if (zoomMeetingId) query.zoom_meeting_id = zoomMeetingId;
+    return this.request('GET', '/api/v1/sessions/available', { query });
+  }
   async updateAggregationConsent(
     sessionId: string,
     consent: AggregationConsent,

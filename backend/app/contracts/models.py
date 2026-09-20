@@ -588,6 +588,64 @@ class CreateCourseRequest(_StrictModel):
     )
 
 
+class EnrollCourseRequest(_StrictModel):
+    """Request enrolling the authenticated student in a course by its code."""
+
+    course_code: str = Field(
+        min_length=1,
+        max_length=16,
+        description="Course catalog code shared by the professor; case-insensitive.",
+    )
+
+
+class UpdateEnrollmentRequest(_StrictModel):
+    """Request changing how Bloom reacts when an enrolled course goes live."""
+
+    is_auto_join_enabled: bool = Field(
+        description=(
+            "True to join new lectures for this course without a prompt; false to "
+            "show a one-click prompt instead."
+        )
+    )
+
+
+class CourseEnrollment(BaseModel):
+    """One student's membership in a course, used to detect live lectures."""
+
+    enrollment_id: str = Field(description="Unique enrollment identifier.")
+    course_id: str = Field(description="Enrolled course identifier.")
+    user_id: str = Field(description="Enrolled student user identifier.")
+    course_title: str = Field(description="Course title at enrollment time.")
+    course_code: str = Field(description="Course catalog code at enrollment time.")
+    is_auto_join_enabled: bool = Field(
+        default=False,
+        description="Whether live lectures for this course are joined without a prompt.",
+    )
+    enrolled_at: str = Field(description="UTC ISO 8601 enrollment time ending in Z.")
+
+
+class SessionMatchSource(str, Enum):
+    """How an active session was matched to the requesting student."""
+
+    ENROLLMENT = "enrollment"
+    ZOOM_MEETING = "zoom_meeting"
+
+
+class AvailableLectureSession(BaseModel):
+    """An active session the student can join with one click."""
+
+    session: LectureSession = Field(description="The active lecture session.")
+    matched_by: SessionMatchSource = Field(
+        description="Whether the match came from course enrollment or a Zoom meeting id."
+    )
+    is_joined: bool = Field(
+        description="True when the student is already a registered participant."
+    )
+    is_auto_join_enabled: bool = Field(
+        description="True when the matching enrollment allows joining without a prompt."
+    )
+
+
 class Lecture(BaseModel):
     """One lecture record belonging to a course."""
 

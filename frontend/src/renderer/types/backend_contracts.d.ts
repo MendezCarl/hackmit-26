@@ -80,6 +80,28 @@ interface ParticipantResponse {
   user_id: string;
   participant_count: number;
 }
+interface EnrollCourseRequest {
+  course_code: string;
+}
+interface UpdateEnrollmentRequest {
+  is_auto_join_enabled: boolean;
+}
+interface CourseEnrollment {
+  enrollment_id: string;
+  course_id: string;
+  user_id: string;
+  course_title: string;
+  course_code: string;
+  is_auto_join_enabled: boolean;
+  enrolled_at: string;
+}
+type SessionMatchSource = 'enrollment' | 'zoom_meeting';
+interface AvailableLectureSession {
+  session: LectureSession;
+  matched_by: SessionMatchSource;
+  is_joined: boolean;
+  is_auto_join_enabled: boolean;
+}
 interface AggregationConsent {
   is_allowed: boolean;
 }
@@ -273,6 +295,14 @@ type BackendApi = {
   readSession: (sessionId: string) => Promise<LectureSession>;
   resolveJoinCode: (joinCode: string) => Promise<LectureSession>;
   joinSession: (sessionId: string) => Promise<ParticipantResponse>;
+  listEnrollments: () => Promise<CourseEnrollment[]>;
+  enrollInCourse: (request: EnrollCourseRequest) => Promise<CourseEnrollment>;
+  updateEnrollment: (
+    enrollmentId: string,
+    request: UpdateEnrollmentRequest,
+  ) => Promise<CourseEnrollment>;
+  leaveCourse: (enrollmentId: string) => Promise<void>;
+  listAvailableSessions: (zoomMeetingId?: string | null) => Promise<AvailableLectureSession[]>;
   updateAggregationConsent: (
     sessionId: string,
     consent: AggregationConsent,
