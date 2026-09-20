@@ -127,20 +127,59 @@ export async function loadZoomRtmsStatus(sessionId: string): Promise<void> {
 /**
  * Binds a Zoom meeting to a session so its RTMS transcript feeds the lecture.
  *
+ * After linking, the session is re-read so the stored `zoom_join_url` (derived
+ * server-side from a pasted link) reaches the professor's Join button.
+ *
  * @param sessionId - Session owned by the current professor.
- * @param zoomMeetingId - Zoom meeting number or UUID from the meeting invite.
+ * @param request - Zoom join link and/or meeting number from the meeting invite.
  * @returns The status returned by the backend after linking.
- * @throws Error When the backend rejects the link (not owner, Zoom not configured, ...).
+ * @throws Error When the backend rejects the link (not owner, Zoom not configured,
+ *   invalid join URL, ...).
  */
 export async function linkZoomMeeting(
   sessionId: string,
-  zoomMeetingId: string,
+  request: StartZoomRtmsRequest,
 ): Promise<ZoomRtmsStatus> {
-  const status = await window.backend.startZoomRtms(sessionId, {
-    zoom_meeting_id: zoomMeetingId.trim(),
-  });
+  const status = await window.backend.startZoomRtms(sessionId, request);
   setZoomRtmsStatus(status);
+  const session = await window.backend.readSession(sessionId);
+  const state = getBackendSessionState();
+  if (state.selectedSession?.session_id === sessionId) setSelectedSession(session);
+  if (state.activeSession?.session_id === sessionId) setActiveSession(session);
   return status;
+}
+
+/**
+ * Finds the validated Zoom join URL for a session known to the renderer.
+ *
+ * @param sessionId - Session the student or professor wants to join.
+ * @returns The join URL, or null when the session is unknown or has no link.
+ */
+export function findZoomJoinUrl(sessionId: string): string | null {
+  const state = getBackendSessionState();
+  const candidates: (LectureSession | null | undefined)[] = [
+    state.activeSession,
+    state.selectedSession,
+    ...state.availableSessions.map((entry) => entry.session),
+    ...state.joinedSessions,
+  ];
+  const match = candidates.find((session) => session?.session_id === sessionId);
+  return match?.zoom_join_url ?? null;
+}
+
+/**
+ * Asks the Electron main process to open a session's Zoom meeting.
+ *
+ * The renderer never opens URLs itself; the main process re-validates the Zoom
+ * host allowlist and prefers the desktop client deep link.
+ *
+ * @param sessionId - Session whose join link should be opened.
+ * @returns Where the meeting opened, or `rejected` when no valid link exists.
+ */
+export async function openZoomMeeting(sessionId: string): Promise<ZoomJoinOutcome> {
+  const joinUrl = findZoomJoinUrl(sessionId);
+  if (!joinUrl) return 'rejected';
+  return window.bloomDesktop.openZoomJoinLink(joinUrl);
 }
 
 /** Loads transcript excerpts for the active student session. */

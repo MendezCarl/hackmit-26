@@ -63,6 +63,7 @@ interface LectureSession {
   ended_at?: string | null;
   session_clock_origin: string;
   zoom_meeting_id?: string | null;
+  zoom_join_url?: string | null;
 }
 interface CreateSessionRequest {
   lecture_id: string;
@@ -70,6 +71,7 @@ interface CreateSessionRequest {
   title: string;
   mode: SessionMode;
   zoom_meeting_id?: string | null;
+  zoom_join_url?: string | null;
 }
 interface SessionListFilter {
   lecture_id?: string;
@@ -176,8 +178,10 @@ interface ZoomRtmsStatus {
   last_error?: string | null;
 }
 interface StartZoomRtmsRequest {
-  zoom_meeting_id: string;
+  zoom_meeting_id?: string | null;
+  zoom_join_url?: string | null;
 }
+type ZoomJoinOutcome = 'desktop' | 'browser' | 'rejected';
 /** WebSocket envelope delivered on `/ws/v1/sessions/{session_id}` (see docs/api/asyncapi.yaml). */
 interface SessionEventEnvelope {
   event_id: string;
@@ -414,6 +418,7 @@ interface BloomDesktopApi {
   overlayAction: (message: OverlayActionMessage) => void;
   showDriftPrompt: (request: DriftPromptRequest) => void;
   onDriftRecoveryState: (callback: (state: DriftRecoveryState) => void) => () => void;
+  openZoomJoinLink: (joinUrl: string) => Promise<ZoomJoinOutcome>;
   getOverlayRole: () => BloomRole;
 }
 interface Window {

@@ -1,4 +1,5 @@
 import { escapeHtml } from './html_text.mjs';
+import { ZoomJoinButton } from './zoom_join_button.mjs';
 
 export type ZoomLiveTranscriptPanelModel = {
   session: LectureSession;
@@ -32,27 +33,46 @@ export function describeZoomRtmsStatus(status: ZoomRtmsStatus | null): string {
 }
 
 /**
+ * Splits the professor's single "Zoom meeting" field into the RTMS request body.
+ *
+ * A pasted https link is sent as `zoom_join_url` so the backend validates it and
+ * derives the meeting number; anything else is treated as a bare meeting id.
+ *
+ * @param value - Raw text from the Zoom meeting input.
+ * @returns Request carrying exactly one of the two meeting references.
+ */
+export function buildZoomMeetingLinkRequest(value: string): StartZoomRtmsRequest {
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed)
+    ? { zoom_join_url: trimmed }
+    : { zoom_meeting_id: trimmed };
+}
+
+/**
  * Renders the professor control for feeding a Zoom meeting's realtime
  * transcript into an active lecture session.
  *
  * @param model - Active session and its latest Zoom link status.
- * @returns Panel markup with a meeting-id form and live status line.
+ * @returns Panel markup with a join-link/meeting-id form, live status line and,
+ *   once a join link is stored, a Join Zoom meeting button.
  */
 export function ZoomLiveTranscriptPanel(model: ZoomLiveTranscriptPanelModel): string {
   const status = model.status;
   const isConfigured = status?.status !== 'not_configured';
-  const meetingId = status?.zoom_meeting_id ?? model.session.zoom_meeting_id ?? '';
+  const meetingReference =
+    model.session.zoom_join_url ?? status?.zoom_meeting_id ?? model.session.zoom_meeting_id ?? '';
   const statusKey = status?.status ?? 'loading';
   return `
     <section class="panel zoom-live-transcript" data-zoom-live-transcript>
       <div>
         <p class="eyebrow">Zoom realtime transcript</p>
         <p class="zoom-live-transcript__status" data-zoom-rtms-status="${escapeHtml(statusKey)}" aria-live="polite">${escapeHtml(describeZoomRtmsStatus(status))}</p>
+        ${ZoomJoinButton({ session: model.session, variant: 'secondary' })}
       </div>
       ${
         isConfigured
           ? `<form class="zoom-live-transcript__form" data-zoom-rtms-form>
-        <label>Zoom meeting id<input type="text" name="zoom_meeting_id" maxlength="128" required value="${escapeHtml(meetingId)}" placeholder="e.g. 123456789" /></label>
+        <label>Zoom join link or meeting id<input type="text" name="zoom_meeting_reference" maxlength="2048" required value="${escapeHtml(meetingReference)}" placeholder="https://zoom.us/j/123456789?pwd=…" /></label>
         <button class="secondary-button" type="submit">${status?.zoom_meeting_id ? 'Relink meeting' : 'Link meeting'}</button>
         <p class="form-message" data-zoom-rtms-message aria-live="polite"></p>
       </form>`

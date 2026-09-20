@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { shell } from 'electron/common';
 import { app, BrowserWindow, ipcMain } from 'electron/main';
 import { registerBackendIpc } from './backend_ipc.js';
 import {
@@ -16,6 +17,7 @@ import {
   sendToZoomOverlay,
   showZoomOverlay,
 } from './zoom_overlay_window.js';
+import { openZoomJoinLink } from './zoom_join_link.js';
 import { ZoomProcessMonitor } from './zoom_monitor.js';
 
 type BloomRole = 'professor' | 'student' | null;
@@ -111,6 +113,9 @@ const registerDesktopIpc = (): void => {
   ipcMain.on('session-events:subscribe', (_event, sessionId: unknown) => {
     sessionEvents?.subscribe(typeof sessionId === 'string' && sessionId ? sessionId : null);
   });
+  ipcMain.handle('zoom:open-join', (_event, joinUrl: unknown) =>
+    openZoomJoinLink(joinUrl, (url) => shell.openExternal(url)),
+  );
 };
 
 app.on('before-quit', () => {

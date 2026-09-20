@@ -198,7 +198,7 @@ The summary response must omit identities and individual event histories. It ret
 | `GET` | `/api/v1/integrations/zoom/authorize` | User-facing | Begin Zoom authorization (planned) | None | Redirect |
 | `GET` | `/api/v1/integrations/zoom/callback` | Provider callback | Complete authorization (planned) | Provider query | Redirect |
 | `POST` | `/api/v1/integrations/zoom/webhooks` | Zoom only | Receive signature-verified `endpoint.url_validation`, `meeting.rtms_started`, and `meeting.rtms_stopped` events | Zoom webhook body + `x-zm-signature`/`x-zm-request-timestamp` | `ZoomWebhookAck` or `ZoomUrlValidationResponse` |
-| `POST` | `/api/v1/sessions/{session_id}/zoom/rtms/start` | Session owner | Link the session to a Zoom meeting so its RTMS transcript stream is accepted | `StartZoomRtmsRequest` | `ZoomRtmsStatus` (202) |
+| `POST` | `/api/v1/sessions/{session_id}/zoom/rtms/start` | Session owner | Link the session to a Zoom meeting (by meeting id or validated join link) so its RTMS transcript stream is accepted and members can join | `StartZoomRtmsRequest` | `ZoomRtmsStatus` (202) |
 | `GET` | `/api/v1/sessions/{session_id}/zoom/status` | Session members | Return the RTMS transcript stream lifecycle for the session | None | `ZoomRtmsStatus` |
 
 The webhook endpoint is unauthenticated for users but rejects any request whose
@@ -215,6 +215,27 @@ RTMS transcript message becomes one `TranscriptChunk` with `source =
 `session_clock_origin`, and a stable `chunk_id` so provider replays deduplicate
 through the normal transcript ingestion rules. See
 [`docs/architecture/zoom_integration.md`](../architecture/zoom_integration.md).
+
+#### `StartZoomRtmsRequest`
+
+- `zoom_meeting_id`: optional numeric meeting id or meeting UUID
+- `zoom_join_url`: optional `https://` Zoom join link; at least one field is
+  required
+
+`zoom_join_url` is accepted only when it is HTTPS, has no userinfo or explicit
+port, is hosted on `zoom.us`, `zoom.com`, `zoomgov.com`, or one of their
+subdomains, and matches a meeting path (`/j|w|s/{9-11 digits}`,
+`/wc/join/{digits}`, `/wc/{digits}/join`) or personal room (`/my/{name}`). The
+backend normalizes the link (path plus an optional `pwd` passcode only,
+dropping any other query parameters and fragments) before storing it as
+`LectureSession.zoom_join_url`. A meeting-path link also derives
+`zoom_meeting_id`; supplying both with different meeting numbers is rejected
+(a meeting UUID may accompany any link), and a personal-room link needs an
+explicit `zoom_meeting_id` because RTMS webhooks match by meeting id.
+Relinking the same meeting id without a link keeps the stored link; relinking
+a different meeting without a link clears it so members never see a stale
+link. Invalid links fail with the standard `validation_failed` error response.
+The same rules apply to `CreateSessionRequest.zoom_join_url`.
 
 #### `ZoomRtmsStatus`
 
@@ -308,6 +329,9 @@ Do not stream raw local signal frames to the server. Periodic anonymous aggregat
 - `ended_at`
 - `session_clock_origin`
 - `zoom_meeting_id` when authorized
+- `zoom_join_url`: validated, normalized HTTPS Zoom join link or `null`; only
+  returned to session members, and only ever opened by the Electron main
+  process after it re-checks the same host allowlist
 
 ### `SignalEvent`
 
