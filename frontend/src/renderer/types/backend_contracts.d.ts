@@ -158,6 +158,41 @@ interface TranscriptWindowResponse {
   transcript_revision: number;
   chunks: TranscriptChunk[];
 }
+type ZoomRtmsStreamStatus =
+  | 'not_configured'
+  | 'not_linked'
+  | 'awaiting_stream'
+  | 'connecting'
+  | 'streaming'
+  | 'stopped'
+  | 'failed';
+interface ZoomRtmsStatus {
+  session_id: string;
+  zoom_meeting_id?: string | null;
+  status: ZoomRtmsStreamStatus;
+  rtms_stream_id?: string | null;
+  transcript_chunk_count?: number;
+  last_transcript_at?: string | null;
+  last_error?: string | null;
+}
+interface StartZoomRtmsRequest {
+  zoom_meeting_id: string;
+}
+/** WebSocket envelope delivered on `/ws/v1/sessions/{session_id}` (see docs/api/asyncapi.yaml). */
+interface SessionEventEnvelope {
+  event_id: string;
+  event_type: string;
+  schema_version?: string;
+  session_id: string;
+  occurred_at: string;
+  sequence_number: number;
+  payload: Record<string, unknown>;
+}
+type SessionEventsConnectionState = 'connecting' | 'connected' | 'disconnected' | 'unauthorized';
+interface SessionEventsConnectionPayload {
+  session_id: string;
+  state: SessionEventsConnectionState;
+}
 interface CreateRecoveryJobRequest {
   start_ms: number;
   end_ms: number;
@@ -321,6 +356,8 @@ type BackendApi = {
     startMs: number,
     endMs: number,
   ) => Promise<TranscriptWindowResponse>;
+  startZoomRtms: (sessionId: string, request: StartZoomRtmsRequest) => Promise<ZoomRtmsStatus>;
+  readZoomStatus: (sessionId: string) => Promise<ZoomRtmsStatus>;
   requestRecoveryCard: (
     sessionId: string,
     request: CreateRecoveryJobRequest,
@@ -341,6 +378,11 @@ interface BloomDesktopApi {
   setRole: (role: BloomRole) => void;
   onZoomDetected: (callback: (payload: ZoomDetectedPayload) => void) => () => void;
   onZoomOverlayOpen: (callback: () => void) => () => void;
+  subscribeSessionEvents: (sessionId: string | null) => void;
+  onSessionEvent: (callback: (envelope: SessionEventEnvelope) => void) => () => void;
+  onSessionEventsConnection: (
+    callback: (payload: SessionEventsConnectionPayload) => void,
+  ) => () => void;
   overlayAction: (action: 'open' | 'dismiss') => void;
   showDriftPrompt: () => void;
   getOverlayRole: () => BloomRole;

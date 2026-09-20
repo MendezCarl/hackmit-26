@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -24,6 +27,9 @@ from app.courses.service import CourseService
 from app.demo.routes import router as demo_router
 from app.enrollments.routes import router as enrollment_router
 from app.enrollments.service import EnrollmentService
+from app.integrations.zoom.routes import router as zoom_router
+from app.integrations.zoom.rtms_client import RtmsConnector, connect_with_websockets
+from app.integrations.zoom.service import ZoomRtmsService
 from app.learning.composition import install_learning_features
 from app.lectures.routes import router as lecture_router
 from app.lectures.service import LectureService
@@ -56,6 +62,10 @@ OPENAPI_TAGS = [
     {"name": "transcript", "description": "Transcript ingestion and timeline reads."},
     {"name": "recovery", "description": "Recovery jobs, cards, and cost metrics."},
     {"name": "professor", "description": "Anonymous, threshold-safe summaries."},
+    {
+        "name": "zoom",
+        "description": "Zoom RTMS webhooks and realtime transcript stream status.",
+    },
     {"name": "demo", "description": "Gated synthetic demo orchestration."},
 ]
 
@@ -69,6 +79,7 @@ class HealthResponse(BaseModel):
 def create_app(
     settings: Settings | None = None,
     recovery_generator: RecoveryGenerator | None = None,
+    rtms_connector: RtmsConnector = connect_with_websockets,
 ) -> FastAPI:
     """Compose the application with injected settings and dependencies.
 
@@ -77,6 +88,8 @@ def create_app(
             omitted.
         recovery_generator: Optional generator override for provider-failure
             tests; defaults to the deterministic mock.
+        rtms_connector: Opens Zoom RTMS WebSocket connections; tests inject
+            fakes so the suite never reaches Zoom.
 
     Returns:
         The fully wired FastAPI application.
@@ -106,8 +119,16 @@ def create_app(
             )
     install_logging()
 
+    @asynccontextmanager
+    async def lifespan(running_app: FastAPI) -> AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            await running_app.state.zoom_rtms_service.shutdown()
+
     app = FastAPI(
         title="Lecture Recovery Assistant API",
+        lifespan=lifespan,
         summary="Backend API for privacy-first lecture recovery.",
         description=(
             "Typed REST endpoints for lecture sessions, recovery cards, "
@@ -167,6 +188,9 @@ def create_app(
     professor_service = ProfessorService(
         store, settings, session_access, signal_service, event_publisher
     )
+    zoom_rtms_service = ZoomRtmsService(
+        store, settings, session_access, transcript_service, connector=rtms_connector
+    )
 
     app.state.settings = settings
     app.state.store = store
@@ -183,6 +207,7 @@ def create_app(
     app.state.enrollment_service = enrollment_service
     app.state.recovery_service = recovery_service
     app.state.professor_service = professor_service
+    app.state.zoom_rtms_service = zoom_rtms_service
 
     install_learning_features(app)
 
@@ -198,6 +223,7 @@ def create_app(
     app.include_router(course_router)
     app.include_router(lecture_router)
     app.include_router(enrollment_router)
+    app.include_router(zoom_router)
 
     @app.get(
         "/health",

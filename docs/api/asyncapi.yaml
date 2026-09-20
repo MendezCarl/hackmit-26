@@ -29,6 +29,8 @@ channels:
         $ref: '#/components/messages/participant_joined'
       transcript_ingested:
         $ref: '#/components/messages/transcript_ingested'
+      transcript_chunk_created:
+        $ref: '#/components/messages/transcript_chunk_created'
       recovery_job_started:
         $ref: '#/components/messages/recovery_job_started'
       recovery_card_completed:
@@ -48,6 +50,7 @@ operations:
       - $ref: '#/channels/lecture_session/messages/signal_event_confirmed'
       - $ref: '#/channels/lecture_session/messages/participant_joined'
       - $ref: '#/channels/lecture_session/messages/transcript_ingested'
+      - $ref: '#/channels/lecture_session/messages/transcript_chunk_created'
       - $ref: '#/channels/lecture_session/messages/recovery_job_started'
       - $ref: '#/channels/lecture_session/messages/recovery_card_completed'
       - $ref: '#/channels/lecture_session/messages/recovery_card_failed'
@@ -87,7 +90,23 @@ components:
     transcript_ingested:
       name: transcript_ingested
       title: Transcript ingested
-      description: Timestamped transcript chunks were ingested.
+      description: >-
+        A transcript batch was accepted. Payload lists accepted_chunk_ids,
+        superseded_chunk_ids, and the new transcript_revision. Kept for
+        compatibility; clients rendering live text should use
+        transcript.chunk.created.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    transcript_chunk_created:
+      name: transcript_chunk_created
+      title: Transcript chunk created
+      description: >-
+        event_type transcript.chunk.created. Emitted once for every accepted
+        TranscriptChunk, including chunks mapped from Zoom RTMS transcript
+        media (source zoom_rtms). Payload is the full TranscriptChunk from
+        shared/contracts/transcript_chunk.schema.json; a higher revision for
+        an existing chunk_id replaces the earlier text. Only members of the
+        session receive it.
       payload:
         $ref: '#/components/schemas/websocket_envelope'
     recovery_job_started:

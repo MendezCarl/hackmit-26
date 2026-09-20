@@ -193,15 +193,38 @@ The summary response must omit identities and individual event histories. It ret
 
 ### Zoom integration
 
-| Method | Path | Audience | Purpose |
-|---|---|---|---|
-| `GET` | `/api/v1/integrations/zoom/authorize` | User-facing | Begin Zoom authorization |
-| `GET` | `/api/v1/integrations/zoom/callback` | Provider callback | Complete authorization |
-| `POST` | `/api/v1/integrations/zoom/webhooks` | Zoom only | Receive verified lifecycle events |
-| `POST` | `/api/v1/sessions/{session_id}/zoom/rtms/start` | Host/admin | Request an RTMS stream when permitted |
-| `GET` | `/api/v1/sessions/{session_id}/zoom/status` | User-facing | Return Meeting SDK/RTMS status |
+| Method | Path | Audience | Purpose | Request | Response |
+|---|---|---|---|---|---|
+| `GET` | `/api/v1/integrations/zoom/authorize` | User-facing | Begin Zoom authorization (planned) | None | Redirect |
+| `GET` | `/api/v1/integrations/zoom/callback` | Provider callback | Complete authorization (planned) | Provider query | Redirect |
+| `POST` | `/api/v1/integrations/zoom/webhooks` | Zoom only | Receive signature-verified `endpoint.url_validation`, `meeting.rtms_started`, and `meeting.rtms_stopped` events | Zoom webhook body + `x-zm-signature`/`x-zm-request-timestamp` | `ZoomWebhookAck` or `ZoomUrlValidationResponse` |
+| `POST` | `/api/v1/sessions/{session_id}/zoom/rtms/start` | Session owner | Link the session to a Zoom meeting so its RTMS transcript stream is accepted | `StartZoomRtmsRequest` | `ZoomRtmsStatus` (202) |
+| `GET` | `/api/v1/sessions/{session_id}/zoom/status` | Session members | Return the RTMS transcript stream lifecycle for the session | None | `ZoomRtmsStatus` |
 
-RTMS media transport is handled by the Zoom integration layer and is not modeled as a public JSON upload endpoint.
+The webhook endpoint is unauthenticated for users but rejects any request whose
+HMAC-SHA256 signature or timestamp (default tolerance 300 s) does not verify
+against `ZOOM_WEBHOOK_SECRET_TOKEN`. When Zoom credentials are not configured,
+`/zoom/rtms/start` fails with the standard `provider_failure` error and
+`/zoom/status` reports `not_configured`.
+
+RTMS media transport is handled by the Zoom integration layer and is not modeled
+as a public JSON upload endpoint. The backend requests transcript media only
+(`media_type` 8); audio, video, share, and chat media are never requested. Each
+RTMS transcript message becomes one `TranscriptChunk` with `source =
+"zoom_rtms"`, lecture-relative `start_ms`/`end_ms` derived from
+`session_clock_origin`, and a stable `chunk_id` so provider replays deduplicate
+through the normal transcript ingestion rules. See
+[`docs/architecture/zoom_integration.md`](../architecture/zoom_integration.md).
+
+#### `ZoomRtmsStatus`
+
+- `session_id`
+- `zoom_meeting_id`: linked meeting id or UUID, or `null`
+- `status`: `not_configured`, `not_linked`, `awaiting_stream`, `connecting`, `streaming`, `stopped`, or `failed`
+- `rtms_stream_id`: current or last RTMS stream id, or `null`
+- `transcript_chunk_count`: chunks accepted from this stream so far
+- `last_transcript_at`: UTC ISO 8601 time of the last accepted chunk, or `null`
+- `last_error`: sanitized failure reason, or `null`; never contains secrets or transcript text
 
 ### Dropbox integration
 
@@ -250,7 +273,8 @@ Prefer an authorization header when the client/runtime permits it. If a query to
 |---|---|---|
 | `session.started` | `LectureSession` | Confirm the session clock |
 | `session.status_changed` | `SessionStatusChanged` | Report meeting/capture state |
-| `transcript.chunk.created` | `TranscriptChunk` | Stream permitted transcript text |
+| `transcript.chunk.created` | `TranscriptChunk` | Stream permitted transcript text; emitted once per accepted chunk (including Zoom RTMS chunks) |
+| `transcript.ingested` | `TranscriptIngested` | Legacy batch receipt (`chunk_count`, `total_chunks`); kept for compatibility |
 | `signal.window.updated` | `MissedContentWindow` | Update the student's local recovery window |
 | `recovery_card.started` | `RecoveryCardJob` | Show generation progress |
 | `recovery_card.completed` | `RecoveryCard` | Display the final recovery card |

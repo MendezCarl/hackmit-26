@@ -3,6 +3,7 @@ import { escapeHtml } from '../../components/html_text.mjs';
 import { LectureTimeline } from '../../components/lecture_timeline.mjs';
 import { MetricCard } from '../../components/metric_card.mjs';
 import { MomentDetail } from '../../components/moment_detail.mjs';
+import { ZoomLiveTranscriptPanel } from '../../components/zoom_live_transcript_panel.mjs';
 import { ACTIVE_LECTURE } from '../../fixtures/demo_content.mjs';
 import {
   buildMomentsFromMetrics,
@@ -21,6 +22,7 @@ export type LectureSummaryPageModel = {
   allLecturesByCourse: Record<string, Lecture[]>;
   summary: ProfessorSummary | null;
   metrics: ProfessorMetrics | null;
+  zoomStatus?: ZoomRtmsStatus | null;
   routeError?: string | null;
 };
 
@@ -114,7 +116,7 @@ export function LectureSummaryPage(model: LectureSummaryPageModel = FIXTURE_MODE
     content: `
       <section class="metrics-grid">${MetricCard('Lecture continuity', continuity, 'Mean across this lecture', 'teal')}${MetricCard('Recovery hotspots', String(hotspotCount), 'Anonymous intervals worth reviewing', 'gold')}${MetricCard('Delivery notes', String(findingCount), 'Possible delivery conditions to review', 'slate')}${MetricCard('Participants', participantValue, 'Aggregate consenting participant count', 'sage')}</section>
       ${model.summary?.is_suppressed ? `<p class="empty-state">Fewer than ${model.summary.minimum_group_size} consenting participants — summary withheld</p>` : ''}
-      ${model.session.status === 'active' ? `<section class="panel session-banner"><strong>Session is active</strong><span>Join code: ${escapeHtml(model.session.join_code)}</span><button class="danger-button" type="button" data-end-session="${escapeHtml(model.session.session_id)}">End session</button></section>` : ''}
+      ${model.session.status === 'active' ? `<section class="panel session-banner"><strong>Session is active</strong><span>Join code: ${escapeHtml(model.session.join_code)}</span><button class="danger-button" type="button" data-end-session="${escapeHtml(model.session.session_id)}">End session</button></section>${ZoomLiveTranscriptPanel({ session: model.session, status: model.zoomStatus ?? null })}` : ''}
       ${selected ? `${LectureTimeline(moments, selected.momentId, formatLectureTime(duration))}<section class="report-grid"><div>${MomentDetail(selected, 'educator')}</div></section>` : '<section class="panel"><p class="empty-state">No report intervals are available for this session.</p></section>'}
       ${actions ? `<section class="panel"><h2>Suggested actions</h2><ul>${actions}</ul></section>` : ''}
       ${(model.metrics?.delivery_findings ?? []).map((finding) => `<section class="panel delivery-section"><div><p class="eyebrow">Delivery note · ${formatLectureTime(finding.start_ms)}–${formatLectureTime(finding.end_ms)}</p><h2>${escapeHtml(finding.signal_type)}</h2><p>Confidence ${Math.round(finding.confidence * 100)}%.</p></div><div class="key-point"><span>Suggestion</span>${escapeHtml(finding.suggested_action)}</div></section>`).join('')}

@@ -11,6 +11,7 @@ from app.contracts.models import IngestTranscriptRequest, TranscriptChunk
 from app.core.errors import AppError, ErrorCode
 from app.storage.in_memory import InMemoryStore
 from app.transcript.repository import (
+    TRANSCRIPT_CHUNK_CREATED,
     TRANSCRIPT_INGESTED,
     TimelineReader,
     WindowReadResult,
@@ -171,6 +172,12 @@ class TranscriptService:
 
         self._store.transcript_chunks[session_id] = chunks
         transcript_revision = max((chunk.revision for chunk in chunks), default=0)
+        for chunk in request.chunks:
+            self._publisher.publish(
+                self._publisher.build_envelope(
+                    session_id, TRANSCRIPT_CHUNK_CREATED, chunk.model_dump(mode="json")
+                )
+            )
         self._publisher.publish(
             self._publisher.build_envelope(
                 session_id,

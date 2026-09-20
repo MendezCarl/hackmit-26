@@ -198,6 +198,32 @@ export class BackendClient {
       query: { start_ms: String(startMs), end_ms: String(endMs) },
     });
   }
+  async startZoomRtms(sessionId: string, request: StartZoomRtmsRequest): Promise<ZoomRtmsStatus> {
+    return this.request(
+      'POST',
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/zoom/rtms/start`,
+      { body: request },
+    );
+  }
+  async readZoomStatus(sessionId: string): Promise<ZoomRtmsStatus> {
+    return this.request('GET', `/api/v1/sessions/${encodeURIComponent(sessionId)}/zoom/status`);
+  }
+  /**
+   * Builds the authenticated WebSocket URL for one session's event stream.
+   *
+   * The bearer token stays in the main process; the renderer only receives
+   * decoded envelopes through IPC.
+   *
+   * @param sessionId - Session whose events should be streamed.
+   * @returns Absolute `ws://` or `wss://` URL, or null when not logged in.
+   */
+  buildSessionEventsUrl(sessionId: string): string | null {
+    if (!this.accessToken) return null;
+    const url = new URL(`/ws/v1/sessions/${encodeURIComponent(sessionId)}`, this.baseUrl);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    url.searchParams.set('token', this.accessToken);
+    return url.toString();
+  }
   async requestRecoveryCard(
     sessionId: string,
     request: CreateRecoveryJobRequest,

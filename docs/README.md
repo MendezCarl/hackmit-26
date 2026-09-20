@@ -129,6 +129,7 @@ The team should fix all mismatches in the same pull request.
 - [Professor metrics plan](professor_metrics_dashboard.md)
 - [AI provider/tool-calling plan](ai_provider_tool_calling_plan.md)
 - [Local object detection plan](architecture/local_object_detection.md)
+- [Zoom realtime transcript integration](architecture/zoom_integration.md)
 - [Implementation report](implementation/new_plan_execution.md): current host baseline, verified behavior and remaining gates.
 - [Contract decisions](decisions/adr_0002_learning_plan_contracts.md): differences resolved against the existing API.
 - [New API handoff](api/learning_plan_contracts.md)

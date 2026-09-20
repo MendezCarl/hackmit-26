@@ -6,6 +6,8 @@ import {
 } from './app/router.mjs';
 import { renderPage } from './app/render_page.mjs';
 import { renderSelectedMoment } from './components/moment_detail.mjs';
+import { describeZoomRtmsStatus } from './components/zoom_live_transcript_panel.mjs';
+import { StudentTranscriptPanel } from './features/recovery-cards/student_summary_page.mjs';
 import {
   clearBackendSessionState,
   dismissAvailableSession,
@@ -39,6 +41,8 @@ import {
   loadProfessorReport,
   loadStudentWorkspace,
   loadTranscriptWorkspace,
+  loadZoomRtmsStatus,
+  linkZoomMeeting,
   recordRecoveryCard,
   recordSubmittedEvent,
   refreshAvailableSessions,
@@ -51,6 +55,10 @@ import {
   formatLectureTime,
   sessionDurationMs,
 } from './services/lecture_view_models.mjs';
+import {
+  bindLiveSessionEvents,
+  syncLiveSessionSubscription,
+} from './services/live_session_events.mjs';
 import {
   startStudentCameraMonitor,
   stopStudentCameraMonitor,
@@ -563,10 +571,74 @@ const bindStudentActions = (): void => {
   );
 };
 
+/** How long to wait after a live chunk before re-reading the professor's Zoom status. */
+const ZOOM_STATUS_REFRESH_DEBOUNCE_MS = 2_000;
+let zoomStatusRefreshTimer: number | undefined;
+
+/**
+ * Repaints the student transcript tab in place after a live transcript change,
+ * preserving whichever tab the student currently has open.
+ */
+const repaintLiveTranscript = (): void => {
+  if (resolveRoute(window.location.hash) !== 'student-summary') return;
+  const panel = document.querySelector<HTMLElement>('[data-tab-panel="transcript"]');
+  if (!panel) return;
+  const state = getBackendSessionState();
+  panel.innerHTML = StudentTranscriptPanel({
+    isDemo: false,
+    session: state.activeSession,
+    courses: state.courses,
+    joinedSessions: state.joinedSessions,
+    submittedEvents: state.submittedEvents,
+    recoveryCards: state.recoveryCards,
+    transcript: state.transcriptChunks,
+    liveEventsConnection: state.liveEventsConnection,
+  });
+};
+
+/** Re-reads the Zoom link status shown on the professor's active lecture page. */
+const refreshProfessorZoomStatus = (): void => {
+  const state = getBackendSessionState();
+  const sessionId = state.selectedSession?.session_id;
+  if (resolveRoute(window.location.hash) !== 'lecture' || !sessionId) return;
+  if (state.selectedSession?.status === 'ended') return;
+  if (zoomStatusRefreshTimer !== undefined) window.clearTimeout(zoomStatusRefreshTimer);
+  zoomStatusRefreshTimer = window.setTimeout(async () => {
+    zoomStatusRefreshTimer = undefined;
+    await loadZoomRtmsStatus(sessionId);
+    const status = getBackendSessionState().zoomRtmsStatusBySession[sessionId] ?? null;
+    const line = document.querySelector<HTMLElement>('[data-zoom-rtms-status]');
+    if (!line) return;
+    line.textContent = describeZoomRtmsStatus(status);
+    line.dataset.zoomRtmsStatus = status?.status ?? 'loading';
+  }, ZOOM_STATUS_REFRESH_DEBOUNCE_MS);
+};
+
+/**
+ * Picks the session whose live events the desktop should follow: the joined or
+ * started session, or the active lecture a professor is currently viewing.
+ */
+const resolveLiveSession = (
+  state: ReturnType<typeof getBackendSessionState>,
+): LectureSession | null => {
+  if (state.activeSession) return state.activeSession;
+  if (state.user?.role === 'professor' && state.selectedSession?.status === 'active') {
+    return state.selectedSession;
+  }
+  return null;
+};
+
 /** Binds local Zoom detection and overlay actions to renderer state. */
 const bindZoomDesktop = (): void => {
   if (zoomDesktopBound) return;
   zoomDesktopBound = true;
+  bindLiveSessionEvents(
+    () => {
+      repaintLiveTranscript();
+      refreshProfessorZoomStatus();
+    },
+    repaintLiveTranscript,
+  );
   window.bloomDesktop.onZoomDetected(({ running }) => {
     setZoomRunning(running);
     if (running) setZoomBannerDismissed(false);
@@ -669,6 +741,23 @@ const bindEducatorActions = (route: AppRoute): void => {
   document.querySelector<HTMLButtonElement>('[data-dismiss-zoom-banner]')?.addEventListener('click', () => {
     setZoomBannerDismissed(true);
     renderApplication();
+  });
+  const zoomRtmsForm = document.querySelector<HTMLFormElement>('[data-zoom-rtms-form]');
+  zoomRtmsForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const sessionId = getBackendSessionState().selectedSession?.session_id;
+    const message = document.querySelector<HTMLElement>('[data-zoom-rtms-message]');
+    if (!sessionId) return;
+    const values = readFormValues(zoomRtmsForm);
+    const button = zoomRtmsForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      await linkZoomMeeting(sessionId, String(values.zoom_meeting_id));
+      renderApplication();
+    } catch (error) {
+      if (message) message.textContent = formErrorMessage(error);
+      if (button) button.disabled = false;
+    }
   });
   document
     .querySelector<HTMLButtonElement>('[data-end-session]')
@@ -814,6 +903,7 @@ const renderApplication = (): void => {
   const route = resolveRoute(window.location.hash);
   const params = resolveRouteParams(window.location.hash);
   stopCameraForSessionChange(state.activeSession);
+  syncLiveSessionSubscription(state.user ? resolveLiveSession(state) : null);
   if (route !== 'login' && !state.user) {
     window.location.hash = buildRouteHash('login');
     return;
@@ -839,7 +929,9 @@ const renderApplication = (): void => {
       // A newer navigation owns the DOM; a late load must not repaint the old route.
       if (generation !== renderGeneration) return;
       setRouteLoading(false);
-      appRoot.innerHTML = renderPage(route, getBackendSessionState(), params);
+      const loaded = getBackendSessionState();
+      syncLiveSessionSubscription(loaded.user ? resolveLiveSession(loaded) : null);
+      appRoot.innerHTML = renderPage(route, loaded, params);
       bindRenderedApplication(route);
     });
 };

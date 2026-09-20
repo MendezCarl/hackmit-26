@@ -15,6 +15,7 @@ from app.contracts.models import TranscriptChunk
 from app.storage.in_memory import InMemoryStore
 
 TRANSCRIPT_INGESTED = "transcript.ingested"
+TRANSCRIPT_CHUNK_CREATED = "transcript.chunk.created"
 
 
 class WindowReadResult(BaseModel):
