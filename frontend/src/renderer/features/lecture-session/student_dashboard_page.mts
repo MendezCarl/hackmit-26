@@ -1,20 +1,42 @@
 import { buildRouteHash } from '../../app/router.mjs';
 import { AppShell } from '../../components/app_shell.mjs';
 import { ConsentDialog } from '../../components/consent_dialog.mjs';
+import { escapeHtml } from '../../components/html_text.mjs';
 import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs';
+
+export type StudentDashboardModel = {
+  isDemo: boolean;
+  user: UserProfile | null;
+  activeSession: LectureSession | null;
+  joinedSessions: LectureSession[];
+  participantCount: number | null;
+};
+
+const FIXTURE_MODEL: StudentDashboardModel = {
+  isDemo: true,
+  user: null,
+  activeSession: null,
+  joinedSessions: [],
+  participantCount: null,
+};
 
 /**
  * Builds the student landing page and explicit lecture-consent entry point.
  *
- * @returns Student dashboard markup populated with synthetic lecture fixtures.
+ * @param model - Backend-backed or fixture page data.
+ * @returns Student dashboard markup.
  */
-export function StudentDashboardPage(): string {
+export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODEL): string {
+  if (!model.isDemo) return buildRealStudentDashboard(model);
+
   return AppShell({
     route: 'student-dashboard',
     role: 'student',
     eyebrow: 'Good afternoon, Alex',
     title: 'Pick up where learning left off.',
+    demoMode: true,
     content: `
+      ${buildJoinForm()}
       <section class="welcome-grid">
         <article class="feature-card feature-card--primary">
           <div>
@@ -26,8 +48,8 @@ export function StudentDashboardPage(): string {
         </article>
         <article class="feature-card">
           <p class="eyebrow">Latest recovery</p>
-          <h2>${ACTIVE_LECTURE.lectureTitle}</h2>
-          <p>Three moments are ready to review from ${ACTIVE_LECTURE.lectureDate}.</p>
+          <h2>${escapeHtml(ACTIVE_LECTURE.lectureTitle)}</h2>
+          <p>Three moments are ready to review from ${escapeHtml(ACTIVE_LECTURE.lectureDate)}.</p>
           <a class="text-link" href="${buildRouteHash('student-summary')}">Open lecture summary <span>→</span></a>
         </article>
       </section>
@@ -41,8 +63,8 @@ export function StudentDashboardPage(): string {
             .map(
               (lecture, index) => `
                 <a class="lecture-row" href="${buildRouteHash('student-summary')}">
-                  <span class="lecture-row__date"><strong>${lecture.lectureDate.split(' ')[1].replace(',', '')}</strong>SEP</span>
-                  <span><strong>${lecture.lectureTitle}</strong><small>${lecture.courseCode} · ${lecture.durationLabel}</small></span>
+                  <span class="lecture-row__date"><strong>${escapeHtml(lecture.lectureDate.split(' ')[1].replace(',', ''))}</strong>SEP</span>
+                  <span><strong>${escapeHtml(lecture.lectureTitle)}</strong><small>${escapeHtml(lecture.courseCode)} · ${escapeHtml(lecture.durationLabel)}</small></span>
                   <span class="lecture-row__status">${index === 0 ? '3 review moments' : 'Summary ready'}</span>
                   <span aria-hidden="true">→</span>
                 </a>`,
@@ -53,4 +75,65 @@ export function StudentDashboardPage(): string {
       ${ConsentDialog()}
     `,
   });
+}
+
+function buildRealStudentDashboard(model: StudentDashboardModel): string {
+  const session = model.activeSession;
+  const joinedSessions = model.joinedSessions;
+  return AppShell({
+    route: 'student-dashboard',
+    role: 'student',
+    eyebrow: model.user ? `Good afternoon, ${model.user.display_name}` : 'Student workspace',
+    title: session?.title ?? 'Your lecture space',
+    demoMode: false,
+    profileName: model.user?.display_name ?? '?',
+    joinedSessions,
+    content: `
+      ${buildJoinForm()}
+      ${
+        session
+          ? `
+        <article class="feature-card feature-card--primary">
+          <span class="status-badge"><i></i>${escapeHtml(session.status)}</span>
+          <h2>${escapeHtml(session.title)}</h2>
+          <p>Join code: <strong>${escapeHtml(session.session_id)}</strong></p>
+          <p data-session-clock>Elapsed time unavailable until the session clock loads.</p>
+          <p>${model.participantCount ?? 0} participant(s) joined.</p>
+          <button class="primary-button" type="button" data-missed-that>I missed that</button>
+        </article>
+        <form class="section-block login-card form-card" data-transcript-form>
+          <label>Local transcript<textarea name="text" required></textarea></label>
+          <button class="secondary-button" type="submit">Add transcript</button>
+          <p class="form-message" data-transcript-message></p>
+        </form>
+        <button class="secondary-button" type="button" data-open-consent>Enable for next lecture</button>
+        ${ConsentDialog()}
+      `
+          : ''
+      }
+      <section class="section-block">
+        <div class="section-heading-row">
+          <div><p class="eyebrow">Current run</p><h2>Your sessions</h2></div>
+          <a class="text-link" href="${buildRouteHash('lecture-library')}">View library</a>
+        </div>
+        ${
+          joinedSessions.length
+            ? `<div class="lecture-row-list">${joinedSessions
+                .map(
+                  (joined) => `
+          <a class="lecture-row lecture-row--backend" href="${buildRouteHash('student-summary')}">
+            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.session_id)} · ${escapeHtml(joined.status)}</small></span>
+            <span aria-hidden="true">→</span>
+          </a>`,
+                )
+                .join('')}</div>`
+            : '<p class="empty-state">No lectures joined yet</p>'
+        }
+      </section>
+    `,
+  });
+}
+
+function buildJoinForm(): string {
+  return `<form class="feature-card login-card form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Session ID<input type="text" name="session_id" required placeholder="Paste the join code" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
 }

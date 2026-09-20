@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { app, BrowserWindow } from 'electron/main';
+import { registerBackendIpc } from './backend_ipc.js';
 
 /**
  * Resolves the Bloom window icon for development or packaged execution.
@@ -37,6 +38,7 @@ const createWindow = (): void => {
 };
 
 void app.whenReady().then(() => {
+  registerBackendIpc();
   if (process.platform === 'darwin') {
     app.dock?.setIcon(getWindowIconPath());
   }

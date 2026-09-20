@@ -1,6 +1,57 @@
 """Coverage, deduplication, corrections and small-group inference boundaries."""
 
+from fastapi.testclient import TestClient
+
+from app.config import Settings
+from app.main import create_app
+
 from .fixtures import cover_all, coverage, end, headers, report, setup, signal
+
+
+def registered_professor_metrics_session() -> tuple[TestClient, str, str, str]:
+    """Create an ended session owned by a registered professor."""
+
+    client = TestClient(create_app(Settings(app_env="test", context_padding_ms=0)))
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "metrics-owner@example.edu",
+            "password": "password-123",
+            "display_name": "Metrics Owner",
+            "role": "professor",
+        },
+    )
+    assert response.status_code == 201, response.text
+    token = response.json()["access_token"]
+    owner_headers = {"Authorization": f"Bearer {token}"}
+    course = client.post(
+        "/api/v1/courses",
+        headers=owner_headers,
+        json={"code": "MET-101", "title": "Metrics"},
+    )
+    assert course.status_code == 201, course.text
+    course_id = course.json()["course_id"]
+    lecture = client.post(
+        "/api/v1/lectures",
+        headers=owner_headers,
+        json={"course_id": course_id, "title": "Metrics lecture"},
+    )
+    assert lecture.status_code == 201, lecture.text
+    session = client.post(
+        "/api/v1/sessions",
+        headers=owner_headers,
+        json={
+            "course_id": course_id,
+            "lecture_id": lecture.json()["lecture_id"],
+            "title": "Metrics lecture",
+            "mode": "in_person",
+        },
+    )
+    assert session.status_code == 201, session.text
+    session_id = session.json()["session_id"]
+    ended = client.post(f"/api/v1/sessions/{session_id}/end", headers=owner_headers)
+    assert ended.status_code == 200, ended.text
+    return client, session_id, token, course_id
 
 
 def test_missing_coverage_never_becomes_healthy_continuity():
@@ -110,3 +161,31 @@ def test_authorization_and_explicit_policy_required():
     end(client, base)
     client.app.state.professor_metrics.policy = None
     assert report(client, base).status_code == 403
+
+
+def test_registered_professor_can_read_own_metrics_and_other_professor_is_forbidden():
+    """Membership, not a JWT course claim, authorizes the metrics report."""
+
+    client, session_id, owner_token, _course_id = registered_professor_metrics_session()
+    own_report = client.get(
+        f"/api/v1/sessions/{session_id}/professor-metrics",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert own_report.status_code == 200, own_report.text
+    assert own_report.json()["status"] in {"suppressed", "insufficient_evidence"}
+
+    other = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "metrics-other@example.edu",
+            "password": "password-123",
+            "display_name": "Other Professor",
+            "role": "professor",
+        },
+    )
+    assert other.status_code == 201, other.text
+    other_report = client.get(
+        f"/api/v1/sessions/{session_id}/professor-metrics",
+        headers={"Authorization": f"Bearer {other.json()['access_token']}"},
+    )
+    assert other_report.status_code == 403

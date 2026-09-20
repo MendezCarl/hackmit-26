@@ -1,5 +1,6 @@
 import { AppRoute } from '../app/router.mjs';
 import { CourseSidebar } from './course_sidebar.mjs';
+import { escapeHtml } from './html_text.mjs';
 import { LoginNavigation } from './login_navigation.mjs';
 import { TopNavigation } from './top_navigation.mjs';
 
@@ -10,6 +11,10 @@ export type AppShellOptions = {
   eyebrow?: string;
   content: string;
   showSidebar?: boolean;
+  demoMode?: boolean;
+  profileName?: string;
+  courses?: Course[];
+  joinedSessions?: LectureSession[];
 };
 
 /**
@@ -19,16 +24,28 @@ export type AppShellOptions = {
  * @returns Complete application markup for the selected page.
  */
 export function AppShell(options: AppShellOptions): string {
-  const sidebar = options.showSidebar === false ? '' : CourseSidebar(options.route, options.role);
-  const layoutClass = options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';
+  const sidebar =
+    options.showSidebar === false
+      ? ''
+      : CourseSidebar(
+          options.route,
+          options.role,
+          options.demoMode !== false,
+          options.courses,
+          options.joinedSessions,
+        );
+  const layoutClass =
+    options.showSidebar === false ? 'app-layout app-layout--centered' : 'app-layout';
   const navigation =
-    options.route === 'login' ? LoginNavigation() : TopNavigation(options.route, options.role);
+    options.route === 'login'
+      ? LoginNavigation()
+      : TopNavigation(options.route, options.role, options.profileName);
   const pageHeading =
     options.title || options.eyebrow
       ? `
           <header class="page-heading">
-            ${options.eyebrow ? `<p class="eyebrow">${options.eyebrow}</p>` : ''}
-            ${options.title ? `<h1>${options.title}</h1>` : ''}
+            ${options.eyebrow ? `<p class="eyebrow">${escapeHtml(options.eyebrow)}</p>` : ''}
+            ${options.title ? `<h1>${escapeHtml(options.title)}</h1>` : ''}
           </header>
         `
       : '';
@@ -41,6 +58,7 @@ export function AppShell(options: AppShellOptions): string {
         <main class="page-content" id="main-content" tabindex="-1">
           ${pageHeading}
           ${options.content}
+          ${options.demoMode === false || options.route === 'login' ? '' : '<span class="demo-badge">Demo mode · synthetic data</span>'}
         </main>
       </div>
     </div>

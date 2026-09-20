@@ -1,4 +1,5 @@
-import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
+import { LectureMoment } from '../fixtures/demo_content.mjs';
+import { escapeHtml } from './html_text.mjs';
 
 /**
  * Builds an interactive lecture timeline from synthetic lecture moments.
@@ -7,16 +8,35 @@ import { ACTIVE_LECTURE, LectureMoment } from '../fixtures/demo_content.mjs';
  * @param selectedMomentId - Moment currently selected in the detail panel.
  * @returns Timeline markup with one button per lecture moment.
  */
-export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: string): string {
-  const markers = moments
+export function LectureTimeline(
+  moments: LectureMoment[],
+  selectedMomentId?: string,
+  durationLabel = 'Lecture end',
+): string {
+  const mergedMoments = Array.from(
+    moments.reduce((byPosition, moment) => {
+      const existing = byPosition.get(moment.startPercent);
+      if (!existing) {
+        byPosition.set(moment.startPercent, { ...moment });
+      } else {
+        existing.title = `${existing.title} · ${moment.title}`;
+        existing.evidence = `${existing.evidence} ${moment.evidence}`;
+        existing.action = `${existing.action} ${moment.action}`;
+        existing.endLabel = moment.endLabel;
+        existing.widthPercent = Math.max(existing.widthPercent, moment.widthPercent);
+      }
+      return byPosition;
+    }, new Map<number, LectureMoment>()),
+  ).map(([, moment]) => moment);
+  const markers = mergedMoments
     .map(
       (moment) => `
         <button
-          class="timeline-marker timeline-marker--${moment.severity} position-${moment.startPercent} width-${moment.widthPercent} ${selectedMomentId === moment.momentId ? 'is-selected' : ''}"
+          class="timeline-marker timeline-marker--${escapeHtml(moment.severity)} position-${moment.startPercent} width-${moment.widthPercent} ${selectedMomentId === moment.momentId ? 'is-selected' : ''}"
           type="button"
-          data-moment-id="${moment.momentId}"
-          aria-label="${moment.startLabel} to ${moment.endLabel}: ${moment.title}"
-        ><span>${moment.startLabel}</span></button>`,
+          data-moment-id="${escapeHtml(moment.momentId)}"
+          aria-label="${escapeHtml(moment.startLabel)} to ${escapeHtml(moment.endLabel)}: ${escapeHtml(moment.title)}"
+        ><span>${escapeHtml(moment.startLabel)}</span></button>`,
     )
     .join('');
 
@@ -36,7 +56,7 @@ export function LectureTimeline(moments: LectureMoment[], selectedMomentId?: str
         <div class="timeline-baseline"></div>
         ${markers}
       </div>
-      <div class="timeline-labels"><span>0:00</span><span>${ACTIVE_LECTURE.durationLabel}</span></div>
+      <div class="timeline-labels"><span>0:00</span><span>${escapeHtml(durationLabel)}</span></div>
     </section>
   `;
 }
