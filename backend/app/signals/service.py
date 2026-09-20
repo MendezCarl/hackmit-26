@@ -230,6 +230,7 @@ class SignalService:
                 is_opted_in=True,
                 joined_at=utc_now_iso(),
             )
+            self._store.participants[session_id] = participants
             self._publisher.publish(
                 self._publisher.build_envelope(
                     session_id,

@@ -301,6 +301,23 @@ def test_app_roundtrips_mutated_records_with_mongo_mappings(
     assert job.status_code == 200, job.text
     assert job.json()["status"] == "completed"
 
+    joiner_registration = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "mongo-joiner@example.com",
+            "password": "correct-horse-battery",
+            "display_name": "Mongo Joiner",
+            "role": "student",
+        },
+    )
+    assert joiner_registration.status_code == 201, joiner_registration.text
+    joiner_auth = {"Authorization": f"Bearer {joiner_registration.json()['access_token']}"}
+    joined = client.post(base + "/participants", headers=joiner_auth)
+    assert joined.status_code == 201, joined.text
+    assert joined.json()["participant_count"] == 1
+    assert store.participants[session_id].keys() == {joined.json()["user_id"]}
+    assert client.get(base, headers=joiner_auth).status_code == 200
+
     ended = client.post(base + "/end", headers=auth)
     assert ended.status_code == 200, ended.text
     assert client.get(base, headers=auth).json()["status"] == "ended"
