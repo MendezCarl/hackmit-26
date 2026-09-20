@@ -309,15 +309,18 @@ def test_app_roundtrips_mutated_records_with_mongo_mappings(
 def test_invalid_mongodb_uri_is_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mongo connection failures do not expose the configured URI."""
 
-    class FailingAdmin:
-        def command(self, _name: str) -> None:
-            raise RuntimeError("mongodb://secret.example.invalid")
+    class UnauthenticatedCollection:
+        def count_documents(self, _query: dict[str, object]) -> int:
+            raise RuntimeError(
+                "Command count requires authentication mongodb://secret.example.invalid"
+            )
 
     class FailingClient:
-        admin = FailingAdmin()
-
         def __init__(self, _uri: str, *, serverSelectionTimeoutMS: int) -> None:
             assert serverSelectionTimeoutMS == 5000
+
+        def __getitem__(self, _database_name: str) -> dict[str, UnauthenticatedCollection]:
+            return {"users": UnauthenticatedCollection()}
 
     import pymongo
 
