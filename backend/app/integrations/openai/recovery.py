@@ -19,6 +19,7 @@ from app.contracts.models import (
     SourceTimestamp,
 )
 from app.core.errors import AppError, ErrorCode
+from app.recovery.evidence_matching import is_quote_grounded
 
 
 class OpenAIUsage(ModelMetadata):
@@ -98,7 +99,7 @@ class OpenAIRecoveryGenerator:
             draft = RecoveryDraft.model_validate(response.output_parsed)
             for fact in draft.facts:
                 chunk = chunks.get(fact.chunk_id)
-                if chunk is None or fact.evidence_quote not in chunk.text:
+                if chunk is None or not is_quote_grounded(fact.evidence_quote, chunk.text):
                     raise ValueError("Unverifiable evidence")
             if (
                 response.usage is None
