@@ -76,6 +76,9 @@ const registerDesktopIpc = (): void => {
     }
     hideZoomOverlay();
   });
+  ipcMain.on('overlay:show-drift', () => {
+    showZoomOverlay(currentRole === 'student' ? 'student' : null, 'drift');
+  });
 };
 
 app.on('before-quit', () => {

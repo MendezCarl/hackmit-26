@@ -65,6 +65,7 @@ const bloomDesktop: BloomDesktopApi = {
   onZoomDetected: (callback) => subscribe('zoom:detected', callback),
   onZoomOverlayOpen: (callback) => subscribe('zoom:overlay-open', callback),
   overlayAction: (action) => ipcRenderer.send('overlay:action', { action }),
+  showDriftPrompt: () => ipcRenderer.send('overlay:show-drift'),
   getOverlayRole: () => {
     const role = new URLSearchParams(window.location.search).get('role');
     return role === 'professor' || role === 'student' ? role : null;

@@ -4,6 +4,7 @@ import { ConsentDialog } from '../../components/consent_dialog.mjs';
 import { escapeHtml } from '../../components/html_text.mjs';
 import { ZoomRecoveryCue } from '../../components/zoom_recovery_cue.mjs';
 import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs';
+import { formatLectureTime } from '../../services/lecture_view_models.mjs';
 
 export type StudentDashboardModel = {
   isDemo: boolean;
@@ -17,6 +18,10 @@ export type StudentDashboardModel = {
   zoomBannerDismissed: boolean;
   externalTextConsentGranted: boolean;
   externalTextConsentNote: string | null;
+  cameraSignalsEnabled: boolean;
+  cameraSignalsStatus: 'off' | 'watching' | 'error';
+  cameraSignalsError: string | null;
+  pendingDriftPrompt: SignalEvent | null;
 };
 
 const FIXTURE_MODEL: StudentDashboardModel = {
@@ -31,6 +36,10 @@ const FIXTURE_MODEL: StudentDashboardModel = {
   zoomBannerDismissed: false,
   externalTextConsentGranted: false,
   externalTextConsentNote: null,
+  cameraSignalsEnabled: false,
+  cameraSignalsStatus: 'off',
+  cameraSignalsError: null,
+  pendingDriftPrompt: null,
 };
 
 /**
@@ -132,6 +141,27 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
           </label>
           <p class="form-message" data-external-text-consent-message aria-live="polite">${model.externalTextConsentNote ? escapeHtml(model.externalTextConsentNote) : ''}</p>
         </section>
+        <section class="panel camera-signals">
+          <label>
+            <input type="checkbox" data-camera-signals ${model.cameraSignalsEnabled ? 'checked' : ''} />
+            Detect drift with my camera (runs on this device; frames never leave your computer)
+          </label>
+          <p data-camera-signals-status aria-live="polite">${
+            model.cameraSignalsStatus === 'watching'
+              ? 'Watching locally…'
+              : model.cameraSignalsError ?? 'Camera off'
+          }</p>
+        </section>
+        ${
+          model.pendingDriftPrompt
+            ? `<section class="panel drift-prompt" role="status">
+          <p>Looks like you may have drifted around ${formatLectureTime(model.pendingDriftPrompt.start_ms)}. Want a recovery card for that stretch?</p>
+          <button class="primary-button" type="button" data-request-recovery="${escapeHtml(model.pendingDriftPrompt.event_id)}">Get recovery card</button>
+          <button class="secondary-button" type="button" data-dismiss-drift-prompt>Dismiss</button>
+          <p class="form-message" data-recovery-message aria-live="polite"></p>
+        </section>`
+            : ''
+        }
         <form class="section-block login-card form-card student-form-card" data-transcript-form>
           <label>Local transcript<textarea name="text" required></textarea></label>
           <button class="secondary-button" type="submit">Add transcript</button>
