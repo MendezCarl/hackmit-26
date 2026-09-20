@@ -256,7 +256,8 @@ def create_mongo_store(uri: str, database_name: str) -> InMemoryStore:
         An ``InMemoryStore`` dataclass populated with Mongo-backed mappings.
 
     Raises:
-        RuntimeError: If PyMongo is unavailable or the database cannot be reached.
+        RuntimeError: If PyMongo is unavailable, the database cannot be reached,
+            or the URI does not carry credentials that can read the database.
     """
     try:
         from pymongo import MongoClient
@@ -267,8 +268,12 @@ def create_mongo_store(uri: str, database_name: str) -> InMemoryStore:
 
     try:
         client: Any = MongoClient(uri, serverSelectionTimeoutMS=5000)
-        client.admin.command("ping")
+        database = client[database_name]
+        database["users"].count_documents({})
     except Exception:  # noqa: BLE001 - redact connection details
-        raise RuntimeError("Could not connect to MongoDB.") from None
+        raise RuntimeError(
+            "Could not connect to MongoDB or the MONGODB_URI credentials cannot"
+            " read the database (check the username:password in the URI)."
+        ) from None
 
-    return build_mongo_store(client[database_name])
+    return build_mongo_store(database)
