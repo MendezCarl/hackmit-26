@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One course owned and taught by a professor.",
+  "properties": {
+    "code": {
+      "description": "Course catalog code.",
+      "title": "Code",
+      "type": "string"
+    },
+    "course_id": {
+      "description": "Unique course identifier.",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC ISO 8601 creation time ending in Z.",
+      "title": "Created At",
+      "type": "string"
+    },
+    "owner_id": {
+      "description": "Professor user who owns the course.",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "title": {
+      "description": "Human-readable course title.",
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "course_id",
+    "owner_id",
+    "title",
+    "code",
+    "created_at"
+  ],
+  "title": "Course",
+  "type": "object"
+}

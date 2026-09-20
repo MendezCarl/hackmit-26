@@ -29,6 +29,11 @@ CONTRACT_MODEL_NAMES: dict[str, str] = {
     "cost_metrics": "CostMetrics",
     "professor_summary": "ProfessorSummary",
     "websocket_envelope": "EventEnvelope",
+    "user_profile": "UserProfile",
+    "auth_session": "AuthSession",
+    "consent_settings": "ConsentSettings",
+    "course": "Course",
+    "lecture": "Lecture",
 }
 
 

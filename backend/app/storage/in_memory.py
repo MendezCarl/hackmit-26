@@ -11,13 +11,29 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.contracts.models import (
+    ConsentSettings,
     CostMetrics,
+    Course,
+    Lecture,
     LectureSession,
     RecoveryCard,
     RecoveryJob,
     SignalEvent,
     TranscriptChunk,
 )
+
+
+@dataclass
+class UserRecord:
+    """Server-side account record; password hashes are never exposed."""
+
+    user_id: str
+    email: str
+    password_hash: str
+    role: str
+    display_name: str
+    created_at: str
+    consent: ConsentSettings
 
 
 @dataclass
@@ -49,6 +65,9 @@ class CardRecord:
 class InMemoryStore:
     """Process-local storage containers shared by feature repositories."""
 
+    users: dict[str, UserRecord] = field(default_factory=dict)
+    courses: dict[str, Course] = field(default_factory=dict)
+    lectures: dict[str, Lecture] = field(default_factory=dict)
     sessions: dict[str, LectureSession] = field(default_factory=dict)
     participants: dict[str, dict[str, ParticipantRecord]] = field(default_factory=dict)
     events: dict[str, list[EventRecord]] = field(default_factory=dict)

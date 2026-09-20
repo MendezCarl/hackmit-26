@@ -8,6 +8,7 @@ schema summaries in ``docs/api/unified_api_contracts.md``.
 from __future__ import annotations
 
 import math
+import re
 from enum import Enum
 from typing import Any, Literal
 
@@ -475,3 +476,111 @@ class ErrorResponse(_StrictModel):
     """Repository-standard error envelope used by every endpoint."""
 
     error: ErrorBody = Field(description="The typed error body.")
+EMAIL_ADDRESS_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+REGISTERED_ROLES: tuple[str, ...] = ("student", "professor")
+
+
+class RegisterUserRequest(_StrictModel):
+    """New-account registration; roles are chosen here, never in bodies later."""
+
+    email: str = Field(min_length=3, max_length=254, description="Account email.")
+    password: str = Field(
+        min_length=8, max_length=128, description="Account password."
+    )
+    display_name: str = Field(min_length=1, max_length=128)
+    role: Literal["student", "professor"] = Field(
+        description="Requested account role."
+    )
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        """Reject malformed addresses without adding an email-parsing dependency."""
+
+        if not EMAIL_ADDRESS_PATTERN.match(value):
+            raise ValueError("email must be a valid email address.")
+        return value.lower()
+
+
+class LoginRequest(_StrictModel):
+    """Existing-account login credentials."""
+
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        """Normalize the address for lookup."""
+
+        return value.lower()
+
+
+class UserProfile(BaseModel):
+    """Public profile of one account; password hashes are never exposed."""
+
+    user_id: str = Field(description="Unique user identifier.")
+    email: str = Field(description="Account email address.")
+    role: str = Field(description="``student`` or ``professor``.")
+    display_name: str = Field(description="Human-readable display name.")
+    created_at: str = Field(description="UTC ISO 8601 creation time ending in Z.")
+
+
+class AuthSession(BaseModel):
+    """Issued credentials for one authenticated account."""
+
+    user: UserProfile = Field(description="The authenticated account's profile.")
+    access_token: str = Field(description="Signed JWT access token.")
+    token_type: str = Field(default="bearer", description="Token type.")
+
+
+class ConsentSettings(BaseModel):
+    """Stored consent choices for one account."""
+
+    analytics_opt_in: bool = Field(
+        default=False,
+        description="Whether the user opted into anonymous aggregated analytics.",
+    )
+    updated_at: str | None = Field(
+        default=None, description="UTC ISO 8601 time the consent was last updated."
+    )
+
+
+class UpdateConsentRequest(_StrictModel):
+    """Request updating one consent choice."""
+
+    analytics_opt_in: bool = Field(description="New analytics opt-in value.")
+
+
+class Course(BaseModel):
+    """One course owned and taught by a professor."""
+
+    course_id: str = Field(description="Unique course identifier.")
+    owner_id: str = Field(description="Professor user who owns the course.")
+    title: str = Field(description="Human-readable course title.")
+    code: str = Field(description="Course catalog code.")
+    created_at: str = Field(description="UTC ISO 8601 creation time ending in Z.")
+
+
+class CreateCourseRequest(_StrictModel):
+    """Request creating a course."""
+
+    title: str = Field(min_length=1, max_length=256)
+    code: str = Field(min_length=1, max_length=64)
+
+
+class Lecture(BaseModel):
+    """One lecture record belonging to a course."""
+
+    lecture_id: str = Field(description="Unique lecture-record identifier.")
+    course_id: str = Field(description="Owning course identifier.")
+    owner_id: str = Field(description="Professor user who owns the lecture.")
+    title: str = Field(description="Human-readable lecture title.")
+    created_at: str = Field(description="UTC ISO 8601 creation time ending in Z.")
+
+
+class CreateLectureRequest(_StrictModel):
+    """Request creating a lecture record."""
+
+    course_id: str = Field(min_length=1, max_length=128)
+    title: str = Field(min_length=1, max_length=256)

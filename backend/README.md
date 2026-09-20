@@ -70,6 +70,23 @@ CI runs both checks and fails when `docs/api/openapi.json` is stale.
 
 System: `GET /health`, `GET /api/status`
 
+Auth (`/api/v1/auth`):
+
+- `POST /register` — create an account (email, password, role) and receive a JWT.
+- `POST /login` — verify credentials and receive a fresh JWT.
+
+Users (`/api/v1/users`):
+
+- `GET /me` — the authenticated account's profile.
+- `GET /me/consent` / `PUT /me/consent` — read and update stored consent
+  (analytics opt-in defaults to false).
+
+Courses (`/api/v1/courses`) and lectures (`/api/v1/lectures`) — professor-owned:
+
+- `POST /courses`, `GET /courses`, `GET /courses/{id}`, `DELETE /courses/{id}`
+- `POST /lectures`, `GET /lectures?course_id=`, `GET /lectures/{id}`,
+  `DELETE /lectures/{id}`
+
 Sessions (`/api/v1/sessions`):
 
 - `POST /api/v1/sessions` — create one running occurrence of a lecture.

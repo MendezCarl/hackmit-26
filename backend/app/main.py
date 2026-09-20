@@ -7,13 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.auth.access import StoreSessionAccess
+from app.auth.routes import router as auth_router
 from app.config import LIVE_PROVIDER_MODE, Settings, get_settings
 from app.core.body_limits import DerivedJsonLimit
 from app.core.errors import install_error_handlers
 from app.core.logging_redaction import install_logging
+from app.courses.routes import router as course_router
+from app.courses.service import CourseService
 from app.cost.ledger import CostLedger
 from app.demo.routes import router as demo_router
 from app.learning.composition import install_learning_features
+from app.lectures.routes import router as lecture_router
+from app.lectures.service import LectureService
 from app.professor.routes import router as professor_router
 from app.professor.service import ProfessorService
 from app.recovery.generator import DeterministicRecoveryGenerator, RecoveryGenerator
@@ -27,6 +32,8 @@ from app.storage.in_memory import InMemoryStore
 from app.transcript.repository import InMemoryTimelineReader
 from app.transcript.routes import router as transcript_router
 from app.transcript.service import TranscriptService
+from app.users.routes import router as user_router
+from app.users.service import UserService
 from app.ws.publisher import WebSocketEventPublisher
 from app.ws.routes import router as websocket_router
 
@@ -130,6 +137,9 @@ def create_app(
     transcript_service = TranscriptService(
         store, settings, session_access, timeline_reader, event_publisher
     )
+    user_service = UserService(store, settings)
+    course_service = CourseService(store)
+    lecture_service = LectureService(store)
     recovery_service = PrivateRecoveryService(
         store,
         settings,
@@ -153,6 +163,9 @@ def create_app(
     app.state.session_service = session_service
     app.state.signal_service = signal_service
     app.state.transcript_service = transcript_service
+    app.state.user_service = user_service
+    app.state.course_service = course_service
+    app.state.lecture_service = lecture_service
     app.state.recovery_service = recovery_service
     app.state.professor_service = professor_service
 
@@ -165,6 +178,10 @@ def create_app(
     app.include_router(professor_router)
     app.include_router(demo_router)
     app.include_router(websocket_router)
+    app.include_router(auth_router)
+    app.include_router(user_router)
+    app.include_router(course_router)
+    app.include_router(lecture_router)
 
     @app.get(
         "/health",
