@@ -81,7 +81,9 @@ class SignalService:
             event: One coarse signal event.
 
         Returns:
-            True when the event's duration meets the configured threshold.
+            True when the event's duration meets the configured threshold. Head-away
+            events use ``min_head_away_window_ms`` when it is set; phone events keep
+            requiring corroboration and never qualify alone.
         """
 
         if event.user_confirmed is False or event.event_type in {
@@ -103,7 +105,11 @@ class SignalService:
                     and duration >= self._settings.phone_unfocused_absent_ms
                 )
             )
-        return (event.end_ms - event.start_ms) >= self._settings.min_missed_window_ms
+        minimum_ms = self._settings.min_missed_window_ms
+        is_head_away = event.event_type == "head_away" or "head_away" in event.signals
+        if is_head_away and self._settings.min_head_away_window_ms is not None:
+            minimum_ms = self._settings.min_head_away_window_ms
+        return (event.end_ms - event.start_ms) >= minimum_ms
 
     def ingest_batch(
         self,

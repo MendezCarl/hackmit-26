@@ -185,3 +185,25 @@ optional AI/vision setup, contracts, privacy behavior, branch ownership and test
 The integration worktree extends baseline `88d7bbb`; it does not overwrite the
 older isolated signal, professor or Dropbox branches. New implementation changes
 remain local and uncommitted for review.
+
+## Local vision models (optional)
+
+The student and presenter workers run pretrained detectors on the laptop. The model files are
+not in the repository (`models/` is gitignored). Build them once with a single command from
+`backend/`; it creates a throwaway environment, so you do not need PyTorch in your own:
+
+```sh
+make export-model APPROVE=1
+```
+
+`APPROVE=1` records that you reviewed the model licenses (the SSDLite weights are trained on
+COCO, and YuNet is MIT per the OpenCV Zoo listing). Without it the workers refuse to load the
+models. The command writes `models/person_detector.onnx`, `models/face_detection_yunet_2023mar.onnx`
+and a manifest beside each. Do not commit the files or redistribute them without a license review.
+
+- [Model provenance, data, results and limitations](../docs/evaluation/local_vision_model_and_data.md)
+- [Student signal rule cards](../docs/evaluation/student_signal_rule_cards.md): every rule, its
+  numbers (generated from the code), the evidence and how it fails
+- Demo: `python -m scripts.demo_student_to_card --clip <clip>` (from the repository root with
+  `PYTHONPATH=backend`) turns a clip into a signal and a grounded recovery card using the mock
+  generator.
