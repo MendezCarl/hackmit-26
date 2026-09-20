@@ -63,6 +63,32 @@
         "title": "ArtifactExport",
         "type": "object"
       },
+      "AuthSession": {
+        "description": "Issued credentials for one authenticated account.",
+        "properties": {
+          "access_token": {
+            "description": "Signed JWT access token.",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "description": "Token type.",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserProfile",
+            "description": "The authenticated account's profile."
+          }
+        },
+        "required": [
+          "user",
+          "access_token"
+        ],
+        "title": "AuthSession",
+        "type": "object"
+      },
       "BatchReceipt": {
         "additionalProperties": false,
         "description": "Accepted records and exact retries; conflicting identifiers fail atomically.",
@@ -99,6 +125,31 @@
           "user_confirmed"
         ],
         "title": "ConfirmEventRequest",
+        "type": "object"
+      },
+      "ConsentSettings": {
+        "description": "Stored consent choices for one account.",
+        "properties": {
+          "analytics_opt_in": {
+            "default": false,
+            "description": "Whether the user opted into anonymous aggregated analytics.",
+            "title": "Analytics Opt In",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 time the consent was last updated.",
+            "title": "Updated At"
+          }
+        },
+        "title": "ConsentSettings",
         "type": "object"
       },
       "CostMetrics": {
@@ -177,6 +228,45 @@
         "title": "CostMetrics",
         "type": "object"
       },
+      "Course": {
+        "description": "One course owned and taught by a professor.",
+        "properties": {
+          "code": {
+            "description": "Course catalog code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "course_id": {
+            "description": "Unique course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "Professor user who owns the course.",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Human-readable course title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_id",
+          "owner_id",
+          "title",
+          "code",
+          "created_at"
+        ],
+        "title": "Course",
+        "type": "object"
+      },
       "CoverageBatch": {
         "additionalProperties": false,
         "description": "Atomic coverage ingestion; no more than 100 interval records.",
@@ -195,6 +285,54 @@
           "records"
         ],
         "title": "CoverageBatch",
+        "type": "object"
+      },
+      "CreateCourseRequest": {
+        "additionalProperties": false,
+        "description": "Request creating a course.",
+        "properties": {
+          "code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "code"
+        ],
+        "title": "CreateCourseRequest",
+        "type": "object"
+      },
+      "CreateLectureRequest": {
+        "additionalProperties": false,
+        "description": "Request creating a lecture record.",
+        "properties": {
+          "course_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Course Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_id",
+          "title"
+        ],
+        "title": "CreateLectureRequest",
         "type": "object"
       },
       "CreateRecoveryJobRequest": {
@@ -1078,6 +1216,45 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "Lecture": {
+        "description": "One lecture record belonging to a course.",
+        "properties": {
+          "course_id": {
+            "description": "Owning course identifier.",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "lecture_id": {
+            "description": "Unique lecture-record identifier.",
+            "title": "Lecture Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "Professor user who owns the lecture.",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Human-readable lecture title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lecture_id",
+          "course_id",
+          "owner_id",
+          "title",
+          "created_at"
+        ],
+        "title": "Lecture",
+        "type": "object"
+      },
       "LectureInterval": {
         "additionalProperties": false,
         "description": "Half-open lecture-relative interval, in integer milliseconds.",
@@ -1185,6 +1362,30 @@
           "session_clock_origin"
         ],
         "title": "LectureSession",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "description": "Existing-account login credentials.",
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
         "type": "object"
       },
       "MetricsBucket": {
@@ -1916,6 +2117,49 @@
         "title": "RegisterParticipantRequest",
         "type": "object"
       },
+      "RegisterUserRequest": {
+        "additionalProperties": false,
+        "description": "New-account registration; roles are chosen here, never in bodies later.",
+        "properties": {
+          "display_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email.",
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Account password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "role": {
+            "description": "Requested account role.",
+            "enum": [
+              "student",
+              "professor"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "display_name",
+          "role"
+        ],
+        "title": "RegisterUserRequest",
+        "type": "object"
+      },
       "ReleasedRatio": {
         "additionalProperties": false,
         "description": "A ratio with its denominator; absent means insufficient or suppressed evidence.",
@@ -2384,6 +2628,61 @@
         "title": "TranscriptWindowResponse",
         "type": "object"
       },
+      "UpdateConsentRequest": {
+        "additionalProperties": false,
+        "description": "Request updating one consent choice.",
+        "properties": {
+          "analytics_opt_in": {
+            "description": "New analytics opt-in value.",
+            "title": "Analytics Opt In",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "analytics_opt_in"
+        ],
+        "title": "UpdateConsentRequest",
+        "type": "object"
+      },
+      "UserProfile": {
+        "description": "Public profile of one account; password hashes are never exposed.",
+        "properties": {
+          "created_at": {
+            "description": "UTC ISO 8601 creation time ending in Z.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable display name.",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email address.",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "description": "``student`` or ``professor``.",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Unique user identifier.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "display_name",
+          "created_at"
+        ],
+        "title": "UserProfile",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -2453,6 +2752,233 @@
         "summary": "Check API readiness",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Verify credentials and issue a fresh access token.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Log in to an existing account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Create one account and issue its first access token.\n\nThe role chosen here is embedded in future verified JWTs; roles never\ncome from any other request body.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register a new account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/courses": {
+      "get": {
+        "description": "List every course the authenticated professor owns.",
+        "operationId": "list_courses_api_v1_courses_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Course"
+                  },
+                  "title": "Response List Courses Api V1 Courses Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List owned courses",
+        "tags": [
+          "courses"
+        ]
+      },
+      "post": {
+        "description": "Create one course owned by the authenticated professor.",
+        "operationId": "create_course_api_v1_courses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCourseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a course",
+        "tags": [
+          "courses"
+        ]
+      }
+    },
+    "/api/v1/courses/{course_id}": {
+      "delete": {
+        "description": "Delete one owned course and its lecture records.",
+        "operationId": "delete_course_api_v1_courses__course_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete an owned course",
+        "tags": [
+          "courses"
+        ]
+      },
+      "get": {
+        "description": "Return one course for its owner.",
+        "operationId": "get_course_api_v1_courses__course_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an owned course",
+        "tags": [
+          "courses"
         ]
       }
     },
@@ -2594,6 +3120,172 @@
         "summary": "Mint a synthetic demo access token",
         "tags": [
           "demo"
+        ]
+      }
+    },
+    "/api/v1/lectures": {
+      "get": {
+        "description": "List lecture records for one course the professor owns.",
+        "operationId": "list_lectures_api_v1_lectures_get",
+        "parameters": [
+          {
+            "description": "Owning course identifier.",
+            "in": "query",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "description": "Owning course identifier.",
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lecture"
+                  },
+                  "title": "Response List Lectures Api V1 Lectures Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List lectures for one course",
+        "tags": [
+          "lectures"
+        ]
+      },
+      "post": {
+        "description": "Create one lecture record inside a course the professor owns.",
+        "operationId": "create_lecture_api_v1_lectures_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLectureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lecture"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a lecture record",
+        "tags": [
+          "lectures"
+        ]
+      }
+    },
+    "/api/v1/lectures/{lecture_id}": {
+      "delete": {
+        "description": "Delete one owned lecture record.",
+        "operationId": "delete_lecture_api_v1_lectures__lecture_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lecture_id",
+            "required": true,
+            "schema": {
+              "title": "Lecture Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete an owned lecture record",
+        "tags": [
+          "lectures"
+        ]
+      },
+      "get": {
+        "description": "Return one lecture record for its owner.",
+        "operationId": "get_lecture_api_v1_lectures__lecture_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lecture_id",
+            "required": true,
+            "schema": {
+              "title": "Lecture Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lecture"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an owned lecture record",
+        "tags": [
+          "lectures"
         ]
       }
     },
@@ -4522,6 +5214,90 @@
         "summary": "Ingest a batch of transcript chunks",
         "tags": [
           "transcript"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Return the authenticated account's public profile.",
+        "operationId": "read_current_user_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read the authenticated account",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/consent": {
+      "get": {
+        "description": "Return the authenticated account's consent choices.",
+        "operationId": "read_consent_api_v1_users_me_consent_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read stored consent settings",
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Store the account's analytics opt-in choice.",
+        "operationId": "update_consent_api_v1_users_me_consent_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update stored consent settings",
+        "tags": [
+          "users"
         ]
       }
     },
