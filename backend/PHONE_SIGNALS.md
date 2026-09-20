@@ -1,6 +1,6 @@
 # Optional phone observations
 
-Status: Implemented on the isolated feature branches
+Status: Implemented; isolated feature branches committed and pushed
 
 Owner: Backend team
 
@@ -10,6 +10,11 @@ Last updated: 2026-09-19
 about attention or comprehension. A phone may support class participation,
 notes, chat, or accessibility. Detection stays on the device; this change adds
 no detector, image upload, raw audio upload, or media endpoint.
+
+This guide is shared documentation. Phone ingestion/rules are implemented on
+`feature/backend-signal-timeline`; professor exclusions are implemented on
+`feature/backend-professor-aggregation`. Its presence on the Dropbox branch
+does not add either service there.
 
 ## Ingestion contract
 
@@ -100,4 +105,6 @@ DTOs are synchronized across the isolated worktrees to prevent merge divergence.
 The combined checkout retains both changes for integration testing.
 Generated JSON Schema and OpenAPI snapshots include the new payload fields.
 Frontend files remain unchanged; external contract review is still required
-before integration. See the feature runbook for branch ownership and checks.
+before integration. The isolated feature branches are committed and pushed;
+the combined integration checkout remains uncommitted. See the
+[branch guide](FEATURE_BRANCHES.md) for the verified feature commit IDs.

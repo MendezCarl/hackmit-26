@@ -2,7 +2,23 @@
 
 FastAPI backend targeting Python 3.14.
 
+## Implementation status and feature apps
+
+See [the implementation report](../docs/implementation/backend_status.md) for what
+has been built, tested, pushed, and left for host integration. The three feature
+branches cover signal/transcript ingestion and timeline, professor summaries,
+and Dropbox operations. OpenAI recovery generation is still planned.
+
+The setup below starts the baseline `app.main`, whose routes are listed at the
+end of this file. It does not mount the new feature routes. Use the
+[feature runbook](LECTURE_FEATURES.md) to choose the instructions for your checked-out
+branch. Each feature checkout contains one of `FEATURE_2.md`, `FEATURE_4.md`, or
+`FEATURE_6.md`. The combined demo is only available in the original local combined
+checkout. Feature demo commands require explicit demo mode.
+
 ## Setup
+
+Run these commands from the `backend/` directory:
 
 ```sh
 python3.14 -m venv .venv
