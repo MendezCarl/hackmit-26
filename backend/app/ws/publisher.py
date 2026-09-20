@@ -151,7 +151,7 @@ class WebSocketEventPublisher:
                 try:
                     queue.get_nowait()
                     queue.put_nowait(envelope)
-                except asyncio.QueueEmpty, asyncio.QueueFull:
+                except (asyncio.QueueEmpty, asyncio.QueueFull):
                     pass
 
     @contextmanager

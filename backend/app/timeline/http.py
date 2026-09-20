@@ -53,7 +53,7 @@ class FeatureRoute(APIRoute):
                 return await handler(request)
             except FeatureError as error:
                 return error_response(error)
-            except RequestValidationError, ValidationError:
+            except (RequestValidationError, ValidationError):
                 return error_response(
                     FeatureError("invalid_request", "Request fields are invalid.", 422)
                 )

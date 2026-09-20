@@ -116,7 +116,7 @@ async def connect_session_events(websocket: WebSocket, session_id: str) -> None:
             if await _drain_queued_envelope(websocket, queue):
                 continue
             await _wait_briefly_for_client_message(websocket, queue)
-    except WebSocketDisconnect, AppError:
+    except (WebSocketDisconnect, AppError):
         pass
     finally:
         publisher.unsubscribe(session_id, queue)

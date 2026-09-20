@@ -84,7 +84,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         print(json.dumps(run_demo(args.url), indent=2))
-    except OSError, ValueError, RuntimeError:
+    except (OSError, ValueError, RuntimeError):
         print(
             "Demo failed. Check the server URL, APP_ENV=demo and the response contract.",
             file=sys.stderr,

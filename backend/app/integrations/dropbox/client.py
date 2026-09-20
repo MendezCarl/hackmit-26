@@ -41,7 +41,7 @@ class SdkDropboxGateway:
             raise FeatureError(
                 "dropbox_authorization_required", "Reconnect the Dropbox account.", 409
             ) from None
-        except DropboxException, RequestException, TimeoutError, OSError:
+        except (DropboxException, RequestException, TimeoutError, OSError):
             raise FeatureError(
                 "dropbox_unavailable", "Dropbox could not complete the request.", 502
             ) from None

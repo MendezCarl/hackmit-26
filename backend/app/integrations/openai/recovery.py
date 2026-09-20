@@ -105,7 +105,7 @@ class OpenAIRecoveryGenerator:
                 or min(response.usage.input_tokens, response.usage.output_tokens) < 0
             ):
                 raise ValueError("Missing usage")
-        except ValueError, ValidationError:
+        except (ValueError, ValidationError):
             raise AppError(
                 ErrorCode.PROVIDER_MALFORMED_OUTPUT,
                 "The recap could not be validated against its sources.",

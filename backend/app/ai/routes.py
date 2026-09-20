@@ -162,7 +162,7 @@ def run_tools(
             for f in draft.facts
         ):
             raise ValueError("Unverifiable source")
-    except ValueError, ValidationError:
+    except (ValueError, ValidationError):
         raise AppError(
             ErrorCode.PROVIDER_MALFORMED_OUTPUT,
             "The tool-assisted recap could not be grounded.",
