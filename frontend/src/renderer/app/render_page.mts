@@ -44,6 +44,8 @@ export function renderPage(
         submittedEvents: state?.submittedEvents ?? [],
         zoomRunning: state?.zoomRunning ?? false,
         zoomBannerDismissed: state?.zoomBannerDismissed ?? false,
+        externalTextConsentGranted: state?.externalTextConsentGranted ?? false,
+        externalTextConsentNote: state?.externalTextConsentNote ?? null,
       }),
     'student-summary': () =>
       StudentSummaryPage({
@@ -78,6 +80,7 @@ export function renderPage(
         sessions: state?.sessions ?? [],
         professorMetricsBySession: state?.professorMetricsBySession ?? {},
         professorSummariesBySession: state?.professorSummariesBySession ?? {},
+        professorMetricsError: state?.professorMetricsError ?? null,
         activeSession: state?.activeSession ?? null,
         zoomRunning: state?.zoomRunning ?? false,
         zoomBannerDismissed: state?.zoomBannerDismissed ?? false,

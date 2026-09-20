@@ -103,8 +103,8 @@ class PrivateRecoveryService(RecoveryService):
             )
         with self.execution_lock, self.learning_state.lock:
             if (
-                self._generator.provider != "mock"
-                and (session_id, actor.user_id, self._generator.provider)
+                self.provider != "mock"
+                and (session_id, actor.user_id, self.provider)
                 not in self.learning_state.external_consent
             ):
                 raise AppError(
@@ -143,7 +143,7 @@ class PrivateRecoveryService(RecoveryService):
         """Hash scoped context contents, so same-max-revision corrections invalidate reuse."""
         payload = {
             "scope": actor.user_id,
-            "provider": self._generator.provider,
+            "provider": self.provider,
             "base": super()._build_cache_key(actor, window),
             "window": window.model_dump(mode="json"),
         }

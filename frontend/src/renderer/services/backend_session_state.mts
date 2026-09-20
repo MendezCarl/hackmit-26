@@ -21,6 +21,8 @@ export type BackendSessionState = {
   professorMetricsBySession: Record<string, ProfessorMetrics>;
   professorSummaryError: string | null;
   professorMetricsError: string | null;
+  externalTextConsentGranted: boolean;
+  externalTextConsentNote: string | null;
   consent: ConsentSettings | null;
   backendState: 'checking' | 'connected' | 'offline';
   routeError: string | null;
@@ -48,6 +50,8 @@ const state: BackendSessionState = {
   professorMetricsBySession: {},
   professorSummaryError: null,
   professorMetricsError: null,
+  externalTextConsentGranted: false,
+  externalTextConsentNote: null,
   consent: null,
   backendState: 'checking',
   routeError: null,
@@ -167,6 +171,16 @@ export function setProfessorReportForSession(
   if (metrics) state.professorMetricsBySession[sessionId] = metrics;
 }
 
+/** Stores the current session's provider-specific external-text consent. */
+export function setExternalTextConsentGranted(granted: boolean): void {
+  state.externalTextConsentGranted = granted;
+}
+
+/** Stores an explanatory message for the external-text consent control. */
+export function setExternalTextConsentNote(note: string | null): void {
+  state.externalTextConsentNote = note;
+}
+
 /** Stores the account's consent settings. */
 export function setConsent(consent: ConsentSettings | null): void {
   state.consent = consent;
@@ -209,6 +223,8 @@ export function clearBackendSessionState(): void {
   state.professorMetricsBySession = {};
   state.professorSummaryError = null;
   state.professorMetricsError = null;
+  state.externalTextConsentGranted = false;
+  state.externalTextConsentNote = null;
   state.consent = null;
   state.backendState = 'checking';
   state.routeError = null;

@@ -106,6 +106,7 @@ Error codes are stable machine-readable `snake_case` values. Human-facing copy s
 |---|---|---|---|---|
 | `GET` | `/health` | Liveness check | None | `HealthResponse` |
 | `GET` | `/ready` | Dependency readiness | None | `ReadinessResponse` |
+| `GET` | `/api/status` | Report API readiness and the configured recovery provider | None | `{ message, recovery_provider }` |
 
 ### Current user and privacy
 
@@ -152,6 +153,7 @@ For Zoom sessions, transcript chunks normally originate from RTMS. For non-Zoom 
 
 | Method | Path | Purpose | Request | Response |
 |---|---|---|---|---|
+| `PUT` | `/api/v1/sessions/{session_id}/external-text-consent` | Grant or revoke provider-specific permission for bounded transcript text | `{ provider: "openai" \| "meta_muse", is_allowed }` | `ExternalTextConsent` |
 | `POST` | `/api/v1/sessions/{session_id}/recovery-cards` | Generate a grounded recovery card for a missed interval | `CreateRecoveryCardRequest` | `RecoveryCardJob` |
 | `GET` | `/api/v1/sessions/{session_id}/recovery-cards` | List recovery cards | `cursor`, `limit` | `PaginatedRecoveryCards` |
 | `GET` | `/api/v1/sessions/{session_id}/recovery-cards/{card_id}` | Read one recovery card | None | `RecoveryCard` |
@@ -159,6 +161,8 @@ For Zoom sessions, transcript chunks normally originate from RTMS. For non-Zoom 
 | `POST` | `/api/v1/sessions/{session_id}/recovery-cards/{card_id}/questions` | Ask a grounded follow-up question | `RecoveryQuestionRequest` | `RecoveryQuestionResponse` |
 
 Generation should be asynchronous. The POST route returns a job immediately, and the WebSocket later emits `recovery_card.completed` or `recovery_card.failed`.
+Only bounded transcript text may be sent to the selected recovery provider, and only
+after provider-specific consent is granted. Raw media remains local.
 
 ### Professor summary
 

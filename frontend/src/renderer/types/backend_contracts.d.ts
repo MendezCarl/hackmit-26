@@ -83,6 +83,11 @@ interface ParticipantResponse {
 interface AggregationConsent {
   is_allowed: boolean;
 }
+type ExternalTextProvider = 'openai' | 'meta_muse';
+interface ExternalTextConsent {
+  provider: ExternalTextProvider;
+  is_allowed: boolean;
+}
 interface SignalEvent {
   event_id: string;
   session_id: string;
@@ -241,6 +246,7 @@ interface BackendHealth {
 }
 interface BackendStatus {
   message: string;
+  recovery_provider: string;
 }
 interface ErrorResponse {
   error: { code: string; message: string; details?: Record<string, unknown> | null };
@@ -253,6 +259,7 @@ interface BackendRequestErrorShape {
 type BackendApi = {
   health: () => Promise<BackendHealth>;
   apiStatus: () => Promise<BackendStatus>;
+  readApiStatus: () => Promise<BackendStatus>;
   register: (request: RegisterUserRequest) => Promise<AuthSession>;
   login: (request: LoginRequest) => Promise<AuthSession>;
   logout: () => Promise<void>;
@@ -270,6 +277,10 @@ type BackendApi = {
     sessionId: string,
     consent: AggregationConsent,
   ) => Promise<AggregationConsent>;
+  updateExternalTextConsent: (
+    sessionId: string,
+    consent: ExternalTextConsent,
+  ) => Promise<ExternalTextConsent>;
   ingestEvents: (sessionId: string, request: IngestEventsRequest) => Promise<EventBatchResponse>;
   ingestTranscript: (
     sessionId: string,

@@ -11,6 +11,7 @@ export type HomeModel = {
   sessions: LectureSession[];
   professorMetricsBySession: Record<string, ProfessorMetrics>;
   professorSummariesBySession: Record<string, ProfessorSummary>;
+  professorMetricsError: string | null;
   activeSession: LectureSession | null;
   zoomRunning: boolean;
   zoomBannerDismissed: boolean;
@@ -25,6 +26,7 @@ const FIXTURE_MODEL: HomeModel = {
   sessions: [],
   professorMetricsBySession: {},
   professorSummariesBySession: {},
+  professorMetricsError: null,
   activeSession: null,
   zoomRunning: false,
   zoomBannerDismissed: false,
@@ -40,11 +42,14 @@ function formatDate(timestamp: string): string {
 function buildMetrics(
   metricsBySession: Record<string, ProfessorMetrics>,
   summariesBySession: Record<string, ProfessorSummary>,
+  metricsError: string | null,
 ): string {
   const metrics = Object.values(metricsBySession);
   const summaries = Object.values(summariesBySession);
   if (!metrics.length && !summaries.length) {
-    return '<p class="empty-state">No lecture data yet</p>';
+    return metricsError
+      ? `<p class="empty-state">${escapeHtml(metricsError)}</p>`
+      : '<p class="empty-state">No lecture data yet</p>';
   }
   const continuity = metrics
     .map((metric) => metric.continuity?.ratio)
@@ -120,7 +125,7 @@ export function HomePage(model: HomeModel = FIXTURE_MODEL): string {
       ${model.zoomRunning && !model.zoomBannerDismissed ? buildZoomBanner(recentLectures, courseById) : ''}
       ${model.isLoading ? '<p class="empty-state">Loading lecture data…</p>' : ''}
       ${model.routeError ? `<p class="empty-state">${escapeHtml(model.routeError)}</p>` : ''}
-      <section class="metrics-grid" aria-label="Lecture metrics">${buildMetrics(model.professorMetricsBySession, model.professorSummariesBySession)}</section>
+      <section class="metrics-grid" aria-label="Lecture metrics">${buildMetrics(model.professorMetricsBySession, model.professorSummariesBySession, model.professorMetricsError)}</section>
       <section class="panel">
         <div class="panel__header"><h2>Recent lectures</h2></div>
         ${

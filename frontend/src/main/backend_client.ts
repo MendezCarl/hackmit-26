@@ -69,6 +69,10 @@ export class BackendClient {
   async apiStatus(): Promise<BackendStatus> {
     return this.request('GET', '/api/status');
   }
+
+  async readApiStatus(): Promise<BackendStatus> {
+    return this.apiStatus();
+  }
   async register(request: RegisterUserRequest): Promise<AuthSession> {
     const result = await this.request<AuthSession>('POST', '/api/v1/auth/register', {
       body: request,
@@ -127,6 +131,17 @@ export class BackendClient {
     return this.request(
       'PUT',
       `/api/v1/sessions/${encodeURIComponent(sessionId)}/aggregation-consent`,
+      { body: consent },
+    );
+  }
+
+  async updateExternalTextConsent(
+    sessionId: string,
+    consent: ExternalTextConsent,
+  ): Promise<ExternalTextConsent> {
+    return this.request(
+      'PUT',
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/external-text-consent`,
       { body: consent },
     );
   }

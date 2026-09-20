@@ -66,6 +66,10 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
     },
     joinedSessions: [],
     participantCount: 1,
+    zoomRunning: false,
+    zoomBannerDismissed: false,
+    externalTextConsentGranted: false,
+    externalTextConsentNote: null,
     submittedEvents: [
       {
         event_id: 'event-1',
@@ -82,6 +86,8 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
   assert.match(page, /data-zoom-recovery-cue/);
   assert.match(page, /Possible missed moment/);
   assert.match(page, /Marked for review, not scored/);
+  assert.match(page, /data-external-text-consent/);
+  assert.match(page, /Allow bounded transcript text to be sent to the AI provider for recovery cards/);
   assert.doesNotMatch(page, /attention score/i);
 });
 
@@ -102,6 +108,7 @@ test('educator home renders metrics and course links', async () => {
     sessions: [],
     professorMetricsBySession: {},
     professorSummariesBySession: {},
+    professorMetricsError: null,
     activeSession: null,
     zoomRunning: true,
     zoomBannerDismissed: false,
@@ -110,6 +117,19 @@ test('educator home renders metrics and course links', async () => {
   assert.match(page, /No lecture data yet/);
   assert.match(page, /course\?course_id=course-1/);
   assert.match(page, /data-open-course-modal/);
+  const metricsErrorPage = HomePage({
+    isDemo: false,
+    courses: [],
+    lecturesByCourse: {},
+    sessions: [],
+    professorMetricsBySession: {},
+    professorSummariesBySession: {},
+    professorMetricsError: 'An approved aggregation policy is required.',
+    activeSession: null,
+    zoomRunning: false,
+    zoomBannerDismissed: false,
+  });
+  assert.match(metricsErrorPage, /An approved aggregation policy is required\./);
   const metricsPage = HomePage({
     isDemo: false,
     courses: [],

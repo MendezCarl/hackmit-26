@@ -14,6 +14,7 @@ export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl
   const operations: Record<string, (...args: never[]) => Promise<unknown>> = {
     health: () => client.health(),
     apiStatus: () => client.apiStatus(),
+    readApiStatus: () => client.readApiStatus(),
     register: (request) => client.register(request),
     login: (request) => client.login(request),
     logout: () => client.logout(),
@@ -29,6 +30,8 @@ export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl
     joinSession: (sessionId) => client.joinSession(sessionId),
     updateAggregationConsent: (sessionId, consent) =>
       client.updateAggregationConsent(sessionId, consent),
+    updateExternalTextConsent: (sessionId, consent) =>
+      client.updateExternalTextConsent(sessionId, consent),
     ingestEvents: (sessionId, request) => client.ingestEvents(sessionId, request),
     ingestTranscript: (sessionId, request) => client.ingestTranscript(sessionId, request),
     readTranscript: (sessionId, startMs, endMs) => client.readTranscript(sessionId, startMs, endMs),
