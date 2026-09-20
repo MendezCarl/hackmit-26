@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bind a lecture session to the Zoom meeting whose RTMS stream feeds it.",
+  "properties": {
+    "zoom_meeting_id": {
+      "description": "Zoom meeting number or UUID reported in RTMS webhooks.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Zoom Meeting Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "zoom_meeting_id"
+  ],
+  "title": "StartZoomRtmsRequest",
+  "type": "object"
+}

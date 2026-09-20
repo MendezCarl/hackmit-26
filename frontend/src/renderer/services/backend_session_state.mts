@@ -17,6 +17,8 @@ export type BackendSessionState = {
   participantCount: number | null;
   submittedEvents: SignalEvent[];
   transcriptChunks: TranscriptChunk[];
+  zoomRtmsStatusBySession: Record<string, ZoomRtmsStatus>;
+  liveEventsConnection: SessionEventsConnectionPayload | null;
   recoveryCards: RecoveryCard[];
   professorSummary: ProfessorSummary | null;
   professorMetrics: ProfessorMetrics | null;
@@ -53,6 +55,8 @@ const state: BackendSessionState = {
   participantCount: null,
   submittedEvents: [],
   transcriptChunks: [],
+  zoomRtmsStatusBySession: {},
+  liveEventsConnection: null,
   recoveryCards: [],
   professorSummary: null,
   professorMetrics: null,
@@ -184,6 +188,41 @@ export function setTranscriptChunks(chunks: TranscriptChunk[]): void {
   state.transcriptChunks = chunks;
 }
 
+/**
+ * Merges one live transcript chunk into the ordered transcript.
+ *
+ * Mirrors the backend revision rules: a chunk with the same `chunk_id` replaces
+ * the stored copy only when its revision is equal or higher, and the result
+ * stays sorted by `start_ms`.
+ *
+ * @param chunk - Chunk delivered by a `transcript.chunk.created` event.
+ * @returns True when the transcript changed.
+ */
+export function upsertTranscriptChunk(chunk: TranscriptChunk): boolean {
+  const existingIndex = state.transcriptChunks.findIndex(
+    (candidate) => candidate.chunk_id === chunk.chunk_id,
+  );
+  if (existingIndex >= 0) {
+    const existing = state.transcriptChunks[existingIndex];
+    if ((existing.revision ?? 1) > (chunk.revision ?? 1)) return false;
+    state.transcriptChunks[existingIndex] = chunk;
+  } else {
+    state.transcriptChunks.push(chunk);
+  }
+  state.transcriptChunks.sort((left, right) => left.start_ms - right.start_ms);
+  return true;
+}
+
+/** Stores the Zoom realtime transcript status for one session. */
+export function setZoomRtmsStatus(status: ZoomRtmsStatus): void {
+  state.zoomRtmsStatusBySession[status.session_id] = status;
+}
+
+/** Records the latest connection state of the live session event stream. */
+export function setLiveEventsConnection(payload: SessionEventsConnectionPayload | null): void {
+  state.liveEventsConnection = payload;
+}
+
 /** Adds one private recovery card to the current renderer run. */
 export function addRecoveryCard(card: RecoveryCard): void {
   state.recoveryCards.push(card);
@@ -279,6 +318,8 @@ export function clearBackendSessionState(): void {
   state.participantCount = null;
   state.submittedEvents = [];
   state.transcriptChunks = [];
+  state.zoomRtmsStatusBySession = {};
+  state.liveEventsConnection = null;
   state.recoveryCards = [];
   state.professorSummary = null;
   state.professorMetrics = null;

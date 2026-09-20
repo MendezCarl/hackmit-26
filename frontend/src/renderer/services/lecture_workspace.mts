@@ -17,6 +17,7 @@ import {
   setProfessorReportForSession,
   setSelectedSession,
   setTranscriptChunks,
+  setZoomRtmsStatus,
 } from './backend_session_state.mjs';
 
 const errorMessage = (error: unknown): string =>
@@ -98,7 +99,47 @@ export async function loadLectureWorkspace(lectureId: string): Promise<void> {
   }
   const latest = sessions[0] ?? null;
   setSelectedSession(latest);
-  if (latest) await loadProfessorReport(latest.session_id);
+  if (latest) {
+    await Promise.all([
+      loadProfessorReport(latest.session_id),
+      latest.status === 'active' ? loadZoomRtmsStatus(latest.session_id) : Promise.resolve(),
+    ]);
+  }
+}
+
+/**
+ * Reads the Zoom realtime transcript status for one session.
+ *
+ * Failures are swallowed into a `failed` status so a Zoom outage never blocks
+ * the surrounding lecture page from rendering.
+ *
+ * @param sessionId - Session whose Zoom link should be read.
+ */
+export async function loadZoomRtmsStatus(sessionId: string): Promise<void> {
+  try {
+    setZoomRtmsStatus(await window.backend.readZoomStatus(sessionId));
+  } catch (error) {
+    setZoomRtmsStatus({ session_id: sessionId, status: 'failed', last_error: errorMessage(error) });
+  }
+}
+
+/**
+ * Binds a Zoom meeting to a session so its RTMS transcript feeds the lecture.
+ *
+ * @param sessionId - Session owned by the current professor.
+ * @param zoomMeetingId - Zoom meeting number or UUID from the meeting invite.
+ * @returns The status returned by the backend after linking.
+ * @throws Error When the backend rejects the link (not owner, Zoom not configured, ...).
+ */
+export async function linkZoomMeeting(
+  sessionId: string,
+  zoomMeetingId: string,
+): Promise<ZoomRtmsStatus> {
+  const status = await window.backend.startZoomRtms(sessionId, {
+    zoom_meeting_id: zoomMeetingId.trim(),
+  });
+  setZoomRtmsStatus(status);
+  return status;
 }
 
 /** Loads transcript excerpts for the active student session. */

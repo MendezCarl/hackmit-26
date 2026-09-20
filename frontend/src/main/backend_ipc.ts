@@ -17,8 +17,15 @@ export function readBackendBaseUrl(): string {
   return process.env.BLOOM_BACKEND_URL?.trim() || DEFAULT_HOSTED_BACKEND_URL;
 }
 
-/** Registers one serialized IPC handler for each backend operation. */
-export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl())): void {
+/**
+ * Registers one serialized IPC handler for each backend operation.
+ *
+ * @param client - Authenticated backend client shared with other main-process bridges.
+ * @returns The client so callers can reuse its session for event streaming.
+ */
+export function registerBackendIpc(
+  client = new BackendClient(readBackendBaseUrl()),
+): BackendClient {
   const operations: Record<string, (...args: never[]) => Promise<unknown>> = {
     health: () => client.health(),
     apiStatus: () => client.apiStatus(),
@@ -48,6 +55,8 @@ export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl
     ingestEvents: (sessionId, request) => client.ingestEvents(sessionId, request),
     ingestTranscript: (sessionId, request) => client.ingestTranscript(sessionId, request),
     readTranscript: (sessionId, startMs, endMs) => client.readTranscript(sessionId, startMs, endMs),
+    startZoomRtms: (sessionId, request) => client.startZoomRtms(sessionId, request),
+    readZoomStatus: (sessionId) => client.readZoomStatus(sessionId),
     requestRecoveryCard: (sessionId, request, key) =>
       client.requestRecoveryCard(sessionId, request, key),
     readRecoveryCard: (sessionId, cardId) => client.readRecoveryCard(sessionId, cardId),
@@ -77,4 +86,5 @@ export function registerBackendIpc(client = new BackendClient(readBackendBaseUrl
       },
     );
   });
+  return client;
 }

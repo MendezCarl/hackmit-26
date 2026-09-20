@@ -46,6 +46,8 @@ const backendApi: BackendApi = {
   ingestTranscript: (sessionId, request) => invokeBackend('ingestTranscript', [sessionId, request]),
   readTranscript: (sessionId, startMs, endMs) =>
     invokeBackend('readTranscript', [sessionId, startMs, endMs]),
+  startZoomRtms: (sessionId, request) => invokeBackend('startZoomRtms', [sessionId, request]),
+  readZoomStatus: (sessionId) => invokeBackend('readZoomStatus', [sessionId]),
   requestRecoveryCard: (sessionId, request, key) =>
     invokeBackend('requestRecoveryCard', [sessionId, request, key]),
   readRecoveryCard: (sessionId, cardId) => invokeBackend('readRecoveryCard', [sessionId, cardId]),
@@ -71,6 +73,9 @@ const bloomDesktop: BloomDesktopApi = {
   setRole: (role) => ipcRenderer.send('app:set-role', role),
   onZoomDetected: (callback) => subscribe('zoom:detected', callback),
   onZoomOverlayOpen: (callback) => subscribe('zoom:overlay-open', callback),
+  subscribeSessionEvents: (sessionId) => ipcRenderer.send('session-events:subscribe', sessionId),
+  onSessionEvent: (callback) => subscribe('session:event', callback),
+  onSessionEventsConnection: (callback) => subscribe('session:events-connection', callback),
   overlayAction: (action) => ipcRenderer.send('overlay:action', { action }),
   showDriftPrompt: () => ipcRenderer.send('overlay:show-drift'),
   getOverlayRole: () => {

@@ -85,6 +85,9 @@ class Settings(BaseModel):
       live-provider settings.
     - ``MONGODB_URI`` and ``MONGODB_DATABASE``: optional MongoDB persistence;
       the URI is never logged.
+    - ``ZOOM_CLIENT_ID``, ``ZOOM_CLIENT_SECRET``, and
+      ``ZOOM_WEBHOOK_SECRET_TOKEN``: Zoom RTMS app credentials used to verify
+      webhooks and sign the realtime transcript handshake; never logged.
     - Threshold and limit knobs documented per field below.
     """
 
@@ -189,6 +192,32 @@ class Settings(BaseModel):
         default="bloom",
         description="MongoDB database name for optional persistence.",
     )
+    zoom_client_id: str | None = Field(
+        default=None,
+        description="Zoom app client id used to sign RTMS handshakes.",
+    )
+    zoom_client_secret: str | None = Field(
+        default=None,
+        description="Zoom app client secret for RTMS signatures; never logged.",
+    )
+    zoom_webhook_secret_token: str | None = Field(
+        default=None,
+        description="Zoom webhook secret token used to verify event signatures.",
+    )
+    zoom_webhook_tolerance_seconds: int = Field(
+        default=300,
+        ge=1,
+        description="Maximum accepted age of a signed Zoom webhook request.",
+    )
+
+    def zoom_rtms_configured(self) -> bool:
+        """Return whether Zoom RTMS credentials are fully configured."""
+
+        return bool(
+            self.zoom_client_id
+            and self.zoom_client_secret
+            and self.zoom_webhook_secret_token
+        )
 
     def is_demo_or_test(self) -> bool:
         """Return whether privileged demo/test helpers are available."""
@@ -254,6 +283,10 @@ def _settings_from_environment() -> Settings:
         muse_base_url=os.environ.get("MUSE_BASE_URL", "https://api.meta.ai/v1"),
         mongodb_uri=os.environ.get("MONGODB_URI"),
         mongodb_database=os.environ.get("MONGODB_DATABASE", "bloom"),
+        zoom_client_id=os.environ.get("ZOOM_CLIENT_ID") or None,
+        zoom_client_secret=os.environ.get("ZOOM_CLIENT_SECRET") or None,
+        zoom_webhook_secret_token=os.environ.get("ZOOM_WEBHOOK_SECRET_TOKEN") or None,
+        zoom_webhook_tolerance_seconds=_read_int("ZOOM_WEBHOOK_TOLERANCE_SECONDS", 300),
         min_head_away_window_ms=_optional_positive_int("MIN_HEAD_AWAY_WINDOW_MS"),
     )
     if settings.app_env == DEMO_ENV and settings.min_head_away_window_ms is None:

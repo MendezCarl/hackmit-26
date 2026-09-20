@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "ZoomRtmsStreamStatus": {
+      "description": "Lifecycle of the Zoom realtime transcript link for one session.",
+      "enum": [
+        "not_configured",
+        "not_linked",
+        "awaiting_stream",
+        "connecting",
+        "streaming",
+        "stopped",
+        "failed"
+      ],
+      "title": "ZoomRtmsStreamStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Zoom realtime transcript status for one lecture session.",
+  "properties": {
+    "last_error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Safe description of the last stream failure.",
+      "title": "Last Error"
+    },
+    "last_transcript_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UTC ISO 8601 time of the last ingested chunk.",
+      "title": "Last Transcript At"
+    },
+    "rtms_stream_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Active or last RTMS stream id from Zoom.",
+      "title": "Rtms Stream Id"
+    },
+    "session_id": {
+      "description": "Lecture session the status describes.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ZoomRtmsStreamStatus",
+      "description": "Current stream lifecycle state."
+    },
+    "transcript_chunk_count": {
+      "default": 0,
+      "description": "Chunks ingested from Zoom during this session.",
+      "minimum": 0,
+      "title": "Transcript Chunk Count",
+      "type": "integer"
+    },
+    "updated_at": {
+      "description": "UTC ISO 8601 time of the last change.",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "zoom_meeting_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Zoom meeting bound to the session, when any.",
+      "title": "Zoom Meeting Id"
+    }
+  },
+  "required": [
+    "session_id",
+    "status",
+    "updated_at"
+  ],
+  "title": "ZoomRtmsStatus",
+  "type": "object"
+}

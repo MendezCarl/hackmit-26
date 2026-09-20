@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron/main';
 import { registerBackendIpc } from './backend_ipc.js';
+import { SessionEventsBridge } from './session_events.js';
 import { createBloomTray, openMainWindow, updateTrayZoomStatus } from './tray.js';
 import { hideZoomOverlay, showZoomOverlay } from './zoom_overlay_window.js';
 import { ZoomProcessMonitor } from './zoom_monitor.js';
@@ -12,6 +13,7 @@ let currentRole: BloomRole = null;
 let isQuitting = false;
 let zoomRunning = false;
 let zoomMonitor: ZoomProcessMonitor | undefined;
+let sessionEvents: SessionEventsBridge | undefined;
 
 /**
  * Resolves the Bloom window icon for development or packaged execution.
@@ -79,15 +81,22 @@ const registerDesktopIpc = (): void => {
   ipcMain.on('overlay:show-drift', () => {
     showZoomOverlay(currentRole === 'student' ? 'student' : null, 'drift');
   });
+  ipcMain.on('session-events:subscribe', (_event, sessionId: unknown) => {
+    sessionEvents?.subscribe(typeof sessionId === 'string' && sessionId ? sessionId : null);
+  });
 };
 
 app.on('before-quit', () => {
   isQuitting = true;
   zoomMonitor?.stop();
+  sessionEvents?.stop();
 });
 
 void app.whenReady().then(() => {
-  registerBackendIpc();
+  const backendClient = registerBackendIpc();
+  sessionEvents = new SessionEventsBridge(backendClient, (channel, payload) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+  });
   registerDesktopIpc();
   if (process.platform === 'darwin') {
     app.dock?.setIcon(getWindowIconPath());

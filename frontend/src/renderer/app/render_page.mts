@@ -64,6 +64,7 @@ export function renderPage(
         submittedEvents: state?.submittedEvents ?? [],
         recoveryCards: state?.recoveryCards ?? [],
         transcript: state?.transcriptChunks ?? [],
+        liveEventsConnection: state?.liveEventsConnection ?? null,
         routeError: state?.routeError,
         isLoading: state?.routeLoading,
       }),
@@ -127,6 +128,9 @@ export function renderPage(
           : null,
         metrics: state?.selectedSession
           ? state?.professorMetricsBySession[state.selectedSession.session_id] ?? null
+          : null,
+        zoomStatus: state?.selectedSession
+          ? state?.zoomRtmsStatusBySession[state.selectedSession.session_id] ?? null
           : null,
         routeError: state?.routeError,
       }),

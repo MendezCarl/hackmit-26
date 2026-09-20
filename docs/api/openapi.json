@@ -2539,6 +2539,24 @@
         "title": "SourceTimestamp",
         "type": "object"
       },
+      "StartZoomRtmsRequest": {
+        "additionalProperties": false,
+        "description": "Bind a lecture session to the Zoom meeting whose RTMS stream feeds it.",
+        "properties": {
+          "zoom_meeting_id": {
+            "description": "Zoom meeting number or UUID reported in RTMS webhooks.",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Zoom Meeting Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zoom_meeting_id"
+        ],
+        "title": "StartZoomRtmsRequest",
+        "type": "object"
+      },
       "TimelineBucket": {
         "description": "Anonymous aggregate event count for one fixed time bucket.",
         "properties": {
@@ -2895,6 +2913,143 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ZoomRtmsStatus": {
+        "description": "Zoom realtime transcript status for one lecture session.",
+        "properties": {
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Safe description of the last stream failure.",
+            "title": "Last Error"
+          },
+          "last_transcript_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 time of the last ingested chunk.",
+            "title": "Last Transcript At"
+          },
+          "rtms_stream_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Active or last RTMS stream id from Zoom.",
+            "title": "Rtms Stream Id"
+          },
+          "session_id": {
+            "description": "Lecture session the status describes.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ZoomRtmsStreamStatus",
+            "description": "Current stream lifecycle state."
+          },
+          "transcript_chunk_count": {
+            "default": 0,
+            "description": "Chunks ingested from Zoom during this session.",
+            "minimum": 0.0,
+            "title": "Transcript Chunk Count",
+            "type": "integer"
+          },
+          "updated_at": {
+            "description": "UTC ISO 8601 time of the last change.",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "zoom_meeting_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Zoom meeting bound to the session, when any.",
+            "title": "Zoom Meeting Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "updated_at"
+        ],
+        "title": "ZoomRtmsStatus",
+        "type": "object"
+      },
+      "ZoomRtmsStreamStatus": {
+        "description": "Lifecycle of the Zoom realtime transcript link for one session.",
+        "enum": [
+          "not_configured",
+          "not_linked",
+          "awaiting_stream",
+          "connecting",
+          "streaming",
+          "stopped",
+          "failed"
+        ],
+        "title": "ZoomRtmsStreamStatus",
+        "type": "string"
+      },
+      "ZoomUrlValidationResponse": {
+        "description": "Challenge response Zoom requires when validating the webhook URL.\n\nField names are camelCase because Zoom dictates this payload shape.",
+        "properties": {
+          "encryptedToken": {
+            "description": "HMAC-SHA256 of the token.",
+            "title": "Encryptedtoken",
+            "type": "string"
+          },
+          "plainToken": {
+            "description": "Echoed challenge token.",
+            "title": "Plaintoken",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plainToken",
+          "encryptedToken"
+        ],
+        "title": "ZoomUrlValidationResponse",
+        "type": "object"
+      },
+      "ZoomWebhookAck": {
+        "description": "Acknowledgement returned for verified lifecycle webhooks.",
+        "properties": {
+          "event": {
+            "description": "Zoom event type that was processed.",
+            "title": "Event",
+            "type": "string"
+          },
+          "status": {
+            "description": "``accepted`` or ``ignored``.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "event"
+        ],
+        "title": "ZoomWebhookAck",
         "type": "object"
       }
     }
@@ -3447,6 +3602,36 @@
         "summary": "Update an enrollment's auto-join preference",
         "tags": [
           "enrollments"
+        ]
+      }
+    },
+    "/api/v1/integrations/zoom/webhooks": {
+      "post": {
+        "description": "Verify a Zoom webhook signature, then start or stop the matching stream.\n\nZoom authenticates deliveries with ``x-zm-signature`` and\n``x-zm-request-timestamp``; unsigned, stale, or forged requests are\nrejected with ``unauthorized``. ``endpoint.url_validation`` returns the\nchallenge answer; ``meeting.rtms_started`` opens a transcript-only stream\nfor the active session bound to that meeting and ``meeting.rtms_stopped``\ncloses it. No media bytes are accepted on this route.",
+        "operationId": "receive_zoom_webhook_api_v1_integrations_zoom_webhooks_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ZoomWebhookAck"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ZoomUrlValidationResponse"
+                    }
+                  ],
+                  "title": "Response Receive Zoom Webhook Api V1 Integrations Zoom Webhooks Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Receive verified Zoom RTMS lifecycle webhooks",
+        "tags": [
+          "zoom"
         ]
       }
     },
@@ -5745,6 +5930,102 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/zoom/rtms/start": {
+      "post": {
+        "description": "Record which Zoom meeting feeds this session and await its RTMS stream.\n\nOnly the session owner may call this. The stream itself begins when Zoom\ndelivers ``meeting.rtms_started`` for the bound meeting, so the response\nreports ``awaiting_stream`` until then.",
+        "operationId": "start_zoom_rtms_api_v1_sessions__session_id__zoom_rtms_start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartZoomRtmsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoomRtmsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bind a session to its Zoom meeting for realtime transcripts",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/zoom/status": {
+      "get": {
+        "description": "Return the stream lifecycle state for any session member.",
+        "operationId": "read_zoom_status_api_v1_sessions__session_id__zoom_status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoomRtmsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Zoom realtime transcript status for a session",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "description": "Return the authenticated account's public profile.",
@@ -5880,6 +6161,10 @@
     {
       "description": "Anonymous, threshold-safe summaries.",
       "name": "professor"
+    },
+    {
+      "description": "Zoom RTMS webhooks and realtime transcript stream status.",
+      "name": "zoom"
     },
     {
       "description": "Gated synthetic demo orchestration.",

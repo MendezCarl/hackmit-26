@@ -2122,6 +2122,48 @@ body {
   margin-left: auto;
 }
 
+.zoom-live-transcript {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.zoom-live-transcript__status {
+  margin: 0.25rem 0 0;
+}
+
+.zoom-live-transcript__status[data-zoom-rtms-status='streaming'] {
+  color: #557f71;
+  font-weight: 600;
+}
+
+.zoom-live-transcript__status[data-zoom-rtms-status='failed'] {
+  color: #a4462f;
+}
+
+.zoom-live-transcript__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.zoom-live-transcript__form .form-message {
+  flex-basis: 100%;
+}
+
+.transcript-live-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: #696d7d;
+}
+
+.transcript-live-status[data-transcript-live-status='connected'] {
+  color: #557f71;
+}
+
 .overlay-body {
   min-height: 100vh;
   margin: 0;

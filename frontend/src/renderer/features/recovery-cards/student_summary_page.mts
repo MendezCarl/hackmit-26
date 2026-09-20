@@ -19,9 +19,34 @@ export type StudentSummaryModel = {
   submittedEvents: SignalEvent[];
   recoveryCards: RecoveryCard[];
   transcript: TranscriptChunk[];
+  liveEventsConnection?: SessionEventsConnectionPayload | null;
   routeError?: string | null;
   isLoading?: boolean;
 };
+
+/**
+ * Describes the live transcript feed for the transcript tab header.
+ *
+ * @param model - Student summary model with the current stream connection.
+ * @returns Short status line, or an empty string when no live feed applies.
+ */
+export function describeLiveTranscriptFeed(model: StudentSummaryModel): string {
+  const session = model.session;
+  if (!session || session.status === 'ended') return '';
+  const connection = model.liveEventsConnection;
+  if (connection?.session_id !== session.session_id) return '';
+  const hasZoomChunks = model.transcript.some((chunk) => chunk.source === 'zoom_rtms');
+  switch (connection.state) {
+    case 'connected':
+      return hasZoomChunks ? 'Live · Zoom transcript streaming' : 'Live · waiting for transcript';
+    case 'connecting':
+      return 'Connecting to live transcript…';
+    case 'unauthorized':
+      return 'Live transcript unavailable for this account';
+    default:
+      return 'Live transcript disconnected · retrying';
+  }
+}
 const FIXTURE_MODEL: StudentSummaryModel = {
   isDemo: true,
   session: null,
@@ -90,7 +115,6 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
   const moments = session
     ? buildMomentsFromEvents(model.submittedEvents, sessionDurationMs(session))
     : [];
-  const transcript = buildTranscriptExcerpts(model.transcript);
   const firstMoment = moments[0];
   return AppShell({
     route: 'student-summary',
@@ -117,6 +141,27 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
           ${firstMoment ? MomentDetail(firstMoment, 'student') : '<p class="empty-state">No recovery moments have been submitted.</p>'}
         </div>
         <div data-tab-panel="transcript" hidden>
+          ${StudentTranscriptPanel(model)}
+        </div>
+      </section>
+    `,
+  });
+}
+
+/**
+ * Renders the transcript tab body: live-feed status plus ordered excerpts.
+ *
+ * Kept separate so live `transcript.chunk.created` events can repaint just this
+ * panel without resetting the selected tab.
+ *
+ * @param model - Student summary model with transcript and stream connection.
+ * @returns Inner markup for the transcript tab panel.
+ */
+export function StudentTranscriptPanel(model: StudentSummaryModel): string {
+  const transcript = buildTranscriptExcerpts(model.transcript);
+  const liveFeed = describeLiveTranscriptFeed(model);
+  return `
+          ${liveFeed ? `<p class="transcript-live-status" data-transcript-live-status="${escapeHtml(model.liveEventsConnection?.state ?? '')}" aria-live="polite">${escapeHtml(liveFeed)}</p>` : ''}
           ${
             transcript.length
               ? `<div class="transcript-list">${transcript
@@ -126,11 +171,7 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
                   )
                   .join('')}</div>`
               : '<p class="empty-state">No transcript chunks are available for this session.</p>'
-          }
-        </div>
-      </section>
-    `,
-  });
+          }`;
 }
 
 /**
