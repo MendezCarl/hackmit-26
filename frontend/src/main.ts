@@ -28,7 +28,7 @@ const createWindow = (): void => {
 
 void app.whenReady().then(() => {
   if (process.platform === 'darwin') {
-    app.dock.setIcon(getWindowIconPath());
+    app.dock?.setIcon(getWindowIconPath());
   }
 
   createWindow();
