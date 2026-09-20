@@ -114,7 +114,7 @@ export async function stopStudentCameraMonitor(): Promise<void> {
     state.analyzer.dispose();
     const endMs = Date.now() - Date.parse(state.session.session_clock_origin);
     const events = state.tracker.flush(Number.isFinite(endMs) ? endMs : 0);
-    await postEvents(state, events);
+    await postEvents(state, events, { notify: false });
   })().finally(() => {
     stopPromise = null;
   });
@@ -140,14 +140,24 @@ async function analyzeTick(state: CameraMonitorState): Promise<void> {
   }
 }
 
-async function postEvents(state: CameraMonitorState, events: SignalEvent[]): Promise<void> {
+/**
+ * Posts derived signal events and optionally surfaces them to the UI.
+ *
+ * Shutdown flushes still post so the interval is recorded, but they never prompt: the
+ * student has already left the session or turned the camera off.
+ */
+async function postEvents(
+  state: CameraMonitorState,
+  events: SignalEvent[],
+  { notify }: { notify: boolean } = { notify: true },
+): Promise<void> {
   for (const event of events) {
     await window.backend.ingestEvents(state.session.session_id, {
       lecture_id: state.session.lecture_id,
       events: [event],
     });
     recordSubmittedEvent(event);
-    state.onEvents([event]);
+    if (notify) state.onEvents([event]);
   }
 }
 
