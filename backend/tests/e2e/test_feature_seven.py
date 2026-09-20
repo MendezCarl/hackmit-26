@@ -65,7 +65,13 @@ def test_demo_ignores_live_host_generator_and_releases_no_host_state(monkeypatch
     # Detect network access without disrupting the in-process ASGI test client.
     import socket
 
-    def no_network(*args, **kwargs):
+    real_connect = socket.socket.connect
+
+    def no_network(sock, address, *args, **kwargs):
+        # asyncio's Windows proactor loop wires its self-pipe through a
+        # loopback socketpair; only non-loopback destinations count as network.
+        if isinstance(address, tuple) and address[0] in ("127.0.0.1", "::1"):
+            return real_connect(sock, address, *args, **kwargs)
         raise AssertionError("No network calls are allowed in the demo")
 
     monkeypatch.setattr(socket.socket, "connect", no_network)

@@ -27,17 +27,36 @@ See the [local object detection architecture](docs/architecture/local_object_det
 
 Copy the local environment template if you want shell-loaded defaults:
 
+**macOS/Linux**
+
 ```sh
 cp .env.example .env
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Real `.env` files are gitignored. Source the file before starting services if
 your shell does not load it automatically.
 
+**macOS/Linux**
+
 ```sh
 cd backend
 source .venv/bin/activate
 APP_ENV=demo fastapi dev app/main.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Set-Location backend
+.\.venv\Scripts\Activate.ps1
+$env:APP_ENV = "demo"
+fastapi dev app/main.py
 ```
 
 In a second terminal:
@@ -95,6 +114,21 @@ Current release artifacts are unsigned. macOS Gatekeeper and Windows SmartScreen
 may warn users until signing and notarization certificates are configured as
 repository secrets.
 
+### Supported platforms
+
+Bloom supports Windows 10/11, macOS on Intel and Apple Silicon, and Linux.
+macOS builds are unsigned: if Gatekeeper blocks the app, right-click Bloom and
+choose **Open**, or remove the quarantine attribute with
+`xattr -d com.apple.quarantine /Applications/Bloom.app`.
+
+Prerequisites: Python 3.14 and Node 24 (or a newer LTS release) on every
+platform. On macOS, install them with `brew install python@3.14 node`; on
+Windows, install Python with `choco install python314` and install Node 24 from
+<https://nodejs.org> (Chocolatey and winget may not carry Node 24). On Linux,
+use `uv` and `nvm` as already documented. Docker is optional:
+`docker compose up -d mongo redis` is not needed because demo mode runs fully
+in memory.
+
 ### Install the desktop app
 
 For published builds, open the repository's GitHub Releases page and download
@@ -111,10 +145,22 @@ of bundling or spawning Python itself. Start the backend first, or set
 `BLOOM_BACKEND_URL` to the backend origin before launching the app when it is not
 available at `http://127.0.0.1:8000`.
 
-To build an installer locally from this checkout:
+To build an installer locally from this checkout (`npm run package` targets the
+current OS; use `package:mac`, `package:win` or `package:linux` for an explicit
+target):
+
+**macOS/Linux**
 
 ```sh
 cd frontend
+npm install
+npm run package
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Set-Location frontend
 npm install
 npm run package
 ```
@@ -145,10 +191,22 @@ See the [frontend wireframe implementation](docs/product/frontend_wireframe_impl
 
 ## Backend
 
+**macOS/Linux**
+
 ```sh
 cd backend
 python3.14 -m venv .venv
 source .venv/bin/activate
+python -m pip install -e .
+fastapi dev app/main.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Set-Location backend
+py -3.14 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e .
 fastapi dev app/main.py
 ```
@@ -172,10 +230,21 @@ from the repository root.
 
 Python 3.14 is the CI version. All dependencies install inside this branch's venv:
 
+**macOS/Linux**
+
 ```sh
 python3.14 -m venv backend/venv
 backend/venv/bin/python -m pip install -e './backend[dev,ai,vision]'
 backend/venv/bin/python backend/scripts/demo_feature_seven.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+py -3.14 -m venv backend\venv
+.\backend\venv\Scripts\Activate.ps1
+python -m pip install -e "./backend[dev,ai,vision]"
+python backend/scripts/demo_feature_seven.py
 ```
 
 The final command calls the actual FastAPI demo endpoint in process and prints a
@@ -185,21 +254,48 @@ the judge demo itself needs only the backend and development dependencies.
 
 To show the HTTP API, start a local server:
 
+**macOS/Linux**
+
 ```sh
 APP_ENV=demo PROVIDER_MODE=mock backend/venv/bin/uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+$env:APP_ENV = "demo"
+$env:PROVIDER_MODE = "mock"
+python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
 In a second terminal, from the same worktree root:
+
+**macOS/Linux**
 
 ```sh
 curl --fail --silent http://127.0.0.1:8000/health
 backend/venv/bin/python backend/scripts/demo_feature_seven.py --url http://127.0.0.1:8000
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+curl.exe --fail --silent http://127.0.0.1:8000/health
+python backend/scripts/demo_feature_seven.py --url http://127.0.0.1:8000
+```
+
 The full response is also available directly:
+
+**macOS/Linux**
 
 ```sh
 curl --fail --silent -X POST http://127.0.0.1:8000/api/v1/demo/runs -H 'Content-Type: application/json' -d '{}' | backend/venv/bin/python -m json.tool
+```
+
+**Windows (PowerShell)**
+
+```powershell
+curl.exe --fail --silent -X POST http://127.0.0.1:8000/api/v1/demo/runs -H 'Content-Type: application/json' -d '{}' | python -m json.tool
 ```
 
 Swagger: <http://127.0.0.1:8000/docs>. `GET /health` reports process liveness only;
@@ -223,6 +319,8 @@ Prepare the server and second terminal before starting the timer.
 
 ### Verify the branch
 
+**macOS/Linux**
+
 ```sh
 backend/venv/bin/python -m pytest backend/tests -q
 backend/venv/bin/python -m ruff check backend/app backend/tests backend/scripts
@@ -232,6 +330,19 @@ backend/venv/bin/python backend/scripts/generate_demo_contracts.py --check
 backend/venv/bin/python backend/scripts/generate_learning_contracts.py --check
 backend/venv/bin/python backend/scripts/generate_openapi_contract.py --check
 backend/venv/bin/python -m pip check
+```
+
+**Windows (PowerShell)**
+
+```powershell
+python -m pytest backend/tests -q
+python -m ruff check backend/app backend/tests backend/scripts
+python -m ruff format --check backend/app backend/tests backend/scripts
+python -m mypy --follow-imports=silent --ignore-missing-imports backend/app
+python backend/scripts/generate_demo_contracts.py --check
+python backend/scripts/generate_learning_contracts.py --check
+python backend/scripts/generate_openapi_contract.py --check
+python -m pip check
 ```
 
 CI on this branch is configured for pushes to `feature/backend-demo-health-metrics`

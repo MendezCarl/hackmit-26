@@ -3,10 +3,22 @@
 The Electron renderer talks to the local FastAPI service through the
 main-process IPC bridge. Start the backend first:
 
+**macOS/Linux**
+
 ```sh
 cd backend
 source .venv/bin/activate
 APP_ENV=demo fastapi dev app/main.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Set-Location backend
+py -3.14 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+$env:APP_ENV = "demo"
+fastapi dev app/main.py
 ```
 
 In another terminal:
@@ -24,10 +36,21 @@ Bloom's optional Zoom cue detects desktop process names locally; it does not
 use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is
 only a reminder to open Bloom and remains independent of Zoom's meeting data.
 
-Build a local installer with:
+Build a local installer for the current OS with `npm run package`, or target a
+platform explicitly:
 
 ```sh
-npm run package
+npm run package:mac    # unsigned universal dmg + zip
+npm run package:win    # NSIS installer + zip
+npm run package:linux  # AppImage + deb
+```
+
+On Windows, if `npm run package:win` prompts for or fails on code signing,
+disable identity discovery before building:
+
+```powershell
+$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+npm run package:win
 ```
 
 The repository release workflow builds platform installers on version tags and
