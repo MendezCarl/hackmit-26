@@ -52,5 +52,8 @@
       "icon": "build/icons",
       "category": "Education"
     }
+  },
+  "dependencies": {
+    "onnxruntime-web": "^1.29.0"
   }
 }
