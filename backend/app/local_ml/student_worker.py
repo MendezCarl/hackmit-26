@@ -6,6 +6,8 @@ as JSON lines. Send them to the backend with ``scripts/post_student_signals.py``
 """
 
 import argparse
+import json
+import sys
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -42,7 +44,8 @@ def run_capture(
     clock_offset_ms: int,
     emit: Callable[[StudentSignal], None],
     monotonic: Callable[[], float] = time.monotonic,
-) -> None:
+    max_duration_ms: int | None = None,
+) -> int:
     """Feed camera frames to the worker until the source ends, is lost, or is interrupted.
 
     Args:
@@ -51,6 +54,10 @@ def run_capture(
         clock_offset_ms: Session-relative lecture time when the worker starts.
         emit: Callback for each finished derived signal.
         monotonic: Clock injected for tests.
+        max_duration_ms: Optional run length; the loop ends cleanly after it.
+
+    Returns:
+        Elapsed run length in milliseconds.
 
     Side effects:
         Loss of the camera calls ``worker.unavailable()`` and emits nothing further,
@@ -63,14 +70,42 @@ def run_capture(
             valid, frame = source.read()
             if not valid:
                 worker.unavailable()
-                return
-            last_ms = clock_offset_ms + int((monotonic() - origin) * 1000)
+                return int((monotonic() - origin) * 1000)
+            elapsed_ms = int((monotonic() - origin) * 1000)
+            if max_duration_ms is not None and elapsed_ms >= max_duration_ms:
+                break
+            last_ms = clock_offset_ms + elapsed_ms
             for signal in worker.observe(cast(Frame, frame), last_ms):
                 emit(signal)
     except KeyboardInterrupt:
         pass
     for signal in worker.flush(last_ms):
         emit(signal)
+    return last_ms - clock_offset_ms
+
+
+def summarize_run(signals: list[StudentSignal], elapsed_ms: int) -> dict[str, object]:
+    """Count signals per label and per minute for a smoke test.
+
+    If the person did none of the behaviours during the run, every count is a false
+    alarm, so ``per_minute`` is then the false-alarm rate for that label.
+
+    Args:
+        signals: Signals emitted during the run.
+        elapsed_ms: Run length in milliseconds.
+
+    Returns:
+        Run length, counts per label, and events per minute per label.
+    """
+    minutes = max(elapsed_ms, 1) / 60_000
+    counts: dict[str, int] = {}
+    for signal in signals:
+        counts[signal.event_type] = counts.get(signal.event_type, 0) + 1
+    return {
+        "seconds": round(elapsed_ms / 1000, 1),
+        "signal_counts": counts,
+        "per_minute": {label: round(count / minutes, 2) for label, count in counts.items()},
+    }
 
 
 def main() -> int:
@@ -86,6 +121,11 @@ def main() -> int:
         required=True,
         help="Current session-relative time at worker start",
     )
+    parser.add_argument(
+        "--max-seconds",
+        type=float,
+        help="Stop after this many seconds and print a per-label summary to stderr.",
+    )
     arguments = parser.parse_args()
     if not 0 <= arguments.clock_offset_ms <= MAXIMUM_CLOCK_OFFSET_MS:
         parser.error("Clock offset must be within the eight-hour session clock.")
@@ -95,13 +135,22 @@ def main() -> int:
     capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    emitted: list[StudentSignal] = []
+
+    def emit(signal: StudentSignal) -> None:
+        emitted.append(signal)
+        print(signal.model_dump_json(), flush=True)
+
     try:
-        run_capture(
+        elapsed_ms = run_capture(
             capture,
             worker,
             arguments.clock_offset_ms,
-            lambda signal: print(signal.model_dump_json(), flush=True),
+            emit,
+            max_duration_ms=None if arguments.max_seconds is None else int(arguments.max_seconds * 1000),
         )
+        if arguments.max_seconds is not None:
+            print(json.dumps(summarize_run(emitted, elapsed_ms)), file=sys.stderr)
         return 0
     finally:
         worker.unavailable()

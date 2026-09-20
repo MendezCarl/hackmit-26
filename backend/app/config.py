@@ -18,6 +18,7 @@ LIVE_PROVIDER_MODE = "live"
 KNOWN_PROVIDER_MODES = (MOCK_PROVIDER_MODE, LIVE_PROVIDER_MODE)
 
 DEFAULT_DEMO_SECRET = "dev-only-secret-change-me-before-production"
+DEMO_HEAD_AWAY_WINDOW_MS = 5_000  # Demo clips are a few seconds long; production keeps 30 s.
 
 
 class Settings(BaseModel):
@@ -75,6 +76,15 @@ class Settings(BaseModel):
         ),
         ge=0,
     )
+    min_head_away_window_ms: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Optional shorter minimum duration for head_away events. When unset, "
+            "min_missed_window_ms applies. Phone visibility never qualifies alone, "
+            "and absence signals always use min_missed_window_ms."
+        ),
+    )
     phone_support_confidence: float = Field(default=0.5, ge=0, le=1)
     phone_looking_down_ms: int = Field(default=20_000, ge=1)
     phone_unfocused_absent_ms: int = Field(default=15_000, ge=1)
@@ -104,6 +114,28 @@ class Settings(BaseModel):
         return self.app_env in (DEMO_ENV, TEST_ENV)
 
 
+def _optional_positive_int(name: str) -> int | None:
+    """Read an optional positive integer environment variable.
+
+    Args:
+        name: Environment variable name.
+
+    Returns:
+        The parsed integer, or None when the variable is unset or empty.
+
+    Raises:
+        ValueError: When the value is not a positive integer.
+    """
+
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return None
+    value = int(raw)
+    if value < 1:
+        raise ValueError(f"{name} must be a positive integer.")
+    return value
+
+
 def _settings_from_environment() -> Settings:
     """Build settings from environment variables with compatibility checks.
 
@@ -122,7 +154,10 @@ def _settings_from_environment() -> Settings:
         jwt_algorithm=os.environ.get("JWT_ALGORITHM", "HS256"),
         openai_api_key=os.environ.get("OPENAI_API_KEY"),
         openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        min_head_away_window_ms=_optional_positive_int("MIN_HEAD_AWAY_WINDOW_MS"),
     )
+    if settings.app_env == DEMO_ENV and settings.min_head_away_window_ms is None:
+        settings.min_head_away_window_ms = DEMO_HEAD_AWAY_WINDOW_MS
     if settings.app_env not in KNOWN_ENVIRONMENTS:
         raise ValueError(f"Unknown APP_ENV: {settings.app_env}")
     if settings.provider_mode not in KNOWN_PROVIDER_MODES:

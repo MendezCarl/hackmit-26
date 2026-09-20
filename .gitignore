@@ -30,3 +30,6 @@ venv/
 data/local/
 models/
 *.onnx
+
+# Throwaway export environments
+.venv-*/

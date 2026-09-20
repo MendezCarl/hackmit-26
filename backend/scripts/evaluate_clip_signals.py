@@ -18,7 +18,7 @@ import numpy as np
 
 from app.local_ml.student_signals import OnnxStudentAnalyzer
 
-PHONE_SCORE_THRESHOLD = 0.5
+PHONE_SCORE_THRESHOLD = 0.4
 PERSON_SCORE_THRESHOLD = 0.5
 HEAD_TURN_YAW_THRESHOLD = 0.7  # Landmark yaw proxy; frontal is near 0, side view above 1.
 SAMPLE_STRIDE_FRAMES = 6  # About 4 samples per second at 24 fps.

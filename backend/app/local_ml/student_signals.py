@@ -8,7 +8,9 @@ persistence, telemetry or networking happens here.
 """
 
 import hashlib
+import statistics
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
@@ -72,8 +74,9 @@ class StudentFrameAnalyzer(Protocol):
 class StudentSignalPolicy(StrictPayload):
     """Configurable heuristics. The phone threshold was chosen on a small evaluation.
 
-    ``phone_threshold`` keeps the false-positive rate under 1% on about 1,900 frames of
-    class recordings, at the cost of low recall for small or low-held phones.
+    ``phone_threshold`` keeps the false-positive rate under 1% (0.7%) on about 1,900 frames
+    of class recordings, counting a phone only while a person is in frame, at the cost of
+    low recall for small or low-held phones.
     ``head_turn_yaw`` was chosen after inspecting three short clips and needs a larger,
     independent evaluation before it is trusted.
     """
@@ -82,8 +85,32 @@ class StudentSignalPolicy(StrictPayload):
     minimum_duration_ms: int = Field(default=1000, ge=100, le=60_000)
     maximum_sample_gap_ms: int = Field(default=2000, ge=100, le=10_000)
     person_threshold: float = Field(default=0.5, ge=0, le=1)
-    phone_threshold: float = Field(default=0.5, ge=0, le=1)
+    phone_threshold: float = Field(default=0.4, ge=0, le=1)
     head_turn_yaw: float = Field(default=0.7, gt=0, le=3)
+    merge_gap_ms: int = Field(
+        default=1000,
+        ge=0,
+        le=10_000,
+        description="A condition that resumes within this gap continues the same interval.",
+    )
+    baseline_window_samples: int = Field(
+        default=180,
+        ge=6,
+        le=1000,
+        description="Recent face-found samples (about a minute) used for the head-angle baseline.",
+    )
+    baseline_min_samples: int = Field(
+        default=3,
+        ge=3,
+        le=100,
+        description="Face-found samples (about a second) needed before head_away is judged.",
+    )
+    baseline_reset_ms: int = Field(
+        default=60_000,
+        ge=5_000,
+        le=600_000,
+        description="A turn lasting longer than this is taken as a new seating position.",
+    )
     detector_version: str = "local-student-v1"
 
 
@@ -292,53 +319,148 @@ class OnnxStudentAnalyzer:
         return FrameObservation(person_score, phone_score, face_score, yaw)
 
 
+@dataclass
+class _Candidate:
+    """A running condition. ``gap_start_ms`` is the first sample that stopped matching."""
+
+    begin_ms: int
+    count: int
+    total: float
+    gap_start_ms: int | None = None
+
+
 class StudentSignalWorker:
-    """One frame at a time; unavailable sources clear candidates without false events."""
+    """One frame at a time; unavailable sources clear candidates without false events.
+
+    Three rules make the raw per-frame flags steadier:
+
+    - **Merging:** a condition that stops for less than ``merge_gap_ms`` and then resumes is
+      one interval, so a brief detector dropout does not split an event.
+    - **Head-angle baseline:** ``head_away`` measures the turn away from this person's own
+      median yaw, so someone who sits at an angle is not flagged. It is judged only once
+      ``baseline_min_samples`` face-found frames exist. Turned frames never feed the
+      baseline, so a long turn keeps being reported; a turn longer than
+      ``baseline_reset_ms`` is taken as a new seating position and re-baselined. The first
+      frames define "normal", so someone already turned away at the start is not flagged.
+    - **Corroboration:** ``phone_visible`` counts only while a person is in frame, since a
+      phone has to be held by someone. This removes phone detections on screens or objects
+      with nobody present.
+    """
 
     def __init__(self, analyzer: StudentFrameAnalyzer, policy: StudentSignalPolicy) -> None:
         """Inject a local analyzer; no camera is opened."""
         self.analyzer = analyzer
         self.policy = policy
-        self.active: dict[StudentSignalLabel, tuple[int, int, float]] = {}
+        self.active: dict[StudentSignalLabel, _Candidate] = {}
+        self.yaw_history: deque[float] = deque(maxlen=policy.baseline_window_samples)
+        self.turn_since_ms: int | None = None
         self.previous_ms: int | None = None
         self.last_latency_ms = 0
         self.is_available = True
 
     def unavailable(self) -> None:
-        """Discard incomplete candidates after camera loss; nothing is emitted."""
+        """Discard incomplete candidates and the baseline after camera loss; emit nothing."""
         self.active.clear()
+        self.yaw_history.clear()
+        self.turn_since_ms = None
         self.previous_ms = None
         self.is_available = False
 
-    def _flags(self, observation: FrameObservation) -> dict[StudentSignalLabel, tuple[bool, float]]:
+    def _yaw_baseline(self) -> float | None:
+        """Median yaw for this person, or None until enough face-found samples exist."""
+        if len(self.yaw_history) < self.policy.baseline_min_samples:
+            return None
+        return float(statistics.median(self.yaw_history))
+
+    def _update_baseline(self, yaw: float | None, is_turned: bool, now_ms: int) -> None:
+        """Feed the baseline, skipping turned frames once it exists; re-baseline on long turns."""
+        established = len(self.yaw_history) >= self.policy.baseline_min_samples
+        if yaw is not None and not (is_turned and established):
+            self.yaw_history.append(yaw)
+        if not is_turned:
+            self.turn_since_ms = None
+        elif self.turn_since_ms is None:
+            self.turn_since_ms = now_ms
+        elif now_ms - self.turn_since_ms > self.policy.baseline_reset_ms:
+            self.yaw_history.clear()
+            self.turn_since_ms = None
+
+    def _flags(
+        self, observation: FrameObservation, baseline: float | None
+    ) -> dict[StudentSignalLabel, tuple[bool, float]]:
         """Map one observation to (is_positive, confidence contribution) per label."""
         policy = self.policy
         is_person = observation.person_score >= policy.person_threshold
         has_face = observation.face_yaw is not None
+        is_turned = (
+            has_face
+            and baseline is not None
+            and abs((observation.face_yaw or 0.0) - baseline) > policy.head_turn_yaw
+        )
         return {
             "student_left_frame": (not is_person, PLACEHOLDER_CONFIDENCE),
             "face_absent": (is_person and not has_face, PLACEHOLDER_CONFIDENCE),
-            "head_away": (
-                has_face and abs(observation.face_yaw or 0.0) > policy.head_turn_yaw,
-                observation.face_score,
+            "head_away": (is_turned, observation.face_score),
+            "phone_visible": (
+                is_person and observation.phone_score >= policy.phone_threshold,
+                observation.phone_score,
             ),
-            "phone_visible": (observation.phone_score >= policy.phone_threshold, observation.phone_score),
         }
 
     def _close(
-        self, label: StudentSignalLabel, begin_ms: int, count: int, total: float, end_ms: int
+        self, label: StudentSignalLabel, candidate: _Candidate, end_ms: int
     ) -> StudentSignal | None:
         """Build a signal for a finished candidate, or None when it was too short."""
-        if end_ms - begin_ms < self.policy.minimum_duration_ms or count == 0:
+        if end_ms - candidate.begin_ms < self.policy.minimum_duration_ms or candidate.count == 0:
             return None
         return StudentSignal(
             event_id=f"student_{uuid4().hex}",
             event_type=label,
-            start_ms=begin_ms,
+            start_ms=candidate.begin_ms,
             end_ms=end_ms,
             signals=[label],
-            confidence=min(1.0, max(0.0, total / count)),
+            confidence=min(1.0, max(0.0, candidate.total / candidate.count)),
         )
+
+    def _advance(
+        self, label: StudentSignalLabel, is_positive: bool, contribution: float, now_ms: int
+    ) -> StudentSignal | None:
+        """Update one label's candidate for this sample; return a signal if one finished."""
+        candidate = self.active.get(label)
+        if is_positive:
+            if candidate is None:
+                self.active[label] = _Candidate(now_ms, 1, contribution)
+                return None
+            if candidate.gap_start_ms is not None and (
+                now_ms - candidate.gap_start_ms >= self.policy.merge_gap_ms
+            ):
+                # The pause was too long to bridge: finish the old interval, start a new one.
+                finished = self._close(label, candidate, candidate.gap_start_ms)
+                self.active[label] = _Candidate(now_ms, 1, contribution)
+                return finished
+            candidate.count += 1
+            candidate.total += contribution
+            candidate.gap_start_ms = None
+            return None
+        if candidate is None:
+            return None
+        if candidate.gap_start_ms is None:
+            candidate.gap_start_ms = now_ms
+        if now_ms - candidate.gap_start_ms >= self.policy.merge_gap_ms:
+            del self.active[label]
+            return self._close(label, candidate, candidate.gap_start_ms)
+        return None
+
+    def _finish_ended(self) -> list[StudentSignal]:
+        """Close candidates that had already stopped matching; drop those still running."""
+        finished = []
+        for label, candidate in self.active.items():
+            if candidate.gap_start_ms is not None:
+                signal = self._close(label, candidate, candidate.gap_start_ms)
+                if signal is not None:
+                    finished.append(signal)
+        self.active.clear()
+        return finished
 
     def observe(self, frame: Frame, lecture_time_ms: int) -> list[StudentSignal]:
         """Consume and erase an owned BGR frame; emit closed, sustained intervals only.
@@ -365,23 +487,20 @@ class StudentSignalWorker:
                 and lecture_time_ms - self.previous_ms < self.policy.sampling_ms
             ):
                 return []
+            events: list[StudentSignal] = []
             if (
                 self.previous_ms is not None
                 and lecture_time_ms - self.previous_ms > self.policy.maximum_sample_gap_ms
             ):
-                self.active.clear()
+                events += self._finish_ended()
             self.previous_ms = lecture_time_ms
-            flags = self._flags(self.analyzer.analyze(frame))
-            events: list[StudentSignal] = []
+            observation = self.analyzer.analyze(frame)
+            flags = self._flags(observation, self._yaw_baseline())
+            self._update_baseline(observation.face_yaw, flags["head_away"][0], lecture_time_ms)
             for label, (is_positive, contribution) in flags.items():
-                if is_positive:
-                    begin, count, total = self.active.get(label, (lecture_time_ms, 0, 0.0))
-                    self.active[label] = (begin, count + 1, total + contribution)
-                elif label in self.active:
-                    begin, count, total = self.active.pop(label)
-                    signal = self._close(label, begin, count, total, lecture_time_ms)
-                    if signal is not None:
-                        events.append(signal)
+                signal = self._advance(label, is_positive, contribution, lecture_time_ms)
+                if signal is not None:
+                    events.append(signal)
             self.is_available = True
             return events
         except Exception:
@@ -394,8 +513,9 @@ class StudentSignalWorker:
     def flush(self, lecture_time_ms: int) -> list[StudentSignal]:
         """Close conditions still open when observation stops, e.g. at end of lecture."""
         events = []
-        for label, (begin, count, total) in self.active.items():
-            signal = self._close(label, begin, count, total, lecture_time_ms)
+        for label, candidate in self.active.items():
+            end_ms = candidate.gap_start_ms if candidate.gap_start_ms is not None else lecture_time_ms
+            signal = self._close(label, candidate, end_ms)
             if signal is not None:
                 events.append(signal)
         self.active.clear()

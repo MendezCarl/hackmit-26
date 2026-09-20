@@ -22,7 +22,14 @@ from scripts.evaluate_clip_signals import load_analyzer
 
 CLIP_STRIDE_FRAMES = 6
 LONG_VIDEO_SAMPLE_SECONDS = 60
+PERSON_THRESHOLD = 0.5  # Matches the worker: a phone counts only while a person is in frame.
 THRESHOLD_GRID = [round(value, 2) for value in np.arange(0.10, 0.81, 0.05)]
+
+
+def gated_phone_score(extractor: OnnxStudentAnalyzer, frame) -> float:
+    """Phone score, or zero when no person is in frame (the worker's corroboration rule)."""
+    person_score, phone_score = extractor.person_and_phone(frame)
+    return phone_score if person_score >= PERSON_THRESHOLD else 0.0
 
 
 def clip_phone_scores(extractor: OnnxStudentAnalyzer, path: Path) -> list[float]:
@@ -33,7 +40,7 @@ def clip_phone_scores(extractor: OnnxStudentAnalyzer, path: Path) -> list[float]
         if index % CLIP_STRIDE_FRAMES == 0:
             valid, frame = capture.retrieve()
             if valid:
-                scores.append(extractor.person_and_phone(frame)[1])
+                scores.append(gated_phone_score(extractor, frame))
                 frame.fill(0)
         index += 1
     capture.release()
@@ -50,7 +57,7 @@ def sparse_phone_scores(extractor: OnnxStudentAnalyzer, path: Path) -> list[floa
         capture.set(cv2.CAP_PROP_POS_MSEC, float(second) * 1000)
         valid, frame = capture.read()
         if valid:
-            scores.append(extractor.person_and_phone(frame)[1])
+            scores.append(gated_phone_score(extractor, frame))
             frame.fill(0)
     capture.release()
     return scores
