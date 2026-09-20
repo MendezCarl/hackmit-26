@@ -133,7 +133,9 @@ classroom detector. Model output grounding still needs semantic quality evaluati
 
 ## Final local review checks
 
-- Integrated host: 109 tests (56 retained baseline tests and 53 new checks).
+- Integrated host before branch consolidation: 109 tests (56 retained baseline
+  tests and 53 new checks). After merging the feature histories and their 13
+  independent feature checks: **122 tests passed**.
 - Isolated feature branches: 57 tests each (56 baseline + focused feature check);
   local vision: 62 tests (56 baseline + six synthetic vision checks).
 - Integrated Ruff lint and format checks, Mypy across 68 application source files,
@@ -151,3 +153,26 @@ feature-owned changes and installation configuration. Their focused lint/type
 checks cover the new feature and shared interfaces; full host formatting/type
 cleanup is owned and verified in the integration branch. Existing tests are not
 removed or skipped to make the new features pass.
+
+## Publication record
+
+The user authorized commits and pushes after reviewing the implementation. All
+nine branches share contract commit `f8581ed`. Feature implementation commits:
+
+| Branch | Commit |
+|---|---|
+| `feature/backend-professor-metrics` | `665a21d` |
+| `feature/backend-delivery-quality` | `8e53bc6` |
+| `feature/local-lecture-vision` | `2cc1c30` |
+| `feature/backend-recovery-cards` | `1572602` |
+| `feature/backend-openai-recovery` | `ed259de` |
+| `feature/backend-ai-read-tools` | `738e05b` |
+| `feature/backend-professor-recommendations` | `8a9a021` |
+| `feature/backend-recovery-export` | `45de56c` |
+
+The integration branch contains composition commit `35a350d` and merge commit
+`942794c`, which incorporates all eight feature histories without conflicts.
+After that merge, 122 tests, Ruff lint/format, Mypy, both contract checks and the
+synthetic demo passed. Publishing the branches does not change `backend`, `dev`
+or `main`. The original dirty checkout is preserved. Remote CI is separate from
+these local results; the workflow runs on pull requests and pushes to dev/main.
