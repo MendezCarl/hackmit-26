@@ -1,30 +1,86 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-test('BackendClient completes the synthetic lecture recovery flow', { skip: !process.env.BLOOM_BACKEND_URL }, async () => {
-  const { BackendClient } = await import('../../dist/main/backend_client.js');
-  const unique = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const professor = new BackendClient(process.env.BLOOM_BACKEND_URL);
-  const professorSession = await professor.register({ display_name: 'Synthetic Professor', email: `professor-${unique}@example.edu`, password: 'password-123', role: 'professor' });
-  const course = await professor.createCourse({ code: `BIO-${unique.slice(-6)}`, title: 'Synthetic Biology' });
-  const lecture = await professor.createLecture({ course_id: course.course_id, title: 'Synthetic lecture' });
-  const session = await professor.createSession({ course_id: course.course_id, lecture_id: lecture.lecture_id, title: lecture.title, mode: 'in_person' });
-  const student = new BackendClient(process.env.BLOOM_BACKEND_URL);
-  await student.register({ display_name: 'Synthetic Student', email: `student-${unique}@example.edu`, password: 'password-123', role: 'student' });
-  const participant = await student.joinSession(session.session_id);
-  assert.equal(participant.session_id, session.session_id);
-  await student.updateAggregationConsent(session.session_id, { is_allowed: true });
-  const event = { event_id: crypto.randomUUID(), session_id: session.session_id, event_type: 'possible_missed_window', start_ms: 0, end_ms: 30000, confidence: 1, signals: ['self_report'], user_confirmed: true };
-  await student.ingestEvents(session.session_id, { lecture_id: lecture.lecture_id, events: [event] });
-  const chunk = { chunk_id: crypto.randomUUID(), session_id: session.session_id, start_ms: 0, end_ms: 30000, text: 'Synthetic lecture context.', source: 'local_transcription', is_final: true, revision: 1, speaker_label: 'Professor' };
-  await student.ingestTranscript(session.session_id, { lecture_id: lecture.lecture_id, chunks: [chunk] });
-  const job = await student.requestRecoveryCard(session.session_id, { start_ms: 0, end_ms: 30000, source_event_ids: [event.event_id] }, event.event_id);
-  assert.equal(job.status, 'completed');
-  assert.ok(job.card_id);
-  const card = await student.readRecoveryCard(session.session_id, job.card_id);
-  assert.ok(card.key_facts.length);
-  await professor.endSession(session.session_id);
-  const summary = await professor.readProfessorSummary(session.session_id);
-  assert.equal(summary.is_suppressed, true);
-  assert.equal(professorSession.user.role, 'professor');
-});
+test(
+  'BackendClient completes the synthetic lecture recovery flow',
+  { skip: !process.env.BLOOM_BACKEND_URL },
+  async () => {
+    const { BackendClient } = await import('../../dist/main/backend_client.js');
+    const unique = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const professor = new BackendClient(process.env.BLOOM_BACKEND_URL);
+    const professorSession = await professor.register({
+      display_name: 'Synthetic Professor',
+      email: `professor-${unique}@example.edu`,
+      password: 'password-123',
+      role: 'professor',
+    });
+    const course = await professor.createCourse({
+      code: `BIO-${unique.slice(-6)}`,
+      title: 'Synthetic Biology',
+    });
+    const lecture = await professor.createLecture({
+      course_id: course.course_id,
+      title: 'Synthetic lecture',
+    });
+    const session = await professor.createSession({
+      course_id: course.course_id,
+      lecture_id: lecture.lecture_id,
+      title: lecture.title,
+      mode: 'in_person',
+    });
+    const student = new BackendClient(process.env.BLOOM_BACKEND_URL);
+    await student.register({
+      display_name: 'Synthetic Student',
+      email: `student-${unique}@example.edu`,
+      password: 'password-123',
+      role: 'student',
+    });
+    const participant = await student.joinSession(session.session_id);
+    assert.equal(participant.session_id, session.session_id);
+    await student.updateAggregationConsent(session.session_id, { is_allowed: true });
+    const event = {
+      event_id: crypto.randomUUID(),
+      session_id: session.session_id,
+      event_type: 'possible_missed_window',
+      start_ms: 0,
+      end_ms: 30000,
+      confidence: 1,
+      signals: ['self_report'],
+      user_confirmed: true,
+    };
+    await student.ingestEvents(session.session_id, {
+      lecture_id: lecture.lecture_id,
+      events: [event],
+    });
+    const chunk = {
+      chunk_id: crypto.randomUUID(),
+      session_id: session.session_id,
+      start_ms: 0,
+      end_ms: 30000,
+      text: 'Synthetic lecture context.',
+      source: 'local_transcription',
+      is_final: true,
+      revision: 1,
+      speaker_label: 'Professor',
+    };
+    await student.ingestTranscript(session.session_id, {
+      lecture_id: lecture.lecture_id,
+      chunks: [chunk],
+    });
+    const job = await student.requestRecoveryCard(
+      session.session_id,
+      { start_ms: 0, end_ms: 30000, source_event_ids: [event.event_id] },
+      event.event_id,
+    );
+    assert.equal(job.status, 'completed');
+    assert.ok(job.card_id);
+    const card = await student.readRecoveryCard(session.session_id, job.card_id);
+    assert.ok(card.key_facts.length);
+    await professor.endSession(session.session_id);
+    const metrics = await professor.readProfessorMetrics(session.session_id);
+    assert.ok(['suppressed', 'insufficient_evidence'].includes(metrics.status));
+    const summary = await professor.readProfessorSummary(session.session_id);
+    assert.equal(summary.is_suppressed, true);
+    assert.equal(professorSession.user.role, 'professor');
+  },
+);

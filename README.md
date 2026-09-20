@@ -28,7 +28,7 @@ See the [local object detection architecture](docs/architecture/local_object_det
 ```sh
 cd backend
 source .venv/bin/activate
-fastapi dev app/main.py
+APP_ENV=demo fastapi dev app/main.py
 ```
 
 In a second terminal:
@@ -41,8 +41,12 @@ npm run dev
 
 The Electron renderer expects the backend at `http://127.0.0.1:8000` and
 falls back to visibly labeled `Demo mode · synthetic data` fixtures when it is
-offline. Live OpenAI recovery requires `PROVIDER_MODE=live` and
-`OPENAI_API_KEY`; normal development uses synthetic behavior.
+offline. Use `APP_ENV=demo` (or `APP_ENV=test`) for local development so
+educator reports use the synthetic aggregation policy. In the default
+environment, the metrics endpoint requires `LUMINA_METRICS_POLICY_JSON` with
+`is_approved: true`, and the summary endpoint is disabled by design. Live
+OpenAI recovery requires `PROVIDER_MODE=live` and `OPENAI_API_KEY`; normal
+development uses synthetic behavior.
 
 The current prototype follows the documented process and feature boundaries without adding a UI framework dependency:
 
