@@ -204,10 +204,10 @@ const bindStudentActions = (): void => {
   const joinForm = document.querySelector<HTMLFormElement>('[data-join-session-form]');
   joinForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const sessionId = String(new FormData(joinForm).get('session_id') ?? '').trim();
+    const joinCode = String(new FormData(joinForm).get('join_code') ?? '').trim();
     const message = joinForm.querySelector<HTMLElement>('[data-join-message]');
     try {
-      await joinLectureSession(sessionId);
+      await joinLectureSession(joinCode);
       renderApplication();
     } catch (error) {
       if (message) message.textContent = formErrorMessage(error);
@@ -312,10 +312,12 @@ const bindEducatorActions = (): void => {
     event.preventDefault();
     const values = readFormValues(courseForm);
     try {
-      const course = await window.backend.createCourse({
-        code: String(values.code),
+      const request: CreateCourseRequest = {
         title: String(values.title),
-      });
+      };
+      const code = String(values.code).trim();
+      if (code) request.code = code;
+      const course = await window.backend.createCourse(request);
       setBackendCourses([...getBackendSessionState().courses, course]);
       renderApplication();
     } catch (error) {

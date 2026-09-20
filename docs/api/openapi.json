@@ -292,10 +292,18 @@
         "description": "Request creating a course.",
         "properties": {
           "code": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional course catalog code; generated when omitted.",
+            "title": "Code"
           },
           "title": {
             "maxLength": 256,
@@ -305,8 +313,7 @@
           }
         },
         "required": [
-          "title",
-          "code"
+          "title"
         ],
         "title": "CreateCourseRequest",
         "type": "object"
@@ -1298,6 +1305,12 @@
             ],
             "description": "UTC ISO 8601 end time.",
             "title": "Ended At"
+          },
+          "join_code": {
+            "default": "",
+            "description": "Short human-typeable code students enter to join.",
+            "title": "Join Code",
+            "type": "string"
           },
           "lecture_id": {
             "description": "Identifier of the underlying lecture record.",
@@ -3350,6 +3363,49 @@
           }
         },
         "summary": "Create a lecture session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/by-join-code/{join_code}": {
+      "get": {
+        "description": "Resolve a student-entered code to an active lecture session.\n\nAuthentication is required, but the lookup is not restricted to session\nmembership. Whitespace and lowercase input are normalized. Unknown codes\nand codes for inactive sessions return a not-found error.",
+        "operationId": "resolve_join_code_api_v1_sessions_by_join_code__join_code__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "join_code",
+            "required": true,
+            "schema": {
+              "title": "Join Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LectureSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve a join code",
         "tags": [
           "sessions"
         ]

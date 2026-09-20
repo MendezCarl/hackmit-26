@@ -21,6 +21,7 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
       StudentDashboardPage({
         isDemo: !isReal,
         user: state?.user ?? null,
+        courses: state?.courses ?? [],
         activeSession: state?.activeSession ?? null,
         joinedSessions: state?.joinedSessions ?? [],
         participantCount: state?.participantCount ?? null,
@@ -31,6 +32,7 @@ export function renderPage(route: AppRoute, state?: BackendSessionState): string
         isDemo: !isReal,
         profileName: state?.user?.display_name,
         session: state?.activeSession ?? null,
+        courses: state?.courses ?? [],
         joinedSessions: state?.joinedSessions ?? [],
         submittedEvents: state?.submittedEvents ?? [],
         recoveryCards: state?.recoveryCards ?? [],

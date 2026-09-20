@@ -14,6 +14,7 @@ export type StudentSummaryModel = {
   isDemo: boolean;
   profileName?: string;
   session: LectureSession | null;
+  courses: Course[];
   joinedSessions: LectureSession[];
   submittedEvents: SignalEvent[];
   recoveryCards: RecoveryCard[];
@@ -24,6 +25,7 @@ export type StudentSummaryModel = {
 const FIXTURE_MODEL: StudentSummaryModel = {
   isDemo: true,
   session: null,
+  courses: [],
   joinedSessions: [],
   submittedEvents: [],
   recoveryCards: [],
@@ -50,6 +52,7 @@ export function StudentSummaryPage(model: StudentSummaryModel = FIXTURE_MODEL): 
     eyebrow: `${ACTIVE_LECTURE.courseCode} · ${ACTIVE_LECTURE.lectureDate}`,
     title: ACTIVE_LECTURE.lectureTitle,
     demoMode: model.isDemo,
+    courses: model.courses,
     joinedSessions: model.joinedSessions,
     content: `
       <div class="summary-meta"><span>${ACTIVE_LECTURE.durationLabel}</span><span>${moments.length} recovery moments</span><span>Processed locally</span></div>
@@ -83,6 +86,7 @@ export function StudentSummaryPage(model: StudentSummaryModel = FIXTURE_MODEL): 
 
 function buildRealStudentSummary(model: StudentSummaryModel): string {
   const session = model.session;
+  const course = model.courses.find((candidate) => candidate.course_id === session?.course_id);
   const moments = session
     ? buildMomentsFromEvents(model.submittedEvents, sessionDurationMs(session))
     : [];
@@ -92,9 +96,10 @@ function buildRealStudentSummary(model: StudentSummaryModel): string {
     route: 'student-summary',
     role: 'student',
     profileName: model.profileName,
-    eyebrow: session ? `Session ${session.course_id}` : 'Student summary',
+    eyebrow: course?.code ?? session?.title ?? 'Student summary',
     title: session?.title ?? 'Lecture summary',
     demoMode: false,
+    courses: model.courses,
     joinedSessions: model.joinedSessions,
     content: `
       ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}

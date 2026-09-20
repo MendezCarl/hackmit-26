@@ -28,11 +28,26 @@ const FIXTURE_MODEL: LectureLibraryModel = {
  * @returns Lecture library markup populated with synthetic lecture fixtures.
  */
 export function LectureLibraryPage(model: LectureLibraryModel = FIXTURE_MODEL): string {
+  const courseById = new Map(model.courses.map((course) => [course.course_id, course]));
   const realLectures = model.lectures
-    .map((lecture) => LectureCard(lecture.title, lecture.course_id, 'Session available', 'ready'))
+    .map((lecture) =>
+      LectureCard(
+        lecture.title,
+        courseById.get(lecture.course_id)?.code ?? 'Course',
+        'Session available',
+        'ready',
+      ),
+    )
     .join('');
   const joined = model.joinedSessions
-    .map((session) => LectureCard(session.title, session.course_id, session.status, 'ready'))
+    .map((session) =>
+      LectureCard(
+        session.title,
+        courseById.get(session.course_id)?.code ?? session.title,
+        session.status,
+        'ready',
+      ),
+    )
     .join('');
   return AppShell({
     route: 'lecture-library',

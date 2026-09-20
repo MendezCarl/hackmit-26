@@ -54,6 +54,7 @@ test('student Zoom sessions show a detector-agnostic recovery cue', async () => 
       owner_id: 'professor-1',
       course_id: 'course-1',
       title: 'Zoom lecture',
+      join_code: 'K7PQ2M',
       mode: 'zoom',
       status: 'active',
       started_at: '2026-01-01T00:00:00.000Z',

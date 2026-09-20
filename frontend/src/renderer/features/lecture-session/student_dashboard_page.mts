@@ -8,6 +8,7 @@ import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs
 export type StudentDashboardModel = {
   isDemo: boolean;
   user: UserProfile | null;
+  courses: Course[];
   activeSession: LectureSession | null;
   joinedSessions: LectureSession[];
   participantCount: number | null;
@@ -17,6 +18,7 @@ export type StudentDashboardModel = {
 const FIXTURE_MODEL: StudentDashboardModel = {
   isDemo: true,
   user: null,
+  courses: [],
   activeSession: null,
   joinedSessions: [],
   participantCount: null,
@@ -98,6 +100,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
     title: session?.title ?? 'Your lecture space',
     demoMode: false,
     profileName: model.user?.display_name ?? '?',
+    courses: model.courses,
     joinedSessions,
     content: `
       ${buildJoinForm()}
@@ -107,7 +110,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
         <article class="feature-card feature-card--primary">
           <span class="status-badge"><i></i>${escapeHtml(session.status)}</span>
           <h2>${escapeHtml(session.title)}</h2>
-          <p>Join code: <strong>${escapeHtml(session.session_id)}</strong></p>
+          <p>Join code: <strong>${escapeHtml(session.join_code)}</strong></p>
           <p data-session-clock>Elapsed time unavailable until the session clock loads.</p>
           <p>${model.participantCount ?? 0} participant(s) joined.</p>
           <button class="primary-button" type="button" data-missed-that>I missed that</button>
@@ -134,7 +137,7 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
                 .map(
                   (joined) => `
           <a class="lecture-row lecture-row--backend" href="${buildRouteHash('student-summary')}">
-            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.session_id)} · ${escapeHtml(joined.status)}</small></span>
+            <span><strong>${escapeHtml(joined.title)}</strong><small>${escapeHtml(joined.join_code)} · ${escapeHtml(joined.status)}</small></span>
             <span aria-hidden="true">→</span>
           </a>`,
                 )
@@ -147,5 +150,5 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
 }
 
 function buildJoinForm(): string {
-  return `<form class="feature-card login-card form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Session ID<input type="text" name="session_id" required placeholder="Paste the join code" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
+  return `<form class="feature-card login-card form-card" data-join-session-form><p class="eyebrow">Join a lecture</p><label>Join code<input type="text" name="join_code" maxlength="6" autocapitalize="characters" required placeholder="e.g. K7PQ2M" /></label><button class="primary-button" type="submit">Join lecture</button><p class="form-message" data-join-message aria-live="polite"></p></form>`;
 }

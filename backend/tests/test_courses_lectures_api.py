@@ -73,6 +73,23 @@ def test_professor_can_create_and_list_courses() -> None:
     assert single.json()["code"] == "CS-6420"
 
 
+def test_professor_can_create_course_without_code() -> None:
+    """Omitted course codes receive a human-typeable generated code."""
+    client = build_test_client()
+    professor_token = register_token(client, "generated-prof@example.com", "professor")
+
+    response = client.post(
+        "/api/v1/courses",
+        json={"title": "Generated Course"},
+        headers=auth_headers(professor_token),
+    )
+
+    assert response.status_code == 201, response.text
+    code = response.json()["code"]
+    assert len(code) == 6
+    assert set(code) <= set("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+
+
 def test_student_cannot_create_courses() -> None:
     """Student accounts must be forbidden from creating courses."""
 

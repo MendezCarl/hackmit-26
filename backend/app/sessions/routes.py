@@ -42,6 +42,26 @@ def create_session(
 
 
 @router.get(
+    "/by-join-code/{join_code}",
+    response_model=LectureSession,
+    summary="Resolve a join code",
+)
+def resolve_join_code(
+    join_code: str,
+    actor: Annotated[AuthenticatedActor, Depends(get_current_actor)],
+    service: Annotated[SessionService, Depends(get_session_service)],
+) -> LectureSession:
+    """Resolve a student-entered code to an active lecture session.
+
+    Authentication is required, but the lookup is not restricted to session
+    membership. Whitespace and lowercase input are normalized. Unknown codes
+    and codes for inactive sessions return a not-found error.
+    """
+
+    return service.resolve_join_code(actor, join_code)
+
+
+@router.get(
     "/{session_id}",
     response_model=LectureSession,
     summary="Retrieve a lecture session",

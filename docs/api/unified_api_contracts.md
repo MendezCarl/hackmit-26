@@ -123,6 +123,7 @@ No privacy-settings endpoint can enable raw webcam or raw system-audio upload be
 | Method | Path | Purpose | Request | Response |
 |---|---|---|---|---|
 | `POST` | `/api/v1/sessions` | Start a lecture session and establish its clock | `CreateSessionRequest` | `LectureSession` |
+| `GET` | `/api/v1/sessions/by-join-code/{join_code}` | Resolve a human-typeable code to an active lecture session | Path parameter | `LectureSession` |
 | `GET` | `/api/v1/sessions/{session_id}` | Read session status and metadata | None | `LectureSession` |
 | `PATCH` | `/api/v1/sessions/{session_id}` | Update allowed session metadata | `UpdateSessionRequest` | `LectureSession` |
 | `POST` | `/api/v1/sessions/{session_id}/end` | End a session idempotently | `EndSessionRequest` | `LectureSession` |

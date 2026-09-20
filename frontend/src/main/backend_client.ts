@@ -105,6 +105,12 @@ export class BackendClient {
   async readSession(sessionId: string): Promise<LectureSession> {
     return this.request('GET', `/api/v1/sessions/${encodeURIComponent(sessionId)}`);
   }
+  async resolveJoinCode(joinCode: string): Promise<LectureSession> {
+    return this.request(
+      'GET',
+      `/api/v1/sessions/by-join-code/${encodeURIComponent(joinCode)}`,
+    );
+  }
   async joinSession(sessionId: string): Promise<ParticipantResponse> {
     return this.request('POST', `/api/v1/sessions/${encodeURIComponent(sessionId)}/participants`);
   }
