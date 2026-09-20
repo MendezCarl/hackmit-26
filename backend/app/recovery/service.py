@@ -293,6 +293,7 @@ class RecoveryService:
             job.card_id = cached_card_id
             job.cache_status = CACHE_HIT
             job.completed_at = utc_now_iso()
+            self._store.recovery_jobs[job.job_id] = job
             cached_record = self._store.recovery_cards[cached_card_id]
             self._record_cost(
                 job,
@@ -340,6 +341,7 @@ class RecoveryService:
         job.card_id = card_id
         job.cache_status = CACHE_MISS
         job.completed_at = utc_now_iso()
+        self._store.recovery_jobs[job.job_id] = job
         self._record_cost(job, cache_hit=False, metadata=metadata)
         self._publisher.publish(
             self._publisher.build_envelope(
@@ -367,6 +369,7 @@ class RecoveryService:
         job.status = JobStatus.FAILED
         job.failure = JobFailure(reason=reason, message=message)
         job.completed_at = utc_now_iso()
+        self._store.recovery_jobs[job.job_id] = job
         self._publisher.publish(
             self._publisher.build_envelope(
                 job.session_id,

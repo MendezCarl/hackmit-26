@@ -204,33 +204,16 @@ def _model_mapping[PydanticModel: BaseModel](
     )
 
 
-def create_mongo_store(uri: str, database_name: str) -> InMemoryStore:
-    """Create the shared store container backed by MongoDB mappings.
+def build_mongo_store(database: Any) -> InMemoryStore:
+    """Build the shared store container from a Mongo-like database.
 
     Args:
-        uri: MongoDB connection URI; it is never included in errors.
-        database_name: MongoDB database containing the store collections.
+        database: Database-like object whose named collections support mapping
+            operations.
 
     Returns:
         An ``InMemoryStore`` dataclass populated with Mongo-backed mappings.
-
-    Raises:
-        RuntimeError: If PyMongo is unavailable or the database cannot be reached.
     """
-    try:
-        from pymongo import MongoClient
-    except ImportError as exc:
-        raise RuntimeError(
-            "MONGODB_URI is set but pymongo is not installed; install the mongodb extra."
-        ) from exc
-
-    try:
-        client: Any = MongoClient(uri, serverSelectionTimeoutMS=5000)
-        client.admin.command("ping")
-    except Exception:  # noqa: BLE001 - redact connection details
-        raise RuntimeError("Could not connect to MongoDB.") from None
-
-    database = client[database_name]
     return InMemoryStore(
         users=MongoCollectionMapping(database["users"], _encode_user, _decode_user),
         courses=_model_mapping(database["courses"], Course),
@@ -260,3 +243,32 @@ def create_mongo_store(uri: str, database_name: str) -> InMemoryStore:
             lambda value: value,
         ),
     )
+
+
+def create_mongo_store(uri: str, database_name: str) -> InMemoryStore:
+    """Create the shared store container backed by MongoDB mappings.
+
+    Args:
+        uri: MongoDB connection URI; it is never included in errors.
+        database_name: MongoDB database containing the store collections.
+
+    Returns:
+        An ``InMemoryStore`` dataclass populated with Mongo-backed mappings.
+
+    Raises:
+        RuntimeError: If PyMongo is unavailable or the database cannot be reached.
+    """
+    try:
+        from pymongo import MongoClient
+    except ImportError as exc:
+        raise RuntimeError(
+            "MONGODB_URI is set but pymongo is not installed; install the mongodb extra."
+        ) from exc
+
+    try:
+        client: Any = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        client.admin.command("ping")
+    except Exception:  # noqa: BLE001 - redact connection details
+        raise RuntimeError("Could not connect to MongoDB.") from None
+
+    return build_mongo_store(client[database_name])

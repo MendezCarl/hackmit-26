@@ -21,10 +21,8 @@ from app.contracts.models import (
     RecoveryCard,
     RecoveryJob,
     SessionMode,
-    SessionStatus,
     SignalEvent,
 )
-from app.core.clock import utc_now_iso
 from app.core.errors import AppError, ErrorCode
 from app.cost.ledger import CostLedger
 from app.demo.cost_comparison import DemoCostComparison, compare_context_cost
@@ -217,8 +215,7 @@ class DemoRunner:
             raise AppError(
                 ErrorCode.INTERNAL_ERROR, "The synthetic demo cache check failed."
             )
-        session.status = SessionStatus.ENDED
-        session.ended_at = utc_now_iso()
+        session = self._session_service.end_session(session_id)
         professor_summary = self._professor_service.build_summary(professor, session_id)
         professor_metrics = self._metrics.report(professor, session_id)
 
@@ -250,8 +247,7 @@ class DemoRunner:
                 chunks=build_full_lecture_chunks(small_session.session_id),
             ),
         )
-        small_session.status = SessionStatus.ENDED
-        small_session.ended_at = utc_now_iso()
+        small_session = self._session_service.end_session(small_session.session_id)
         suppressed_metrics = self._metrics.report(professor, small_session.session_id)
         suppressed_summary = self._professor_service.build_summary(
             professor, small_session.session_id
