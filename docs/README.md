@@ -33,6 +33,7 @@ docs/
 │   ├── system_overview.md
 │   ├── timestamp_model.md
 │   ├── local_media_boundary.md
+│   ├── local_object_detection.md
 │   └── zoom_integration.md
 ├── api/
 │   ├── unified_api_contracts.md
@@ -64,6 +65,7 @@ docs/
 | Backend REST endpoint | Unified API contracts, Pydantic schemas, API tests |
 | WebSocket event | Unified API contracts, AsyncAPI file, event schema, contract tests |
 | ML signal rule | Student story, signal evaluation, timestamp model, privacy boundary |
+| Local object detection | Local object detection architecture, local-media boundary, signal evaluation, professor metrics plan |
 | Zoom integration | Zoom integration, timestamp model, API contract, consent flow |
 | OpenAI or Muse integration | AI provider tool-calling plan, recovery evaluation, token-cost baseline, privacy boundary |
 | Professor metrics | Professor metrics dashboard plan, professor story, aggregation privacy rules, summary contract |
