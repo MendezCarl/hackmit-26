@@ -25,3 +25,11 @@ test('parseZoomRunning treats empty output as not running', async () => {
   const { parseZoomRunning } = await import('../../dist/main/zoom_monitor.js');
   assert.equal(parseZoomRunning('linux', ''), false);
 });
+
+test('overlay HTML loads the emitted renderer module', async () => {
+  const overlayHtml = await readFile(
+    join(__dirname, '../../src/renderer/overlay.html'),
+    'utf8',
+  );
+  assert.match(overlayHtml, /src="\.\/renderer\/overlay\.mjs"/);
+});
