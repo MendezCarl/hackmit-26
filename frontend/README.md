@@ -3,10 +3,22 @@
 The Electron renderer talks to the local FastAPI service through the
 main-process IPC bridge. Start the backend first:
 
+**macOS/Linux**
+
 ```sh
 cd backend
 source .venv/bin/activate
 APP_ENV=demo fastapi dev app/main.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Set-Location backend
+py -3.14 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+$env:APP_ENV = "demo"
+fastapi dev app/main.py
 ```
 
 In another terminal:
@@ -26,8 +38,19 @@ only a reminder to open Bloom and remains independent of Zoom's meeting data.
 
 Build a local installer with:
 
+**macOS/Linux**
+
 ```sh
 npm run package
+npm run package:mac
+npm run package:linux
+```
+
+**Windows (PowerShell)**
+
+```powershell
+npm run package
+npm run package:win
 ```
 
 The repository release workflow builds platform installers on version tags and

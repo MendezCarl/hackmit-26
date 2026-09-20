@@ -40,15 +40,31 @@ checkout. Feature demo commands require explicit demo mode.
 
 Run these commands from the `backend/` directory:
 
+**macOS/Linux**
+
 ```sh
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate
 python -m pip install -e ".[dev]"
 
 docker compose up -d mongo redis   # optional until storage is faked no longer
 
 APP_ENV=demo PROVIDER_MODE=mock \
   uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+**Windows (PowerShell)**
+
+```powershell
+py -3.14 -m venv venv
+.\venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+
+docker compose up -d mongo redis
+
+$env:APP_ENV = "demo"
+$env:PROVIDER_MODE = "mock"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 - `PROVIDER_MODE=mock` (default) generates deterministic synthetic recovery
