@@ -14,6 +14,7 @@ from app.contracts.models import (
     TranscriptChunk,
     TranscriptSource,
 )
+from app.core.errors import AppError, ErrorCode
 from app.integrations.meta_muse.recovery import (
     MuseRecoveryGenerator,
     create_muse_generator,
@@ -63,8 +64,13 @@ def build_window() -> ContextWindow:
 class Responses:
     """SDK-shaped fake captures structured Responses requests offline."""
 
-    def __init__(self, evidence_quote: str = "last-in, first-out") -> None:
+    def __init__(
+        self,
+        evidence_quote: str = "last-in, first-out",
+        facts: list[dict[str, str]] | None = None,
+    ) -> None:
         self.evidence_quote = evidence_quote
+        self.facts = facts
         self.calls: list[dict[str, object]] = []
 
     def parse(self, **kwargs: object) -> SimpleNamespace:
@@ -76,7 +82,8 @@ class Responses:
             output_parsed=RecoveryDraft(
                 topic="Stacks",
                 explanation="A stack uses last-in, first-out ordering.",
-                facts=[
+                facts=self.facts
+                or [
                     {
                         "text": "The last item is removed first.",
                         "chunk_id": "source_0",
@@ -118,6 +125,82 @@ def test_muse_generator_accepts_normalized_grounding_quote() -> None:
     card, _metadata = generator.generate(build_session(), window)
 
     assert card.key_facts == ["The last item is removed first."]
+
+
+def test_muse_generator_keeps_grounded_facts_when_one_quote_is_invalid() -> None:
+    """One invalid provider fact does not discard grounded recovery content."""
+    responses = Responses(
+        facts=[
+            {
+                "text": "The last item is removed first.",
+                "chunk_id": "source_0",
+                "evidence_quote": "last-in, first-out",
+            },
+            {
+                "text": "This fact is not in the transcript.",
+                "chunk_id": "source_0",
+                "evidence_quote": "not present in the source",
+            },
+        ]
+    )
+    generator = MuseRecoveryGenerator(
+        SimpleNamespace(responses=responses), "muse-spark-1.2"
+    )
+
+    card, _metadata = generator.generate(build_session(), build_window())
+
+    assert card.key_facts == ["The last item is removed first."]
+
+
+def test_muse_generator_rejects_when_no_facts_are_grounded() -> None:
+    """A provider response with no grounded facts remains malformed output."""
+    responses = Responses(evidence_quote="not present in the source")
+    generator = MuseRecoveryGenerator(
+        SimpleNamespace(responses=responses), "muse-spark-1.2"
+    )
+
+    with pytest.raises(AppError) as excinfo:
+        generator.generate(build_session(), build_window())
+
+    assert excinfo.value.code == ErrorCode.PROVIDER_MALFORMED_OUTPUT
+
+
+def test_muse_grounding_diagnostics_contain_counts_without_transcript_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Grounding diagnostics expose counts without provider or transcript text."""
+    invalid_quote = "not present in the source"
+    responses = Responses(
+        facts=[
+            {
+                "text": "The last item is removed first.",
+                "chunk_id": "source_0",
+                "evidence_quote": "last-in, first-out",
+            },
+            {
+                "text": "This fact is not in the transcript.",
+                "chunk_id": "source_0",
+                "evidence_quote": invalid_quote,
+            },
+        ]
+    )
+    generator = MuseRecoveryGenerator(
+        SimpleNamespace(responses=responses), "muse-spark-1.2"
+    )
+
+    with caplog.at_level("WARNING"):
+        generator.generate(build_session(), build_window())
+
+    record = next(
+        record
+        for record in caplog.records
+        if record.message == "recovery_grounding_rejected"
+    )
+    assert record.total_facts == 2
+    assert record.kept_facts == 1
+    assert record.unknown_chunk_count == 0
+    assert record.ungrounded_quote_count == 1
+    assert invalid_quote not in str(record.__dict__)
 
 
 def test_create_muse_generator_requires_api_key() -> None:
