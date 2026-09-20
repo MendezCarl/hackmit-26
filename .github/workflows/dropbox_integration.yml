@@ -29,7 +29,7 @@ jobs:
       - name: Install isolated feature dependencies
         run: |
           python -m venv backend/venv
-          backend/venv/bin/python -m pip install -e './backend[dev,vision]' -r backend/requirements-dropbox_integration.txt
+          backend/venv/bin/python -m pip install -e './backend[dev,vision,ai]' -r backend/requirements-dropbox_integration.txt
       - name: Check feature and baseline contracts
         run: |
           backend/venv/bin/python backend/scripts/generate_feature_contracts.py --check
