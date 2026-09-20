@@ -2,6 +2,7 @@ import { buildRouteHash } from '../../app/router.mjs';
 import { AppShell } from '../../components/app_shell.mjs';
 import { ConsentDialog } from '../../components/consent_dialog.mjs';
 import { escapeHtml } from '../../components/html_text.mjs';
+import { ZoomRecoveryCue } from '../../components/zoom_recovery_cue.mjs';
 import { ACTIVE_LECTURE, LECTURE_LIBRARY } from '../../fixtures/demo_content.mjs';
 
 export type StudentDashboardModel = {
@@ -10,6 +11,7 @@ export type StudentDashboardModel = {
   activeSession: LectureSession | null;
   joinedSessions: LectureSession[];
   participantCount: number | null;
+  submittedEvents: SignalEvent[];
 };
 
 const FIXTURE_MODEL: StudentDashboardModel = {
@@ -18,6 +20,7 @@ const FIXTURE_MODEL: StudentDashboardModel = {
   activeSession: null,
   joinedSessions: [],
   participantCount: null,
+  submittedEvents: [],
 };
 
 /**
@@ -80,6 +83,14 @@ export function StudentDashboardPage(model: StudentDashboardModel = FIXTURE_MODE
 function buildRealStudentDashboard(model: StudentDashboardModel): string {
   const session = model.activeSession;
   const joinedSessions = model.joinedSessions;
+  const latestPossibleMissedEvent = session
+    ? (model.submittedEvents
+        .filter(
+          (event) =>
+            event.session_id === session.session_id && event.event_type === 'possible_missed_window',
+        )
+        .at(-1) ?? null)
+    : null;
   return AppShell({
     route: 'student-dashboard',
     role: 'student',
@@ -110,7 +121,8 @@ function buildRealStudentDashboard(model: StudentDashboardModel): string {
         ${ConsentDialog()}
       `
           : ''
-      }
+        }
+        ${session?.mode === 'zoom' ? ZoomRecoveryCue({ event: latestPossibleMissedEvent }) : ''}
       <section class="section-block">
         <div class="section-heading-row">
           <div><p class="eyebrow">Current run</p><h2>Your sessions</h2></div>

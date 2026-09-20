@@ -20,6 +20,52 @@ KNOWN_PROVIDER_MODES = (MOCK_PROVIDER_MODE, LIVE_PROVIDER_MODE)
 DEFAULT_DEMO_SECRET = "dev-only-secret-change-me-before-production"
 
 
+def _read_int(name: str, default: int) -> int:
+    """Read an integer environment variable.
+
+    Args:
+        name: Environment variable name.
+        default: Value used when the environment variable is unset.
+
+    Returns:
+        Parsed integer value.
+
+    Raises:
+        ValueError: If the environment variable is set but is not an integer.
+    """
+
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer.") from exc
+
+
+def _read_float(name: str, default: float) -> float:
+    """Read a floating-point environment variable.
+
+    Args:
+        name: Environment variable name.
+        default: Value used when the environment variable is unset.
+
+    Returns:
+        Parsed floating-point value.
+
+    Raises:
+        ValueError: If the environment variable is set but is not numeric.
+    """
+
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    try:
+        return float(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be numeric.") from exc
+
+
 class Settings(BaseModel):
     """Runtime configuration resolved from environment variables.
 
@@ -120,6 +166,18 @@ def _settings_from_environment() -> Settings:
         provider_mode=os.environ.get("PROVIDER_MODE", MOCK_PROVIDER_MODE),
         app_secret=os.environ.get("APP_SECRET", DEFAULT_DEMO_SECRET),
         jwt_algorithm=os.environ.get("JWT_ALGORITHM", "HS256"),
+        jwt_ttl_seconds=_read_int("JWT_TTL_SECONDS", 3600),
+        minimum_group_size=_read_int("MINIMUM_GROUP_SIZE", 5),
+        aggregation_window_ms=_read_int("AGGREGATION_WINDOW_MS", 300_000),
+        context_padding_ms=_read_int("CONTEXT_PADDING_MS", 30_000),
+        max_context_padding_ms=_read_int("MAX_CONTEXT_PADDING_MS", 120_000),
+        min_missed_window_ms=_read_int("MIN_MISSED_WINDOW_MS", 30_000),
+        phone_support_confidence=_read_float("PHONE_SUPPORT_CONFIDENCE", 0.5),
+        phone_looking_down_ms=_read_int("PHONE_LOOKING_DOWN_MS", 20_000),
+        phone_unfocused_absent_ms=_read_int("PHONE_UNFOCUSED_ABSENT_MS", 15_000),
+        max_batch_events=_read_int("MAX_BATCH_EVENTS", 50),
+        max_batch_chunks=_read_int("MAX_BATCH_CHUNKS", 200),
+        max_transcript_text_chars=_read_int("MAX_TRANSCRIPT_TEXT_CHARS", 4_000),
         openai_api_key=os.environ.get("OPENAI_API_KEY"),
         openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
     )

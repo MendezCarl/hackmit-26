@@ -25,6 +25,15 @@ See the [local object detection architecture](docs/architecture/local_object_det
 
 ## Frontend
 
+Copy the local environment template if you want shell-loaded defaults:
+
+```sh
+cp .env.example .env
+```
+
+Real `.env` files are gitignored. Source the file before starting services if
+your shell does not load it automatically.
+
 ```sh
 cd backend
 source .venv/bin/activate
@@ -47,6 +56,47 @@ environment, the metrics endpoint requires `LUMINA_METRICS_POLICY_JSON` with
 `is_approved: true`, and the summary endpoint is disabled by design. Live
 OpenAI recovery requires `PROVIDER_MODE=live` and `OPENAI_API_KEY`; normal
 development uses synthetic behavior.
+
+`BLOOM_BACKEND_URL` controls the Electron main-process backend origin. It
+defaults to `http://127.0.0.1:8000` when unset.
+
+## Desktop Releases
+
+Installable frontend binaries are built by `.github/workflows/frontend-release.yml`.
+Pushing a version tag such as `v0.1.0` runs tests, builds macOS, Windows, and
+Linux installers, and creates a draft GitHub Release with the artifacts attached.
+Manual workflow runs build artifacts without publishing a release unless they run
+from a tag ref.
+
+Current release artifacts are unsigned. macOS Gatekeeper and Windows SmartScreen
+may warn users until signing and notarization certificates are configured as
+repository secrets.
+
+### Install the desktop app
+
+For published builds, open the repository's GitHub Releases page and download
+the installer for your operating system:
+
+- macOS: download the `.dmg` artifact, open it, and drag Bloom into
+  `Applications`.
+- Windows: download the `.exe` installer and run it.
+- Linux: download the `.AppImage` or `.deb` artifact. For AppImage builds, make
+  the file executable before opening it.
+
+The packaged desktop app currently connects to a running Bloom backend instead
+of bundling or spawning Python itself. Start the backend first, or set
+`BLOOM_BACKEND_URL` to the backend origin before launching the app when it is not
+available at `http://127.0.0.1:8000`.
+
+To build an installer locally from this checkout:
+
+```sh
+cd frontend
+npm install
+npm run package
+```
+
+The generated installer files are written to `frontend/release/`.
 
 The current prototype follows the documented process and feature boundaries without adding a UI framework dependency:
 
