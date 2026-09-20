@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Stored consent choices for one account.",
+  "properties": {
+    "analytics_opt_in": {
+      "default": false,
+      "description": "Whether the user opted into anonymous aggregated analytics.",
+      "title": "Analytics Opt In",
+      "type": "boolean"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UTC ISO 8601 time the consent was last updated.",
+      "title": "Updated At"
+    }
+  },
+  "title": "ConsentSettings",
+  "type": "object"
+}

@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "UserProfile": {
+      "description": "Public profile of one account; password hashes are never exposed.",
+      "properties": {
+        "created_at": {
+          "description": "UTC ISO 8601 creation time ending in Z.",
+          "title": "Created At",
+          "type": "string"
+        },
+        "display_name": {
+          "description": "Human-readable display name.",
+          "title": "Display Name",
+          "type": "string"
+        },
+        "email": {
+          "description": "Account email address.",
+          "title": "Email",
+          "type": "string"
+        },
+        "role": {
+          "description": "``student`` or ``professor``.",
+          "title": "Role",
+          "type": "string"
+        },
+        "user_id": {
+          "description": "Unique user identifier.",
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "email",
+        "role",
+        "display_name",
+        "created_at"
+      ],
+      "title": "UserProfile",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Issued credentials for one authenticated account.",
+  "properties": {
+    "access_token": {
+      "description": "Signed JWT access token.",
+      "title": "Access Token",
+      "type": "string"
+    },
+    "token_type": {
+      "default": "bearer",
+      "description": "Token type.",
+      "title": "Token Type",
+      "type": "string"
+    },
+    "user": {
+      "$ref": "#/$defs/UserProfile",
+      "description": "The authenticated account's profile."
+    }
+  },
+  "required": [
+    "user",
+    "access_token"
+  ],
+  "title": "AuthSession",
+  "type": "object"
+}

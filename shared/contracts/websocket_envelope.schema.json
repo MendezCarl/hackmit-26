@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed WebSocket event envelope matching the AsyncAPI contract.",
+  "properties": {
+    "event_id": {
+      "description": "Unique envelope identifier.",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "description": "Dotted past-tense event type, e.g. ``recovery_card.completed``.",
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "description": "UTC ISO 8601 occurrence time ending in Z.",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "description": "Typed event payload.",
+      "title": "Payload",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "description": "Payload schema version.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_number": {
+      "description": "Per-session monotonic sequence number.",
+      "minimum": 0,
+      "title": "Sequence Number",
+      "type": "integer"
+    },
+    "session_id": {
+      "description": "Session the event belongs to.",
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "session_id",
+    "occurred_at",
+    "sequence_number",
+    "payload"
+  ],
+  "title": "EventEnvelope",
+  "type": "object"
+}

@@ -3,8 +3,10 @@ info:
   title: Lecture Recovery Assistant Realtime API
   version: 0.1.0
   description: >-
-    Contract placeholder for session-scoped WebSocket messages. Add concrete
-    messages as the realtime session workflow is implemented.
+    Session-scoped WebSocket contract. Connections are authorized by JWT and
+    session membership at /ws/v1/sessions/{session_id}?token=<jwt>. Envelopes
+    use the shared websocket_envelope schema; raw local signal frames are
+    never streamed to the server.
 servers:
   local:
     host: 127.0.0.1:8000
@@ -17,26 +19,99 @@ channels:
       session_id:
         description: Unique lecture-session identifier.
     messages:
-      session_event:
-        $ref: '#/components/messages/session_event'
+      session_connected:
+        $ref: '#/components/messages/session_connected'
+      signal_event_ingested:
+        $ref: '#/components/messages/signal_event_ingested'
+      signal_event_confirmed:
+        $ref: '#/components/messages/signal_event_confirmed'
+      participant_joined:
+        $ref: '#/components/messages/participant_joined'
+      transcript_ingested:
+        $ref: '#/components/messages/transcript_ingested'
+      recovery_job_started:
+        $ref: '#/components/messages/recovery_job_started'
+      recovery_card_completed:
+        $ref: '#/components/messages/recovery_card_completed'
+      recovery_card_failed:
+        $ref: '#/components/messages/recovery_card_failed'
+      professor_summary_ready:
+        $ref: '#/components/messages/professor_summary_ready'
 operations:
   receive_session_events:
     action: receive
     channel:
       $ref: '#/channels/lecture_session'
     messages:
-      - $ref: '#/channels/lecture_session/messages/session_event'
+      - $ref: '#/channels/lecture_session/messages/session_connected'
+      - $ref: '#/channels/lecture_session/messages/signal_event_ingested'
+      - $ref: '#/channels/lecture_session/messages/signal_event_confirmed'
+      - $ref: '#/channels/lecture_session/messages/participant_joined'
+      - $ref: '#/channels/lecture_session/messages/transcript_ingested'
+      - $ref: '#/channels/lecture_session/messages/recovery_job_started'
+      - $ref: '#/channels/lecture_session/messages/recovery_card_completed'
+      - $ref: '#/channels/lecture_session/messages/recovery_card_failed'
+      - $ref: '#/channels/lecture_session/messages/professor_summary_ready'
   send_client_events:
     action: send
     channel:
       $ref: '#/channels/lecture_session'
     messages:
-      - $ref: '#/channels/lecture_session/messages/session_event'
+      - $ref: '#/channels/lecture_session/messages/session_connected'
 components:
   messages:
-    session_event:
-      name: session_event
-      title: Session event envelope
+    session_connected:
+      name: session_connected
+      title: Connection established
+      description: Sent once after authorization; payload carries the actor role.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    signal_event_ingested:
+      name: signal_event_ingested
+      title: Signal events ingested
+      description: A batch of coarse signal events was accepted.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    signal_event_confirmed:
+      name: signal_event_confirmed
+      title: Signal event corrected
+      description: A student confirmed or denied a missed-content signal.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    participant_joined:
+      name: participant_joined
+      title: Participant joined
+      description: An opted-in participant joined the session.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    transcript_ingested:
+      name: transcript_ingested
+      title: Transcript ingested
+      description: Timestamped transcript chunks were ingested.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    recovery_job_started:
+      name: recovery_job_started
+      title: Recovery job started
+      description: A recovery job was queued for one interval.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    recovery_card_completed:
+      name: recovery_card_completed
+      title: Recovery card completed
+      description: A grounded recovery card was generated or reused from cache.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    recovery_card_failed:
+      name: recovery_card_failed
+      title: Recovery card failed
+      description: A recovery job failed with a typed, recoverable reason.
+      payload:
+        $ref: '#/components/schemas/websocket_envelope'
+    professor_summary_ready:
+      name: professor_summary_ready
+      title: Professor summary ready
+      description: An anonymous, threshold-safe summary was generated.
       payload:
         $ref: '#/components/schemas/websocket_envelope'
   schemas:

@@ -1,0 +1,111 @@
+{
+  "$defs": {
+    "SessionMode": {
+      "description": "How a lecture session is held.",
+      "enum": [
+        "zoom",
+        "in_person"
+      ],
+      "title": "SessionMode",
+      "type": "string"
+    },
+    "SessionStatus": {
+      "description": "Lifecycle state of a lecture session.",
+      "enum": [
+        "created",
+        "active",
+        "ending",
+        "ended",
+        "failed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One running occurrence of a lecture on the shared lecture clock.",
+  "properties": {
+    "course_id": {
+      "description": "Owning course identifier.",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "ended_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UTC ISO 8601 end time.",
+      "title": "Ended At"
+    },
+    "lecture_id": {
+      "description": "Identifier of the underlying lecture record.",
+      "title": "Lecture Id",
+      "type": "string"
+    },
+    "mode": {
+      "$ref": "#/$defs/SessionMode",
+      "description": "How the session is held."
+    },
+    "owner_id": {
+      "description": "Authenticated user who started the session.",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "session_clock_origin": {
+      "description": "UTC ISO 8601 origin of the shared lecture clock.",
+      "title": "Session Clock Origin",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for this occurrence.",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "started_at": {
+      "description": "UTC ISO 8601 start time ending in Z.",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/SessionStatus",
+      "description": "Current lifecycle state."
+    },
+    "title": {
+      "description": "Human-readable lecture-session title.",
+      "title": "Title",
+      "type": "string"
+    },
+    "zoom_meeting_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Zoom meeting identifier when authorized.",
+      "title": "Zoom Meeting Id"
+    }
+  },
+  "required": [
+    "session_id",
+    "lecture_id",
+    "owner_id",
+    "course_id",
+    "title",
+    "mode",
+    "status",
+    "started_at",
+    "session_clock_origin"
+  ],
+  "title": "LectureSession",
+  "type": "object"
+}
