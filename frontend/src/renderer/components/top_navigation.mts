@@ -39,7 +39,7 @@ export function TopNavigation(
       <div class="top-nav__actions">
         <span class="connection-pill" data-backend-state="checking" aria-live="polite">
           <span class="connection-pill__dot"></span>
-          <span data-backend-label>Checking local service</span>
+          <span data-backend-label>Checking Bloom service</span>
         </span>
         <a class="role-switch" href="${buildRouteHash(roleRoute)}">${roleLabel}</a>
         <a class="profile-link ${route === 'account' ? 'is-active' : ''}" href="${buildRouteHash('account')}" aria-label="Open account settings">

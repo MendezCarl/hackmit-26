@@ -219,7 +219,7 @@ export function setConsent(consent: ConsentSettings | null): void {
   state.consent = consent;
 }
 
-/** Marks whether the local service is reachable. */
+/** Marks whether the backend service is reachable. */
 export function setBackendState(backendState: BackendSessionState['backendState']): void {
   state.backendState = backendState;
 }

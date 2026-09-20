@@ -101,7 +101,7 @@ function buildRealEducatorSummary(model: EducatorSummaryModel): string {
     demoMode: false,
     courses: model.courses,
     content: `
-      ${model.isLoading ? '<p class="empty-state">Loading from local service…</p>' : ''}
+      ${model.isLoading ? '<p class="empty-state">Loading from Bloom service…</p>' : ''}
       ${errors.map((error) => `<p class="empty-state">${escapeHtml(error)}</p>`).join('')}
       ${suppression}
       ${metrics ? `<p class="summary-meta">Metrics status: ${escapeHtml(metrics.status)}</p>${continuity}` : ''}

@@ -48,9 +48,10 @@ npm install
 npm run dev
 ```
 
-The Electron renderer expects the backend at `http://127.0.0.1:8000` and
-falls back to visibly labeled `Demo mode · synthetic data` fixtures when it is
-offline. Use `APP_ENV=demo` (or `APP_ENV=test`) for local development so
+The Electron app defaults to the hosted Render backend at
+`https://bloom-backend-srdd.onrender.com` and falls back to visibly labeled
+`Demo mode · synthetic data` fixtures when it is offline. Use `APP_ENV=demo`
+(or `APP_ENV=test`) for local development so
 educator reports use the synthetic aggregation policy. In the default
 environment, the metrics endpoint requires `LUMINA_METRICS_POLICY_JSON` with
 `is_approved: true`, and the summary endpoint is disabled by design. Live
@@ -58,8 +59,10 @@ recovery requires `PROVIDER_MODE=live` plus the selected provider's credentials:
 `LIVE_PROVIDER=openai` with `OPENAI_API_KEY`, or `LIVE_PROVIDER=meta_muse` with
 `MUSE_API_KEY`; normal development uses synthetic behavior.
 
-`BLOOM_BACKEND_URL` controls the Electron main-process backend origin. It
-defaults to `http://127.0.0.1:8000` when unset.
+`BLOOM_BACKEND_URL` overrides the hosted backend for local development. On
+macOS/Linux, run `BLOOM_BACKEND_URL=http://127.0.0.1:8000 npm run dev`; in
+PowerShell, run `$env:BLOOM_BACKEND_URL="http://127.0.0.1:8000"; npm run dev`.
+When unset or blank, the app uses the hosted Render backend.
 
 ## Deploying the backend (Render)
 
@@ -106,10 +109,11 @@ the installer for your operating system:
 - Linux: download the `.AppImage` or `.deb` artifact. For AppImage builds, make
   the file executable before opening it.
 
-The packaged desktop app currently connects to a running Bloom backend instead
-of bundling or spawning Python itself. Start the backend first, or set
-`BLOOM_BACKEND_URL` to the backend origin before launching the app when it is not
-available at `http://127.0.0.1:8000`.
+The packaged desktop app currently connects to the hosted Render backend
+instead of bundling or spawning Python itself. For a local backend, set
+`BLOOM_BACKEND_URL` before launching the app; macOS/Linux users can run
+`BLOOM_BACKEND_URL=http://127.0.0.1:8000 npm run dev`, while PowerShell users
+can run `$env:BLOOM_BACKEND_URL="http://127.0.0.1:8000"; npm run dev`.
 
 To build an installer locally from this checkout:
 
