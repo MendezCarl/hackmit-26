@@ -87,12 +87,27 @@ def make_session(client: TestClient) -> str:
     return response.json()["session_id"]
 
 
-def signals_from(observation: FrameObservation, seconds: int):
+class LeadInAnalyzer:
+    """Faces forward for the first samples, then shows the given observation."""
+
+    def __init__(self, observation: FrameObservation, forward_samples: int) -> None:
+        self.observation = observation
+        self.forward = FrameObservation(0.99, 0.0, 0.9, 0.0)
+        self.forward_samples = forward_samples
+        self.calls = 0
+
+    def analyze(self, frame):
+        self.calls += 1
+        return self.forward if self.calls <= self.forward_samples else self.observation
+
+
+def signals_from(observation: FrameObservation, seconds: int, forward_seconds: int = 0):
     """Run the real worker on synthetic frames and return the closed signals."""
-    worker = StudentSignalWorker(ScriptedAnalyzer(observation), StudentSignalPolicy())
+    analyzer = LeadInAnalyzer(observation, forward_seconds * 2)
+    worker = StudentSignalWorker(analyzer, StudentSignalPolicy())
     collected = []
     run_capture(
-        FakeCamera(seconds * 2, lose_camera=False),
+        FakeCamera((seconds + forward_seconds) * 2, lose_camera=False),
         worker,
         0,
         collected.append,
@@ -105,7 +120,9 @@ def test_worker_signals_are_accepted_and_phone_alone_is_never_eligible():
     client = TestClient(create_app(SETTINGS))
     session_id = make_session(client)
     phone = signals_from(FrameObservation(0.99, 0.9, 0.9, 0.0), seconds=40)
-    head = signals_from(FrameObservation(0.99, 0.0, 0.9, 1.3), seconds=40)
+    head = signals_from(
+        FrameObservation(0.99, 0.0, 0.9, 1.3), seconds=40, forward_seconds=6
+    )
     assert [s.event_type for s in phone] == ["phone_visible"]
     assert [s.event_type for s in head] == ["head_away"]
     receipt = post_signals(
@@ -185,3 +202,33 @@ def test_normal_end_flushes_open_interval():
     )
     assert [s.event_type for s in collected] == ["phone_visible"]
     assert collected[0].start_ms >= 5_000
+
+
+def test_run_stops_at_max_duration_and_reports_elapsed_time():
+    from app.local_ml.student_worker import summarize_run
+
+    worker = StudentSignalWorker(
+        ScriptedAnalyzer(FrameObservation(0.99, 0.9, 0.9, 0.0)), StudentSignalPolicy()
+    )
+    collected = []
+    camera = FakeCamera(1000, lose_camera=False)
+    elapsed = run_capture(
+        camera, worker, 0, collected.append, ticking_clock(), max_duration_ms=4_000
+    )
+    assert 3_000 <= elapsed <= 4_500 and camera.remaining > 900
+    summary = summarize_run(collected, elapsed)
+    assert summary["signal_counts"] == {"phone_visible": 1}
+    assert summary["per_minute"]["phone_visible"] > 0
+
+
+def test_demo_turns_a_short_signal_into_a_grounded_card():
+    from scripts.demo_student_to_card import LECTURE_OFFSET_MS, run_demo
+
+    signals = signals_from(FrameObservation(0.99, 0.9, 0.9, 0.0), seconds=5)
+    result = run_demo(signals)
+    # The 30 s rule is advisory: a five-second phone signal is not eligible, yet a card exists.
+    assert result["receipt"]["recovery_eligible_event_ids"] == []
+    assert result["job"]["status"] == "completed"
+    assert result["card"]["card_id"] == result["job"]["card_id"]
+    assert result["card"]["source_timestamps"], "card must cite transcript timestamps"
+    assert signals[0].start_ms + LECTURE_OFFSET_MS >= 0
