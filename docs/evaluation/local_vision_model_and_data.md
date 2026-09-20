@@ -4,6 +4,8 @@
 **Owner:** ML and Backend teams  
 **Last updated:** 2026-09-20
 
+The rules themselves are listed on [rule cards](student_signal_rule_cards.md), generated from the code.
+
 This document records what the local vision pipeline uses, where every external
 component came from, what was and was not trained, and how it was evaluated. It
 supports the attribution requirement for open-source code and pretrained models.
