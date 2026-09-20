@@ -55,6 +55,12 @@ APP_ENV=demo PROVIDER_MODE=mock \
   cards and labels all usage `synthetic`; `live` is not implemented yet.
 - `APP_ENV=demo` unlocks `POST /api/v1/demo/runs` and demo token minting;
   both are unavailable in development and production.
+- Production professor metrics require an explicitly approved policy. Render
+  sets `LUMINA_METRICS_POLICY_JSON` to a bounded JSON policy, for example:
+
+  ```text
+  {"policy_version":"bloom-render-v1","minimum_group_size":3,"bucket_ms":30000,"is_approved":true}
+  ```
 
 ## API documentation
 

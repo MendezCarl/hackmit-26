@@ -17,7 +17,7 @@
         "type": "object"
       },
       "ApiStatusResponse": {
-        "description": "Response describing whether the API is ready.",
+        "description": "Response describing API readiness and the configured recovery provider.",
         "properties": {
           "message": {
             "description": "Human-readable API status message.",
@@ -26,10 +26,19 @@
             ],
             "title": "Message",
             "type": "string"
+          },
+          "recovery_provider": {
+            "description": "Provider identity used for recovery-card generation.",
+            "examples": [
+              "mock"
+            ],
+            "title": "Recovery Provider",
+            "type": "string"
           }
         },
         "required": [
-          "message"
+          "message",
+          "recovery_provider"
         ],
         "title": "ApiStatusResponse",
         "type": "object"
@@ -1030,8 +1039,11 @@
             "type": "boolean"
           },
           "provider": {
-            "const": "openai",
             "default": "openai",
+            "enum": [
+              "openai",
+              "meta_muse"
+            ],
             "title": "Provider",
             "type": "string"
           }

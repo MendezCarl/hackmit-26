@@ -153,7 +153,7 @@ class ProfessorMetrics(StrictPayload):
 class ExternalTextConsent(StrictPayload):
     """Separate, revocable permission for bounded text to the chosen AI provider."""
 
-    provider: Literal["openai"] = "openai"
+    provider: Literal["openai", "meta_muse"] = "openai"
     is_allowed: bool
 
 

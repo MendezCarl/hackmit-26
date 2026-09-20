@@ -90,6 +90,15 @@ class RecoveryService:
         self._publisher = event_publisher
         self._cache = InMemoryRecoveryCache(store.recovery_cache)
 
+    @property
+    def provider(self) -> str:
+        """Return the configured recovery provider identity.
+
+        Returns:
+            Provider name used for recovery-card generation.
+        """
+        return self._generator.provider
+
     def _source_event_intervals(
         self, session_id: str, source_event_ids: list[str]
     ) -> list[tuple[int, int]]:

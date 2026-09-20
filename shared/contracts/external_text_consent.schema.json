@@ -8,8 +8,11 @@
       "type": "boolean"
     },
     "provider": {
-      "const": "openai",
       "default": "openai",
+      "enum": [
+        "openai",
+        "meta_muse"
+      ],
       "title": "Provider",
       "type": "string"
     }

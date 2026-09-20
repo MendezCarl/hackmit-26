@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+      - key: LUMINA_METRICS_POLICY_JSON
+        value: '{"policy_version":"bloom-render-v1","minimum_group_size":3,"bucket_ms":30000,"is_approved":true}'
       - key: OPENAI_API_KEY
         sync: false
       - key: MUSE_API_KEY

@@ -15,6 +15,8 @@ import {
   setBackendState,
   setBackendUser,
   setConsent,
+  setExternalTextConsentGranted,
+  setExternalTextConsentNote,
   setRouteError,
   setRouteLoading,
   setZoomBannerDismissed,
@@ -244,6 +246,35 @@ const bindStudentActions = (): void => {
     }
   });
   const session = getBackendSessionState().activeSession;
+  document
+    .querySelector<HTMLInputElement>('[data-external-text-consent]')
+    ?.addEventListener('change', async (event) => {
+      const checkbox = event.currentTarget as HTMLInputElement;
+      if (!session) return;
+      try {
+        const status = await window.backend.readApiStatus();
+        if (status.recovery_provider === 'mock') {
+          setExternalTextConsentGranted(false);
+          setExternalTextConsentNote('Local mock provider — no external text is sent');
+          renderApplication();
+          return;
+        }
+        const provider = status.recovery_provider;
+        if (provider !== 'openai' && provider !== 'meta_muse') {
+          throw new Error(`Unsupported recovery provider: ${provider}`);
+        }
+        const consent = await window.backend.updateExternalTextConsent(session.session_id, {
+          provider,
+          is_allowed: checkbox.checked,
+        });
+        setExternalTextConsentGranted(consent.is_allowed);
+        setExternalTextConsentNote(null);
+        renderApplication();
+      } catch (error) {
+        setExternalTextConsentNote(formErrorMessage(error));
+        renderApplication();
+      }
+    });
   document
     .querySelector<HTMLButtonElement>('[data-missed-that]')
     ?.addEventListener('click', async () => {
