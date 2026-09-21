@@ -4,7 +4,7 @@ Status: Implemented locally; review pending
 
 Owner: Backend team
 
-Last updated: 2026-09-19
+Last updated: 2026-09-20
 
 Read [ADR 0002](../decisions/adr_0002_learning_plan_contracts.md) for the mapping
 from the two planning branches to the implemented wire contracts. The new
@@ -23,7 +23,7 @@ are rejected. New mutation bodies are capped at 1 MiB before JSON parsing.
 | `GET /professor-metrics` | none / `ProfessorMetrics` | Course professor, ended session, explicit policy; current consent recomputed |
 | `PUT /aggregation-consent` | `AggregationConsent` / same | Own student participation; withdrawal erases own coverage |
 | `PUT /external-text-consent` | `ExternalTextConsent` / same | Own session membership; provider-specific, revocable permission |
-| `POST /professor-recommendations` | none / `RecommendationReport` | Safe report first; live consent separately required; mock by default |
+| `POST /professor-recommendations` | none / `RecommendationReport` | On request only. Safe report first; lecture excerpts analyzed locally in mock mode, in live mode only with the professor's own external-text consent; otherwise `intervals_only` |
 | `PUT /professor-recommendations/reviews` | `RecommendationReview` / same | Current generated report revision and valid suggestion index required |
 | `POST /recovery/tool-runs` | `LectureInterval` / `ToolRecoveryResult` | Own bounded recovery; read-only tool loop, no arbitrary files or writes |
 | `PUT /artifacts/folder` | `FolderSelection` / same | Own explicitly selected, authorized destination |
@@ -51,6 +51,15 @@ feature branch's batch shapes for these host contracts.
   has a source reference and exact evidence quote. Server owns timestamps/card IDs.
 - [Recommendations](../../shared/contracts/recommendation_report.schema.json):
   suggestions reference released intervals and a content-derived report revision.
+  `evidence_scope` is `lecture_transcript` when bounded excerpts (final transcript
+  chunks overlapping each hotspot, at most 2 000 characters per interval, no speaker
+  labels or participant data) were analyzed; then each suggestion may carry `topic`,
+  `medium` (`explanation`, `pace`, `example`, `terminology`) and up to three
+  `evidence` facts whose `evidence_quote` is verified verbatim against the cited
+  `chunk_id`. Suggestions whose evidence fails verification, or whose wording infers
+  attention, emotion, comprehension, disability or causation, are dropped. With
+  `intervals_only`, `evidence_note` explains why (consent not granted, or no
+  transcript overlaps the hotspots) and no lecture text leaves the service.
 - [Type handoff](../../shared/contracts/generated/learning_types.ts): generated
   TypeScript declarations, with runtime range/privacy validation still on the backend.
 

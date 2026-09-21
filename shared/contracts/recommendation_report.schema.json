@@ -1,14 +1,72 @@
 {
   "$defs": {
+    "GroundedFact": {
+      "additionalProperties": false,
+      "description": "A claim and an exact evidence quote from a selected transcript chunk.",
+      "properties": {
+        "chunk_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "evidence_quote": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Evidence Quote",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "chunk_id",
+        "evidence_quote"
+      ],
+      "title": "GroundedFact",
+      "type": "object"
+    },
     "Recommendation": {
       "additionalProperties": false,
-      "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.",
+      "description": "Teaching suggestion tied to a released report bucket; never a student diagnosis.\n\n``topic``, ``medium`` and ``evidence`` are present only when the lecture\ntranscript for the interval was analyzed; every evidence quote must occur in\na supplied transcript chunk, so the professor can verify the observation.",
       "properties": {
         "end_ms": {
           "maximum": 28800000,
           "minimum": 0,
           "title": "End Ms",
           "type": "integer"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/GroundedFact"
+          },
+          "maxItems": 3,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "medium": {
+          "anyOf": [
+            {
+              "enum": [
+                "explanation",
+                "pace",
+                "example",
+                "terminology"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Medium"
         },
         "observation": {
           "maxLength": 600,
@@ -27,6 +85,20 @@
           "minLength": 1,
           "title": "Suggested Action",
           "type": "string"
+        },
+        "topic": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic"
         }
       },
       "required": [
@@ -77,6 +149,28 @@
   "additionalProperties": false,
   "description": "Recommendations retain report revision, provider provenance and uncertainty.",
   "properties": {
+    "evidence_note": {
+      "anyOf": [
+        {
+          "maxLength": 400,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evidence Note"
+    },
+    "evidence_scope": {
+      "default": "intervals_only",
+      "enum": [
+        "intervals_only",
+        "lecture_transcript"
+      ],
+      "title": "Evidence Scope",
+      "type": "string"
+    },
     "provider_mode": {
       "enum": [
         "mock",

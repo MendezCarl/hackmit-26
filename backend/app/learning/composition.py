@@ -11,6 +11,7 @@ from app.contracts.learning import MetricsPolicy
 from app.delivery.service import DeliveryService
 from app.learning.routes import router
 from app.learning.state import LearningState
+from app.professor.excerpts import StoreTranscriptExcerpts
 from app.professor.metrics import ProfessorMetricsService
 from app.professor.recommendations import (
     DeterministicRecommendations,
@@ -52,7 +53,7 @@ def install_learning_features(app: FastAPI, policy: MetricsPolicy | None = None)
 
         recommendations = OpenAIRecommendations(delegate.client, delegate.model)
     app.state.recommendation_service = RecommendationService(
-        metrics, state, recommendations
+        metrics, state, recommendations, StoreTranscriptExcerpts(app.state.store)
     )
     app.include_router(router)
     app.include_router(ai_router)

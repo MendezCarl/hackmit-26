@@ -132,6 +132,7 @@ export function renderPage(
         zoomStatus: state?.selectedSession
           ? state?.zoomRtmsStatusBySession[state.selectedSession.session_id] ?? null
           : null,
+        teachingMoments: state?.teachingMoments ?? null,
         routeError: state?.routeError,
       }),
     'educator-dashboard': () =>
@@ -154,6 +155,7 @@ export function renderPage(
         metrics: state?.professorMetrics ?? null,
         summaryError: state?.professorSummaryError,
         metricsError: state?.professorMetricsError,
+        teachingMoments: state?.teachingMoments ?? null,
         routeError: state?.routeError,
         isLoading: state?.routeLoading,
       }),

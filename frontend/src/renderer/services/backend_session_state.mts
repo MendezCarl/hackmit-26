@@ -1,5 +1,24 @@
 /** In-memory renderer state for the current authenticated Bloom run. */
 
+/** Professor-requested teaching moments for one lecture; generated only on click. */
+export type TeachingMomentsState = {
+  sessionId: string | null;
+  status: 'idle' | 'loading' | 'ready' | 'failed';
+  report: RecommendationReport | null;
+  error: string | null;
+  transcriptConsentGranted: boolean;
+  consentNote: string | null;
+};
+
+const IDLE_TEACHING_MOMENTS: TeachingMomentsState = {
+  sessionId: null,
+  status: 'idle',
+  report: null,
+  error: null,
+  transcriptConsentGranted: false,
+  consentNote: null,
+};
+
 export type BackendSessionState = {
   user: UserProfile | null;
   courses: Course[];
@@ -28,6 +47,7 @@ export type BackendSessionState = {
   professorMetricsError: string | null;
   externalTextConsentGranted: boolean;
   externalTextConsentNote: string | null;
+  teachingMoments: TeachingMomentsState;
   cameraSignalsEnabled: boolean;
   cameraSignalsStatus: 'off' | 'watching' | 'error';
   cameraSignalsError: string | null;
@@ -66,6 +86,7 @@ const state: BackendSessionState = {
   professorMetricsError: null,
   externalTextConsentGranted: false,
   externalTextConsentNote: null,
+  teachingMoments: { ...IDLE_TEACHING_MOMENTS },
   cameraSignalsEnabled: false,
   cameraSignalsStatus: 'off',
   cameraSignalsError: null,
@@ -261,6 +282,35 @@ export function setExternalTextConsentNote(note: string | null): void {
   state.externalTextConsentNote = note;
 }
 
+/**
+ * Replaces teaching-moments state, resetting it when the lecture changes.
+ *
+ * @param sessionId - Lecture the state belongs to.
+ * @param patch - Fields to overwrite; omitted fields keep their value for the same lecture.
+ */
+export function setTeachingMoments(
+  sessionId: string,
+  patch: Partial<Omit<TeachingMomentsState, 'sessionId'>>,
+): void {
+  const base =
+    state.teachingMoments.sessionId === sessionId ? state.teachingMoments : IDLE_TEACHING_MOMENTS;
+  state.teachingMoments = { ...base, ...patch, sessionId };
+}
+
+/** Applies one review to the current teaching-moments report, replacing any prior review of that index. */
+export function recordTeachingMomentReview(sessionId: string, review: RecommendationReview): void {
+  const current = state.teachingMoments;
+  if (current.sessionId !== sessionId || !current.report) return;
+  if (current.report.report_revision !== review.report_revision) return;
+  const reviews = (current.report.reviews ?? []).filter(
+    (existing) => existing.recommendation_index !== review.recommendation_index,
+  );
+  state.teachingMoments = {
+    ...current,
+    report: { ...current.report, reviews: [...reviews, review] },
+  };
+}
+
 /** Stores whether local camera drift detection is enabled. */
 export function setCameraSignalsEnabled(enabled: boolean): void {
   state.cameraSignalsEnabled = enabled;
@@ -329,6 +379,7 @@ export function clearBackendSessionState(): void {
   state.professorMetricsError = null;
   state.externalTextConsentGranted = false;
   state.externalTextConsentNote = null;
+  state.teachingMoments = { ...IDLE_TEACHING_MOMENTS };
   state.cameraSignalsEnabled = false;
   state.cameraSignalsStatus = 'off';
   state.cameraSignalsError = null;

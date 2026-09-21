@@ -68,6 +68,11 @@ import {
   startStudentCameraMonitor,
   stopStudentCameraMonitor,
 } from './services/student_camera_monitor.mjs';
+import {
+  analyzeTeachingMoments,
+  reviewTeachingMoment,
+  setTeachingTranscriptConsent,
+} from './services/teaching_moments.mjs';
 
 const appRoot = document.querySelector<HTMLElement>('#app');
 if (!appRoot) throw new Error('Bloom requires an #app mount element.');
@@ -926,9 +931,50 @@ const bindZoomJoinButtons = (): void => {
   );
 };
 
+const isReviewStatus = (value: string | undefined): value is RecommendationReviewStatus =>
+  value === 'reviewed' || value === 'dismissed' || value === 'resolved';
+
+/**
+ * Binds the professor's Teaching moments panel: explicit Analyze, transcript
+ * consent, and per-moment review decisions. Analysis never runs without a click.
+ */
+const bindTeachingMoments = (): void => {
+  document
+    .querySelector<HTMLButtonElement>('[data-analyze-teaching-moments]')
+    ?.addEventListener('click', async (event) => {
+      const sessionId = (event.currentTarget as HTMLButtonElement).dataset.analyzeTeachingMoments;
+      if (!sessionId) return;
+      const pending = analyzeTeachingMoments(sessionId);
+      renderApplication();
+      await pending;
+      renderApplication();
+    });
+  document
+    .querySelector<HTMLInputElement>('[data-teaching-transcript-consent]')
+    ?.addEventListener('change', async (event) => {
+      const checkbox = event.currentTarget as HTMLInputElement;
+      const sessionId = checkbox.dataset.teachingTranscriptConsent;
+      if (!sessionId) return;
+      await setTeachingTranscriptConsent(sessionId, checkbox.checked);
+      renderApplication();
+    });
+  document.querySelectorAll<HTMLButtonElement>('[data-review-teaching-moment]').forEach((button) =>
+    button.addEventListener('click', async () => {
+      const sessionId = button.dataset.reviewTeachingMoment;
+      const index = Number(button.dataset.reviewIndex);
+      const status = button.dataset.reviewStatus;
+      if (!sessionId || !Number.isInteger(index) || !isReviewStatus(status)) return;
+      button.disabled = true;
+      await reviewTeachingMoment(sessionId, index, status);
+      renderApplication();
+    }),
+  );
+};
+
 const bindRenderedApplication = (route: AppRoute): void => {
   bindTimelineInteractions(route);
   bindZoomJoinButtons();
+  bindTeachingMoments();
   bindSummaryTabs();
   bindLibraryFilters();
   bindAuthentication();

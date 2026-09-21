@@ -2361,6 +2361,63 @@ body {
   font-size: 0.9rem;
 }
 
+.teaching-moments__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.82rem;
+}
+
+.teaching-moments__list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.teaching-moment.is-dismissed {
+  opacity: 0.6;
+}
+
+.teaching-moment__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.teaching-moment__header h3 {
+  margin: 0.2rem 0 0.6rem;
+}
+
+.teaching-moment__evidence {
+  margin: 0.5rem 0 0.9rem;
+  padding-left: 1.1rem;
+  color: var(--slate);
+  font-size: 0.8rem;
+}
+
+.teaching-moment__evidence li {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.teaching-moment__evidence q {
+  font-style: italic;
+}
+
+.teaching-moment__evidence-empty {
+  color: var(--slate);
+  font-size: 0.78rem;
+}
+
+.teaching-moment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
 @media (max-width: 760px) {
   .table-row,
   .lecture-log-row {
