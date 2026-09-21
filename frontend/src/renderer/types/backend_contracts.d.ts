@@ -378,17 +378,46 @@ type BloomRole = 'professor' | 'student' | null;
 interface ZoomDetectedPayload {
   running: boolean;
 }
+/** Which view the main window should show after the overlay's "Open Bloom" action. */
+interface ZoomOverlayOpenPayload {
+  view: 'default' | 'recovery-summary';
+}
+/** Drift window the renderer hands to the main process for in-overlay recovery. */
+interface DriftPromptRequest {
+  session_id: string;
+  event_id: string;
+  start_ms: number;
+  end_ms: number;
+}
+/** Recovery lifecycle pushed from the main process to the overlay renderer. */
+type DriftRecoveryState =
+  | { status: 'loading'; request: DriftPromptRequest }
+  | { status: 'ready'; request: DriftPromptRequest; card: RecoveryCard }
+  | { status: 'failed'; request: DriftPromptRequest; message: string };
+/** Card created by the main process on the overlay's behalf, mirrored to the main window. */
+interface RecoveryCardCreatedPayload {
+  session_id: string;
+  event_id: string;
+  card: RecoveryCard;
+}
+type OverlayAction = 'open' | 'dismiss' | 'recover';
+interface OverlayActionMessage {
+  action: OverlayAction;
+  view?: ZoomOverlayOpenPayload['view'];
+}
 interface BloomDesktopApi {
   setRole: (role: BloomRole) => void;
   onZoomDetected: (callback: (payload: ZoomDetectedPayload) => void) => () => void;
-  onZoomOverlayOpen: (callback: () => void) => () => void;
+  onZoomOverlayOpen: (callback: (payload: ZoomOverlayOpenPayload) => void) => () => void;
+  onRecoveryCardCreated: (callback: (payload: RecoveryCardCreatedPayload) => void) => () => void;
   subscribeSessionEvents: (sessionId: string | null) => void;
   onSessionEvent: (callback: (envelope: SessionEventEnvelope) => void) => () => void;
   onSessionEventsConnection: (
     callback: (payload: SessionEventsConnectionPayload) => void,
   ) => () => void;
-  overlayAction: (action: 'open' | 'dismiss') => void;
-  showDriftPrompt: () => void;
+  overlayAction: (message: OverlayActionMessage) => void;
+  showDriftPrompt: (request: DriftPromptRequest) => void;
+  onDriftRecoveryState: (callback: (state: DriftRecoveryState) => void) => () => void;
   openZoomJoinLink: (joinUrl: string) => Promise<ZoomJoinOutcome>;
   getOverlayRole: () => BloomRole;
 }

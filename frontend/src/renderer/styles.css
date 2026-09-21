@@ -2224,6 +2224,49 @@ body {
   color: var(--ink);
 }
 
+.overlay-card--expanded {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.overlay-recovery {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  overflow-y: auto;
+  max-height: 340px;
+  padding-right: 0.25rem;
+}
+
+.overlay-recovery__topic {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.overlay-recovery ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--slate-dark);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.overlay-recovery__follow-up {
+  font-style: italic;
+}
+
+.overlay-recovery small {
+  color: var(--slate);
+  font-size: 0.75rem;
+}
+
+.overlay-card [role='alert'] {
+  color: #9a3b3b;
+}
+
 .zoom-banner {
   display: flex;
   align-items: center;

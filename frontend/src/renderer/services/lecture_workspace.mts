@@ -13,6 +13,7 @@ import {
   setConsent,
   setEnrollments,
   setParticipantCount,
+  setPendingDriftPrompt,
   setProfessorReport,
   setProfessorReportForSession,
   setSelectedSession,
@@ -318,6 +319,26 @@ export function recordSubmittedEvent(event: SignalEvent): void {
 /** Stores a completed personal recovery card. */
 export function recordRecoveryCard(card: RecoveryCard): void {
   addRecoveryCard(card);
+}
+
+/**
+ * Mirrors a recovery card that the Zoom overlay obtained through the main process.
+ *
+ * Cards for a session other than the active one are ignored, repeated deliveries
+ * of the same card are deduplicated, and a pending drift prompt for the same
+ * event is cleared so the dashboard and overlay agree.
+ *
+ * @param payload - Card and drift context pushed on `recovery:card-created`.
+ * @returns True when renderer state changed and a re-render is warranted.
+ */
+export function applyOverlayRecoveryCard(payload: RecoveryCardCreatedPayload): boolean {
+  const state = getBackendSessionState();
+  if (state.activeSession?.session_id !== payload.session_id) return false;
+  const isKnownCard = state.recoveryCards.some((card) => card.card_id === payload.card.card_id);
+  if (!isKnownCard) addRecoveryCard(payload.card);
+  const clearsPrompt = state.pendingDriftPrompt?.event_id === payload.event_id;
+  if (clearsPrompt) setPendingDriftPrompt(null);
+  return !isKnownCard || clearsPrompt;
 }
 
 /** Returns current state to callers that need to build a route model. */

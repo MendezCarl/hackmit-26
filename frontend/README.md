@@ -43,8 +43,10 @@ $env:BLOOM_BACKEND_URL="http://127.0.0.1:8000"; npm run dev
 ```
 
 Bloom's optional Zoom cue detects desktop process names locally; it does not
-use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is
-only a reminder to open Bloom and remains independent of Zoom's meeting data.
+use the Zoom SDK or inject UI into the Zoom window. The always-on-top cue is a
+separate Bloom window layered over Zoom and remains independent of Zoom's
+meeting data; for students it also shows the drift recovery card in place so
+they never have to leave the meeting.
 
 Build a local installer for the current OS with `npm run package`, or target a
 platform explicitly:
